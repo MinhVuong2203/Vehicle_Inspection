@@ -15,6 +15,11 @@ CREATE TABLE dbo.Role (
     RoleName    NVARCHAR(100) NOT NULL UNIQUE  -- QUẢN TRỊ VIÊN, GIÁM SÁT VIÊN, KỸ THUẬT VIÊN, LỄ TÂN, THU NGÂN...
 );
 
+CREATE TABLE Position(
+	PositionId  INT IDENTITY(1,1) PRIMARY KEY,
+
+)
+
 CREATE TABLE dbo.[User] (
     UserId          UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     FullName        NVARCHAR(120) NOT NULL,

@@ -1,7 +1,14 @@
+using Vehicle_Inspection.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+
+// Register VehInsContext with dependency injection
+builder.Services.AddDbContext<VehInsContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("VehicleDb")));
 
 var app = builder.Build();
 

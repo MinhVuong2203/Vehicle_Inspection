@@ -20,3 +20,107 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+/* Admin top header styles inspired by the provided image */
+
+.admin-topbar {
+    background: #10a37f; /* green */
+    color: #fff;
+}
+
+    .admin-topbar .brand {
+        font-weight: 600;
+        letter-spacing: .5px;
+    }
+
+    .admin-topbar .search-box {
+        max-width: 420px;
+    }
+
+        .admin-topbar .search-box .form-control {
+            border-radius: 20px;
+            padding-right: 2.5rem;
+        }
+
+    .admin-topbar .user-links a {
+        color: rgba(255,255,255,0.9);
+        margin-left: 0.75rem;
+    }
+
+.admin-subnav {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e6e6e6;
+}
+
+    .admin-subnav .nav-pills .nav-link {
+        border-radius: 0;
+        color: #666;
+        padding: 0.4rem 1rem;
+        text-align: center;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        font-weight: bold;
+        min-width: 7rem;
+        border-right: 1px solid rgba(0,0,0,0.1);    
+    }
+
+        .admin-subnav .nav-pills .nav-link i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.25rem;
+            align-items: center;
+        }
+
+        .admin-subnav .nav-pills .nav-link.active {
+            background: rgba(16, 163, 127, 0.3);
+            border-bottom: 3px solid #10a37f;
+            color: #333;
+        }
+
+        .admin-subnav .nav-pills .nav-link:hover {
+            background: #e6e6e6;
+        }
+/* small tweak so sticky headers don't overlap page content */
+.page-main {
+    padding-top: 0.75rem;
+}
+
+@media (max-width: 576px) {
+    .admin-topbar .search-box {
+        max-width: 180px;
+    }
+
+    .admin-subnav .nav-pills {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+        .admin-subnav .nav-pills .nav-link {
+            display: inline-block;
+        }
+}
+
+/* Transition and fade-in animation for nav links */
+.admin-subnav .nav .nav-link {
+    transition: background-color 0.4s ease, color 0.4s ease, transform 0.4s ease, opacity 0.4s ease;
+    opacity: 0.9;
+}
+
+    .admin-subnav .nav .nav-link.active {
+        /* small lift and full opacity when active */
+        transform: translateY(-4px);
+        opacity: 1;
+        animation: navFadeIn 0.4s ease forwards;
+    }
+
+@keyframes navFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

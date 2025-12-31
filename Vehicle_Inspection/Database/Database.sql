@@ -9,16 +9,39 @@ GO
 -- =========================
 -- 1) NHÓM NGƯỜI DÙNG - NHÂN SỰ - PHÂN QUYỀN
 -- =========================
-CREATE TABLE dbo.Role (
+CREATE TABLE dbo.Role(
     RoleId      INT IDENTITY(1,1) PRIMARY KEY,
-    RoleCode    NVARCHAR(50) NOT NULL UNIQUE,   -- ADMIN, SUPERVISOR, INSPECTOR, RECEPTION, CASHIER...
-    RoleName    NVARCHAR(100) NOT NULL UNIQUE  -- QUẢN TRỊ VIÊN, GIÁM SÁT VIÊN, KỸ THUẬT VIÊN, LỄ TÂN, THU NGÂN...
+    RoleCode    NVARCHAR(50) NOT NULL UNIQUE,   
+	RoleAcronym NVARCHAR(50) NOT NULL,
+    RoleName    NVARCHAR(255) NOT NULL,
+	RoleIcon    NVARCHAR(255),
+	RoleHref    NVARCHAR(255)
 );
+
+
+INSERT INTO Role(RoleCode, RoleAcronym, RoleName, RoleIcon)
+VALUES ('LOGIN', N'Đăng nhập', N'Đăng nhập hệ thống', 'fa-solid fa-arrow-right-to-bracket'),
+	   ('EMPLOYEE', N'Nhân sự', N'Quản lý nhân sự', 'fa-regular fa-address-book'),
+	   ('RECEIVE PROFILE', N'Hồ sơ', N'Tiếp nhận hồ sơ', 'fa-regular fa-address-card'),
+	   ('INSPECTION', N'Kiểm định', N'Tạo lượt kiểm định', 'fa-solid fa-magnifying-glass'),
+	   ('TOLL', N'Thu phí', N'Thu phí, in biên nhận', 'fa-solid fa-coins'),
+	   ('RESULT', N'Kết quả', N'Nhập kết quả kiểm định theo công đoạn', 'fa-regular fa-pen-to-square'),
+	   ('CONCLUSION', N'Kết luận', N'Chốt kết luận đạt/không đạt', 'fa-regular fa-handshake'),
+	   ('REPORT', N'Xem báo cáo', N'Xem báo cáo', 'fa-solid fa-chart-pie')
+
 
 CREATE TABLE Position(
 	PositionId  INT IDENTITY(1,1) PRIMARY KEY,
-
+	PoitionCode NVARCHAR(100) NOT NULL,
+	PositionName NVARCHAR(100) NOT NULL,
 )
+
+CREATE TABLE Team(
+	TeamId  INT IDENTITY(1,1) PRIMARY KEY,
+	TeamCode NVARCHAR(100) NOT NULL,
+	TeamName NVARCHAR(100) NOT NULL,
+)
+
 
 CREATE TABLE dbo.[User] (
     UserId          UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
@@ -30,11 +53,20 @@ CREATE TABLE dbo.[User] (
 	Address			NVARCHAR(255),
 	Gender			NVARCHAR(10),
 	ImageUrl		NVARCHAR(255),  -- Sau này cần bổ sung thêm default
-	Position		NVARCHAR(60) NOT NULL,          -- Giám đốc / Phó / KTV / NV nghiệp vụ / Kế toán...
-	Team			NVARCHAR(60) NULL,         -- Ban giám đốc / Tổ kiểm định / Tổ nghiệp vụ / Tổ kế toán (nếu bạn muốn lưu)
+	PositionId		INT DEFAULT 1,          -- Giám đốc / Phó / KTV / NV nghiệp vụ / Kế toán...
+	TeamId			INT DEFAULT 1,         -- Ban giám đốc / Tổ kiểm định / Tổ nghiệp vụ / Tổ kế toán (nếu bạn muốn lưu)
     IsActive        BIT NOT NULL DEFAULT 1,
-    CreatedAt       DATETIME NOT NULL DEFAULT GETDATE()
+    CreatedAt       DATETIME NOT NULL DEFAULT GETDATE(),
+	FOREIGN KEY (PositionId) REFERENCES Position(PositionId)
 );
+
+CREATE TABLE User_Role(
+	EmployeeID UNIQUEIDENTIFIER,
+	RoleId INT,
+	PRIMARY KEY (EmployeeID, OperationId),
+	FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID) ON DELETE CASCADE,
+	FOREIGN KEY (RoleId) REFERENCES Role(RoleId) ON DELETE CASCADE
+)
 
 CREATE TABLE dbo.Account (
     UserId          UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
@@ -45,6 +77,15 @@ CREATE TABLE dbo.Account (
     LastLoginAt     DATETIME2 NULL,  -- Lần đăng nhập cuối cùng
     CONSTRAINT FK_Account_User FOREIGN KEY (UserId) REFERENCES dbo.[User](UserId) ON DELETE CASCADE
 );
+
+CREATE TABLE PasswordRecovery(
+	PasswordRecoveryId INT PRIMARY KEY IDENTITY(1,1),
+	UserId          UNIQUEIDENTIFIER NOT NULL,
+	ResetOtpHash    NVARCHAR(200) NULL,
+    ResetOtpExpiresAt DATETIME2 NULL,
+    ResetOtpAttemptCount INT NOT NULL CONSTRAINT DF_Users_ResetOtpAttemptCount DEFAULT(0),
+	FOREIGN KEY (UserId) REFERENCES [User](UserId) ON DELETE CASCADE
+)
 
 CREATE TABLE dbo.UserRole (
     UserId  UNIQUEIDENTIFIER NOT NULL,

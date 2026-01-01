@@ -28,6 +28,7 @@ public partial class Role
     [StringLength(255)]
     public string? RoleHref { get; set; }
 
-
-
+    [ForeignKey("RoleId")]
+    [InverseProperty("Roles")]
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

@@ -1,10 +1,12 @@
-using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Vehicle_Inspection.Models;
+using System.Diagnostics;
 using Vehicle_Inspection.Data;
+using Vehicle_Inspection.Models;
 
 namespace Vehicle_Inspection.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

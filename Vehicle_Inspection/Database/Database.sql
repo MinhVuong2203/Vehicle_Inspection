@@ -455,128 +455,419 @@ CREATE TABLE dbo.StageItemThreshold (
 -- 4) NHÓM HỒ SƠ KIỂM ĐỊNH (LÕI NGHIỆP VỤ)
 -- Status: 0 Draft, 1 Received, 2 Paid, 3 InProgress, 4 WaitingConclusion, 5 Passed, 6 Failed, 7 Cancelled
 -- =========================
+-- 4.1) Bảng Inspection (Hồ sơ kiểm định chính)
+-- Trạng thái chính của hồ sơ theo quy trình thực tế
 CREATE TABLE dbo.Inspection (
-    InspectionId        INT IDENTITY(1,1) PRIMARY KEY,
-    InspectionCode      NVARCHAR(30) NOT NULL UNIQUE,     -- mã lượt (có thể QR)
-    VehicleId           INT NOT NULL,
-    OwnerId             INT NOT NULL,
-    ParentInspectionId  INT NULL,     -- tái kiểm
-    LaneId              INT NULL,     -- dây chuyền gán
-    Status              SMALLINT NOT NULL DEFAULT 0,
-    CheckInAt           DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    StartedAt           DATETIME2 NULL,
-    ConcludedAt         DATETIME2 NULL,
-    ConclusionNote      NVARCHAR(255) NULL,
-    FinalApprovedBy     UNIQUEIDENTIFIER NULL,     -- user trưởng dây chuyền
-    CreatedBy           UNIQUEIDENTIFIER NULL,
+    InspectionId INT IDENTITY(1,1) PRIMARY KEY,
+    InspectionCode NVARCHAR(30) NOT NULL UNIQUE,-- Mã lượt kiểm định
+    
+    -- THÔNG TIN PHƯƠNG TIỆN & CHỦ XE
+    VehicleId INT NOT NULL,
+    OwnerId INT NOT NULL,
+    
+    -- PHÂN LOẠI KIỂM ĐỊNH
+    InspectionType NVARCHAR(20) NOT NULL DEFAULT N'FIRST',  
+                        -- FIRST: Đăng kiểm lần đầu
+                        -- PERIODIC: Định kỳ
+                        -- RE_INSPECTION: Tái kiểm (sau khi sửa)
+    ParentInspectionId INT NULL,-- Liên kết tái kiểm với lượt trước
+    
+    -- PHÂN DÂY CHUYỀN
+    LaneId INT NULL,-- Dây chuyền được gán
+    
+    -- TRẠNG THÁI QUY TRÌNH 
+    Status SMALLINT NOT NULL DEFAULT 0,
+    /*
+        0: DRAFT           - Nháp (chưa tiếp nhận)
+        1: RECEIVED        - Đã tiếp nhận (chờ thu phí)
+        2: PAID            - Đã thu phí (chờ vào dây chuyền)
+        3: IN_PROGRESS     - Đang kiểm định
+        4: COMPLETED       - Hoàn thành kiểm định (chờ kết luận)
+        5: PASSED          - Đạt (chờ cấp giấy)
+        6: FAILED          - Không đạt (cần sửa chữa)
+        7: CERTIFIED       - Đã cấp chứng nhận
+        8: CANCELLED       - Hủy bỏ
+    */
+    
+    -- KẾT LUẬN CUỐI CÙNG
+    FinalResult INT NULL,                    
+    /*
+        NULL: Chưa có kết luận
+        1: ĐẠT - Tất cả công đoạn đạt
+        2: KHÔNG ĐẠT - Có công đoạn không đạt
+        3: TẠM ĐÌNH CHỈ - Vi phạm nghiêm trọng
+    */
+    ConclusionNote NVARCHAR(1000) NULL,-- Ghi chú kết luận
+    ConcludedBy UNIQUEIDENTIFIER NULL,-- Giám sát viên/Tổ trưởng kết luận
+    ConcludedAt DATETIME2 NULL,
+    
+    -- THỜI GIAN QUY TRÌNH
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),  -- Tạo hồ sơ
+    ReceivedAt DATETIME2 NULL,                   -- Tiếp nhận
+    PaidAt DATETIME2 NULL,                   -- Thu phí xong
+    StartedAt DATETIME2 NULL,                   -- Bắt đầu kiểm định
+    CompletedAt DATETIME2 NULL,                   -- Hoàn thành kiểm định
+    CertifiedAt DATETIME2 NULL,                   -- Cấp chứng nhận
+    
+    -- NGƯỜI THỰC HIỆN
+    CreatedBy UNIQUEIDENTIFIER NULL, -- Người tạo (có thể là hệ thống hoặc NV tiếp nhận)
+    ReceivedBy UNIQUEIDENTIFIER NULL, -- NV tiếp nhận hồ sơ
+    
+    -- GHI CHÚ & METADATA
+    Notes               NVARCHAR(1000) NULL,-- Ghi chú chung
+    Priority            SMALLINT DEFAULT 1,-- Mức ưu tiên (1: Thường, 2: Cao, 3: Khẩn cấp)
+    IsDeleted           BIT NOT NULL DEFAULT 0,
+    
     FOREIGN KEY (VehicleId) REFERENCES dbo.Vehicle(VehicleId),
     FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
     FOREIGN KEY (ParentInspectionId) REFERENCES dbo.Inspection(InspectionId),
     FOREIGN KEY (LaneId) REFERENCES dbo.Lane(LaneId),
-    FOREIGN KEY (FinalApprovedBy) REFERENCES dbo.[User](UserId),
+    FOREIGN KEY (ConcludedBy) REFERENCES dbo.[User](UserId),
     FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
-    CONSTRAINT CK_Inspection_Status CHECK (Status IN (0,1,2,3,4,5,6,7))
+    FOREIGN KEY (ReceivedBy) REFERENCES dbo.[User](UserId),
+    CONSTRAINT CK_Inspection_Status CHECK (Status BETWEEN 0 AND 8),
+    CONSTRAINT CK_Inspection_FinalResult CHECK (FinalResult IN (1,2,3) OR FinalResult IS NULL),
+    CONSTRAINT CK_Inspection_Priority CHECK (Priority BETWEEN 1 AND 3)
 );
 
 CREATE INDEX IX_Inspection_VehicleId ON dbo.Inspection(VehicleId);
-CREATE INDEX IX_Inspection_Status ON dbo.Inspection(Status);
-CREATE INDEX IX_Inspection_CheckInAt ON dbo.Inspection(CheckInAt);
+CREATE INDEX IX_Inspection_Status ON dbo.Inspection(Status) WHERE IsDeleted = 0;
+CREATE INDEX IX_Inspection_ReceivedAt ON dbo.Inspection(ReceivedAt);
+CREATE INDEX IX_Inspection_LaneId ON dbo.Inspection(LaneId) WHERE Status IN (3,4);
+CREATE INDEX IX_Inspection_InspectionType ON dbo.Inspection(InspectionType);
 
--- STAGE RUN (1 hồ sơ chạy qua nhiều công đoạn)
--- RunStatus: 0 NotStarted, 1 Running, 2 Done, 3 Skipped
-CREATE TABLE dbo.StageRun (
-    StageRunId      INT IDENTITY(1,1) PRIMARY KEY,
-    InspectionId    INT NOT NULL,
-    StageId         INT NOT NULL,
-    LaneId          INT NULL,
-    StartedBy       UNIQUEIDENTIFIER NULL,
-    StartedAt       DATETIME2 NULL,
-    EndedAt         DATETIME2 NULL,
-    RunStatus       SMALLINT NOT NULL DEFAULT 0,
-    Note            NVARCHAR(255) NULL,
-    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId),
+-- 4.2) Bảng InspectionStage (Chi tiết công đoạn kiểm định)
+-- Mỗi hồ sơ sẽ có nhiều công đoạn tương ứng với dây chuyền
+CREATE TABLE dbo.InspectionStage (
+    InspStageId BIGINT IDENTITY(1,1) PRIMARY KEY,
+    InspectionId INT NOT NULL,
+    StageId INT NOT NULL,-- Công đoạn (Động cơ, Phanh, Đèn...)
+    
+    -- PHÂN CÔNG KỸ THUẬT VIÊN
+    AssignedUserId UNIQUEIDENTIFIER NULL,-- KTV thực hiện (mapping UserStage)
+    
+    -- TRẠNG THÁI CÔNG ĐOẠN
+    Status INT NOT NULL DEFAULT 0,
+    /*
+        0: PENDING     - Chờ thực hiện
+        1: IN_PROGRESS - Đang thực hiện
+        2: COMPLETED   - Hoàn thành
+        3: ON_HOLD     - Tạm dừng (chờ thiết bị/sửa chữa)
+        4: SKIPPED     - Bỏ qua (không áp dụng)
+    */
+    
+    -- KẾT QUẢ CÔNG ĐOẠN
+    StageResult INT NULL,
+    /*
+        NULL: Chưa có kết quả
+        1: ĐẠT - Tất cả chỉ tiêu đạt
+        2: KHÔNG ĐẠT - Có chỉ tiêu không đạt
+        3: KHUYẾT ĐIỂM - Đạt nhưng có lỗi nhỏ cần lưu ý
+    */
+    
+    -- THỜI GIAN THỰC HIỆN
+    StartTime DATETIME2 NULL,-- Bắt đầu công đoạn
+    EndTime DATETIME2 NULL,-- Kết thúc công đoạn
+    DurationMinutes INT NULL,-- Thời gian thực hiện (phút)
+    
+    -- GHI CHÚ
+    Notes NVARCHAR(500) NULL,-- Ghi chú của KTV
+    
+    -- METADATA
+    SortOrder INT NOT NULL DEFAULT 0,-- Thứ tự thực hiện
+    IsRequired BIT NOT NULL DEFAULT 1,-- Bắt buộc hay không
+    
+    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
     FOREIGN KEY (StageId) REFERENCES dbo.Stage(StageId),
-    FOREIGN KEY (LaneId) REFERENCES dbo.Lane(LaneId),
-    FOREIGN KEY (StartedBy) REFERENCES dbo.[User](UserId),
-    CONSTRAINT UQ_StageRun UNIQUE(InspectionId, StageId),
-    CONSTRAINT CK_StageRun_Status CHECK (RunStatus IN (0,1,2,3))
+    FOREIGN KEY (AssignedUserId) REFERENCES dbo.[User](UserId),
+    CONSTRAINT CK_InspStage_Status CHECK (Status BETWEEN 0 AND 4),
+    CONSTRAINT CK_InspStage_Result CHECK (StageResult IN (1,2,3) OR StageResult IS NULL),
+    CONSTRAINT UQ_InspStage UNIQUE (InspectionId, StageId)
 );
 
-CREATE INDEX IX_StageRun_InspectionId ON dbo.StageRun(InspectionId);
+CREATE INDEX IX_InspStage_InspectionId ON dbo.InspectionStage(InspectionId);
+CREATE INDEX IX_InspStage_Status ON dbo.InspectionStage(Status);
+CREATE INDEX IX_InspStage_AssignedUserId ON dbo.InspectionStage(AssignedUserId) WHERE Status IN (0,1);
 
---MEASUREMENT (kết quả đo / nhập)
--- Pass: NULL (chưa xét), 0 Fail, 1 Pass
-CREATE TABLE dbo.Measurement (
-    MeasurementId    INT IDENTITY(1,1) PRIMARY KEY,
-    StageRunId       INT NOT NULL,
-    ItemId           INT NOT NULL,
-    ValueText        NVARCHAR(255) NULL,
-    ValueNumber      DECIMAL(18,4) NULL,
-    Pass             BIT NULL,
-    Source           NVARCHAR(20) NOT NULL DEFAULT N'MANUAL', -- MANUAL / DEVICE
-    RecordedBy       UNIQUEIDENTIFIER NULL,
-    RecordedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    FOREIGN KEY (StageRunId) REFERENCES dbo.StageRun(StageRunId),
+-- 4.3) Bảng InspectionDetail (Kết quả đo chi tiết từng chỉ tiêu)
+CREATE TABLE dbo.InspectionDetail (
+    DetailId INT IDENTITY(1,1) PRIMARY KEY,
+    InspStageId INT NOT NULL,-- Thuộc công đoạn nào
+    ItemId INT NOT NULL,-- Chỉ tiêu nào
+    
+    -- TIÊU CHUẨN (Lấy từ StageItemThreshold theo VehicleType)
+    StandardMin DECIMAL(18,4) NULL, -- Giá trị min theo tiêu chuẩn
+    StandardMax DECIMAL(18,4) NULL, -- Giá trị max theo tiêu chuẩn
+    StandardText NVARCHAR(100) NULL, -- Tiêu chuẩn dạng text (VD: "Bình thường")
+    
+    -- GIÁ TRỊ ĐO ĐƯỢC
+    ActualValue DECIMAL(18,4) NULL,-- Giá trị đo (số)
+    ActualText NVARCHAR(100) NULL, -- Giá trị đo (text)
+    Unit NVARCHAR(20) NULL,-- Đơn vị (kg, N, lux, %)
+    
+    -- KẾT QUẢ ĐÁNH GIÁ
+    IsPassed BIT NULL,-- Đạt chỉ tiêu này?
+    /*
+        NULL: Chưa đánh giá
+        0: KHÔNG ĐẠT
+        1: ĐẠT
+    */
+    DeviationPercent DECIMAL(10,2) NULL,-- % chênh lệch so với tiêu chuẩn
+    
+    -- NGUỒN DỮ LIỆU
+    DataSource NVARCHAR(20) NOT NULL DEFAULT N'MANUAL',
+    /*
+        MANUAL: Nhập tay
+        DEVICE: Từ thiết bị đo
+        VISUAL: Kiểm tra mắt thường
+        CALCULATED: Tính toán
+    */
+    DeviceId NVARCHAR(50) NULL,-- ID thiết bị đo (nếu có)
+    
+    -- THÔNG TIN GHI NHẬN
+    RecordedBy UNIQUEIDENTIFIER NULL,-- KTV ghi nhận
+    RecordedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    
+    -- ẢNH CHỤP 
+    ImageUrls NVARCHAR(1000) NULL,
+    
+    -- GHI CHÚ
+    Notes NVARCHAR(500) NULL,
+    
+    FOREIGN KEY (InspStageId) REFERENCES dbo.InspectionStage(InspStageId) ON DELETE CASCADE,
     FOREIGN KEY (ItemId) REFERENCES dbo.StageItem(ItemId),
     FOREIGN KEY (RecordedBy) REFERENCES dbo.[User](UserId),
-    CONSTRAINT UQ_Measurement UNIQUE(StageRunId, ItemId)
+    CONSTRAINT UQ_InspDetail UNIQUE (InspStageId, ItemId)
 );
 
-CREATE INDEX IX_Measurement_StageRunId ON dbo.Measurement(StageRunId);
+CREATE INDEX IX_InspDetail_InspStageId ON dbo.InspectionDetail(InspStageId);
+CREATE INDEX IX_InspDetail_IsPassed ON dbo.InspectionDetail(IsPassed) WHERE IsPassed = 0;
 
--- DEFECT (lỗi phát hiện)
--- Severity: 1 Minor, 2 Major, 3 Critical
-CREATE TABLE dbo.Defect (
-    DefectId        INT IDENTITY(1,1) PRIMARY KEY,
-    InspectionId    INT NOT NULL,
-    ItemId          INT NULL,
-    DefectCode      NVARCHAR(40) NULL,
-    Description     NVARCHAR(255) NOT NULL,
-    Severity        SMALLINT NOT NULL DEFAULT 2,
-    CreatedBy       UNIQUEIDENTIFIER NULL,
-    CreatedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
-    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId),
+-- 4.4) Bảng InspectionDefect (Danh sách lỗi phát hiện)
+-- Ghi nhận các lỗi/hư hỏng phát hiện trong quá trình kiểm định
+CREATE TABLE dbo.InspectionDefect (
+    DefectId BIGINT IDENTITY(1,1) PRIMARY KEY,
+    InspectionId INT NOT NULL,
+    InspStageId BIGINT NULL,-- Lỗi phát hiện ở công đoạn nào
+    ItemId INT NULL,-- Lỗi liên quan chỉ tiêu nào
+    
+    -- PHÂN LOẠI LỖI
+    DefectCategory NVARCHAR(50) NOT NULL,-- Danh mục (VD: "Hệ thống phanh", "Hệ thống đèn")
+    DefectCode NVARCHAR(40) NULL,-- Mã lỗi chuẩn (VD: "HTP", "HTD")
+    
+    -- MÔ TẢ LỖI
+    DefectDescription NVARCHAR(1000) NOT NULL,          -- Mô tả chi tiết lỗi
+    
+    -- MỨC ĐỘ NGHIÊM TRỌNG
+    Severity INT NOT NULL DEFAULT 2,
+    /*
+        1: KHUYẾT ĐIỂM - Nhắc nhở, không ảnh hưởng kết quả
+        2: HƯ HỎNG - Không đạt, cần sửa chữa
+        3: NGUY HIỂM - Nghiêm trọng, cấm lưu hành
+    */
+    
+    -- HÌNH ẢNH MINH HỌA
+    ImageUrls NVARCHAR(1000) NULL,
+    
+    -- TRẠNG THÁI XỬ LÝ (cho tái kiểm)
+    IsFixed BIT NOT NULL DEFAULT 0,-- Đã sửa chữa?
+    FixedNote NVARCHAR(500) NULL,-- Ghi chú về việc sửa chữa
+    VerifiedBy UNIQUEIDENTIFIER NULL,-- KTV xác nhận đã sửa (tái kiểm)
+    VerifiedAt DATETIME2 NULL,
+    
+    -- NGƯỜI PHÁT HIỆN
+    CreatedBy UNIQUEIDENTIFIER NULL,-- KTV phát hiện lỗi
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    
+    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
+    FOREIGN KEY (InspStageId) REFERENCES dbo.InspectionStage(InspStageId),
     FOREIGN KEY (ItemId) REFERENCES dbo.StageItem(ItemId),
     FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
-    CONSTRAINT CK_Defect_Severity CHECK (Severity IN (1,2,3))
+    FOREIGN KEY (VerifiedBy) REFERENCES dbo.[User](UserId),
+    CONSTRAINT CK_Defect_Severity CHECK (Severity BETWEEN 1 AND 3)
 );
 
-CREATE INDEX IX_Defect_InspectionId ON dbo.Defect(InspectionId);
+CREATE INDEX IX_Defect_InspectionId ON dbo.InspectionDefect(InspectionId);
+CREATE INDEX IX_Defect_Severity ON dbo.InspectionDefect(Severity);
+CREATE INDEX IX_Defect_IsFixed ON dbo.InspectionDefect(IsFixed) WHERE Severity >= 2;
 
--- =========================
--- 5) PAYMENT
--- PayStatus: 0 Pending, 1 Paid, 2 Refunded, 3 Cancelled
--- =========================
+-- 4.5) Bảng InspectionHistory (Lịch sử thay đổi trạng thái)
+-- Audit trail cho việc chuyển trạng thái hồ sơ
+CREATE TABLE dbo.InspectionHistory (
+    HistoryId BIGINT IDENTITY(1,1) PRIMARY KEY,
+    InspectionId INT NOT NULL,
+    
+    -- THAY ĐỔI TRẠNG THÁI
+    FromStatus SMALLINT NULL, -- Trạng thái cũ
+    ToStatus SMALLINT NOT NULL, -- Trạng thái mới
+    
+    -- NGƯỜI THỰC HIỆN VÀ THỜI GIAN
+    ChangedBy UNIQUEIDENTIFIER NULL,
+    ChangedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    
+    -- GHI CHÚ
+    Notes NVARCHAR(500) NULL,-- Lý do thay đổi
+    
+    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
+    FOREIGN KEY (ChangedBy) REFERENCES dbo.[User](UserId)
+);
+
+CREATE INDEX IX_History_InspectionId ON dbo.InspectionHistory(InspectionId);
+CREATE INDEX IX_History_ChangedAt ON dbo.InspectionHistory(ChangedAt);
+
+-- 5) NHÓM THU PHÍ - CHỨNG NHẬN - THIẾT KẾ LẠI
+
+-- 5.1) Bảng FeeSchedule (Bảng giá dịch vụ)
+-- Quản lý giá theo loại xe và loại kiểm định
+CREATE TABLE dbo.FeeSchedule (
+    FeeId INT IDENTITY(1,1) PRIMARY KEY,
+    
+    -- PHÂN LOẠI PHÍ
+    ServiceType NVARCHAR(30) NOT NULL,
+    /*
+        FIRST_INSPECTION    - Kiểm định lần đầu
+        PERIODIC           - Định kỳ
+        RE_INSPECTION      - Tái kiểm
+    */
+    
+    VehicleTypeId       INT NULL,-- Loại xe áp dụng hoăc tất cả xe
+    
+    -- GIÁ PHÍ
+    BaseFee DECIMAL(18,2) NOT NULL,-- Phí cơ bản
+    CertificateFee DECIMAL(18,2) DEFAULT 0,-- Phí giấy chứng nhận
+    StickerFee DECIMAL(18,2) DEFAULT 0,-- Phí tem kiểm định
+    TotalFee DECIMAL(18,2) NOT NULL,-- Tổng phí
+    
+    -- THỜI GIAN ÁP DỤNG
+    EffectiveFrom DATE NOT NULL,
+    EffectiveTo DATE NULL,-- NULL = vô thời hạn
+    
+    -- TRẠNG THÁI
+    IsActive BIT NOT NULL DEFAULT 1,
+    
+    CreatedBy UNIQUEIDENTIFIER NULL,
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    UpdatedBy UNIQUEIDENTIFIER NULL,
+    UpdatedAt DATETIME2 NULL,
+    
+    FOREIGN KEY (VehicleTypeId) REFERENCES dbo.VehicleType(VehicleTypeId),
+    CONSTRAINT CK_Fee_Dates CHECK (EffectiveTo IS NULL OR EffectiveTo >= EffectiveFrom),
+    CONSTRAINT CK_Fee_Amount CHECK (TotalFee >= 0)
+);
+
+CREATE INDEX IX_FeeSchedule_ServiceType ON dbo.FeeSchedule(ServiceType);
+CREATE INDEX IX_FeeSchedule_Effective ON dbo.FeeSchedule(EffectiveFrom, EffectiveTo) WHERE IsActive = 1;
+
+-- 5.2) Bảng Payment (Thanh toán)
 CREATE TABLE dbo.Payment (
-    PaymentId        INT IDENTITY(1,1) PRIMARY KEY,
-    InspectionId     INT NOT NULL UNIQUE,
-    Amount           DECIMAL(18,2) NOT NULL,
-    Method           NVARCHAR(30) NOT NULL,        -- CASH, TRANSFER, QR, POS
-    PayStatus        SMALLINT NOT NULL DEFAULT 0,
-    ReceiptNo        NVARCHAR(40) NULL,
-    PaidAt           DATETIME2 NULL,
-    CreatedBy        UNIQUEIDENTIFIER NULL,
-    CreatedAt        DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    PaymentId INT IDENTITY(1,1) PRIMARY KEY,
+    InspectionId INT NOT NULL,
+    
+    -- CHI TIẾT PHÍ
+    FeeScheduleId INT NULL,-- Tham chiếu bảng giá
+    BaseFee DECIMAL(18,2) NOT NULL,-- Phí cơ bản
+    CertificateFee DECIMAL(18,2) DEFAULT 0,
+    StickerFee DECIMAL(18,2) DEFAULT 0,
+    TotalAmount DECIMAL(18,2) NOT NULL, -- Tổng tiền
+    
+    -- PHƯƠNG THỨC THANH TOÁN
+    PaymentMethod NVARCHAR(30) NOT NULL,
+    /*
+        - Tiền mặt
+        - Chuyển khoản
+    */
+    
+    -- TRẠNG THÁI THANH TOÁN
+    PaymentStatus       SMALLINT NOT NULL DEFAULT 0,
+    /*
+        0: PENDING   - Chờ thanh toán
+        1: PAID      - Đã thanh toán
+        2: CANCELLED - Đã hủy
+    */
+    
+    -- THÔNG TIN BIÊN NHẬN
+    ReceiptNo NVARCHAR(40) NULL UNIQUE, -- Số biên nhận
+    ReceiptPrintCount INT DEFAULT 0, -- Số lần in biên nhận
+    
+    -- THỜI GIAN
+    CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    PaidAt DATETIME2 NULL, -- Thời điểm thanh toán
+    --RefundedAt DATETIME2 NULL, -- Thời điểm hoàn tiền
+    
+    -- NGƯỜI THỰC HIỆN
+    CreatedBy UNIQUEIDENTIFIER NULL,  -- Thu ngân tạo phiếu
+    PaidBy UNIQUEIDENTIFIER NULL,  -- Thu ngân nhận tiền
+    --RefundedBy UNIQUEIDENTIFIER NULL, -- Người thực hiện hoàn tiền
+    
+    -- GHI CHÚ
+    Notes NVARCHAR(500) NULL,
+    --RefundReason NVARCHAR(500) NULL,-- Lý do hoàn tiền
+    
     FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId),
+    FOREIGN KEY (FeeScheduleId) REFERENCES dbo.FeeSchedule(FeeId),
     FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
-    CONSTRAINT CK_Payment_Status CHECK (PayStatus IN (0,1,2,3))
+    FOREIGN KEY (PaidBy) REFERENCES dbo.[User](UserId),
+    FOREIGN KEY (RefundedBy) REFERENCES dbo.[User](UserId),
+    CONSTRAINT CK_Payment_Status CHECK (PaymentStatus BETWEEN 0 AND 3),
+    CONSTRAINT CK_Payment_Amount CHECK (TotalAmount >= 0),
+    CONSTRAINT UQ_Payment_Inspection UNIQUE (InspectionId)  -- Mỗi hồ sơ 1 phiếu thu
 );
 
-CREATE INDEX IX_Payment_PayStatus ON dbo.Payment(PayStatus);
+CREATE INDEX IX_Payment_Status ON dbo.Payment(PaymentStatus);
+CREATE INDEX IX_Payment_PaidAt ON dbo.Payment(PaidAt);
+CREATE INDEX IX_Payment_ReceiptNo ON dbo.Payment(ReceiptNo);
 
--- CERTIFICATE (cấp giấy/tem nếu đạt)
+-- 5.3) Bảng Certificate (Chứng nhận kiểm định)
+-- Cấp cho xe ĐẠT kiểm định
 CREATE TABLE dbo.Certificate (
-    CertificateId    INT IDENTITY(1,1) PRIMARY KEY,
-    InspectionId     INT NOT NULL UNIQUE,
-    CertNo           NVARCHAR(40) NOT NULL UNIQUE,
-    StickerNo        NVARCHAR(40) NULL UNIQUE,
-    IssueDate        DATE NOT NULL,
-    ExpiryDate       DATE NOT NULL,
-    IssuedBy         UNIQUEIDENTIFIER NULL,
-    CreatedAt        DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    CertificateId       INT IDENTITY(1,1) PRIMARY KEY,
+    InspectionId        INT NOT NULL,
+    
+    -- SỐ CHỨNG NHẬN
+    CertificateNo NVARCHAR(40) NOT NULL UNIQUE, -- Số GCN (VD: 1234567890-01/2024)
+    StickerNo NVARCHAR(40) NULL UNIQUE, -- Số tem kiểm định
+    
+    -- THỜI HẠN
+    IssueDate DATE NOT NULL,-- Ngày cấp
+    ExpiryDate DATE NOT NULL,-- Ngày hết hạn
+    ValidityMonths INT NOT NULL DEFAULT 12,-- Số tháng có hiệu lực
+    
+    -- TRẠNG THÁI
+    Status  SMALLINT NOT NULL DEFAULT 1,
+    /*
+        1: ACTIVE    - Còn hiệu lực
+        2: EXPIRED   - Hết hạn
+        3: REVOKED   - Thu hồi
+        4: REPLACED  - Thay thế (cấp lại)
+    */
+    
+    -- THÔNG TIN IN ẤN
+    PrintTemplate       NVARCHAR(50) DEFAULT N'STANDARD', -- Template in
+    PrintCount INT DEFAULT 0,  -- Số lần in
+    LastPrintedAt DATETIME2 NULL, -- Lần in cuối
+    
+    -- THÔNG TIN CẤP PHÁT
+    IssuedBy UNIQUEIDENTIFIER NULL,  -- Cán bộ cấp
+    IssuedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    
+    -- FILE ĐÍNH KÈM
+    PdfUrl NVARCHAR(500) NULL,  -- File PDF chứng nhận
+    
+    -- GHI CHÚ
+    Notes NVARCHAR(500) NULL,
+    
     FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId),
-    FOREIGN KEY (IssuedBy) REFERENCES dbo.[User](UserId)
+    FOREIGN KEY (IssuedBy) REFERENCES dbo.[User](UserId),
+    FOREIGN KEY (RevokedBy) REFERENCES dbo.[User](UserId),
+    CONSTRAINT CK_Certificate_Status CHECK (Status BETWEEN 1 AND 4),
+    CONSTRAINT CK_Certificate_Dates CHECK (ExpiryDate > IssueDate),
+    CONSTRAINT UQ_Certificate_Inspection UNIQUE (InspectionId)
 );
+
+CREATE INDEX IX_Certificate_Status ON dbo.Certificate(Status);
+CREATE INDEX IX_Certificate_ExpiryDate ON dbo.Certificate(ExpiryDate) WHERE Status = 1;
+CREATE INDEX IX_Certificate_IssueDate ON dbo.Certificate(IssueDate);
+
 
 
 

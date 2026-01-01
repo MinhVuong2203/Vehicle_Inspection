@@ -119,29 +119,151 @@ CREATE TABLE dbo.Owner (
 );
 
 CREATE TABLE dbo.Vehicle(
-    VehicleId       INT IDENTITY(1,1) PRIMARY KEY,
-    PlateNo         NVARCHAR(20) NOT NULL UNIQUE,     -- biển số
-	-- Nhóm phương tiện 
-    Classis             NVARCHAR(50) NULL, -- Số khung
-    EngineNo        NVARCHAR(50) NULL,  -- Số máy
-    VehicleType     NVARCHAR(50) NOT NULL,            -- ô tô con, tải, khách...
-    Brand           NVARCHAR(60) NULL,
-    Model           NVARCHAR(60) NULL,
-    ManufactureYear INT NULL,
-    FuelType        NVARCHAR(30) NULL,                -- Xăng/Dầu/Điện/Hybrid...
-    Seats           INT NULL,
-    GrossWeightKg   INT NULL,
-    OwnerId         INT NOT NULL,
-	-- Quốc gia
-    -- IsActive        BIT NOT NULL DEFAULT 1,
-    FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId)
+    VehicleId               INT IDENTITY(1,1) PRIMARY KEY,
+    
+    -- THÔNG TIN CƠ BẢN
+    PlateNo                 NVARCHAR(20) NOT NULL,              -- Biển đăng ký (Registration plate)
+    InspectionNo            NVARCHAR(50) NULL,                         -- Số quản lý phương tiện (Vehicle inspection N°)
+    
+    -- PHÂN LOẠI
+    VehicleGroup            NVARCHAR(100) NULL,                        -- Nhóm phương tiện (Vehicle's group)
+    VehicleType             NVARCHAR(100) NULL,                        -- Loại phương tiện (Vehicle's type)
+    
+    -- NĂNG LƯỢNG & MỤC ĐÍCH SỬ DỤNG
+    EnergyType              NVARCHAR(50) NULL,                         -- Sử dụng năng lượng sạch, xanh, thân thiện môi trường
+    IsCleanEnergy           BIT NULL DEFAULT 0,                        -- Clean, green energy vehicle
+    UsagePermission         NVARCHAR(20) NULL,                         -- Cho phép tự động lái / Một phần / Toàn phần
+                                                                       -- (Drive automation: Partially / Fully)
+    
+    -- THƯƠNG HIỆU & MODEL
+    Brand                   NVARCHAR(100) NULL,                        -- Nhãn hiệu, tên thương mại (Trademark, Commercial name)
+    Model                   NVARCHAR(100) NULL,                        -- Mã kiểu loại (Model code)
+    
+    -- THÔNG SỐ ĐỘNG CƠ & KHUNG XE
+    EngineNo                NVARCHAR(50) NULL,                         -- Số động cơ (Engine N°)
+    Chassis                 NVARCHAR(50) NULL,                         -- Số khung (Chassis N°)
+    
+    -- XUẤT XỨ
+    ManufactureYear         INT NULL,                                  -- Năm (Production year)
+    ManufactureCountry      NVARCHAR(100) NULL,                        -- Nước sản xuất (Country)
+    LifetimeLimitYear       INT NULL,                                  -- Niên hạn sử dụng (Lifetime Limit in)
+    
+    -- CẢI TẠO
+    HasCommercialModification BIT NULL DEFAULT 0,                      -- Có kinh doanh vận tải (Commercial use)
+    HasModification         BIT NULL DEFAULT 0,                        -- Có cải tạo (Modification)
+    
+    -- QUAN HỆ CHỦ XE
+    OwnerId                 INT NOT NULL,
+    
+    -- TIMESTAMPS
+    CreatedAt               DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    UpdatedAt               DATETIME2 NULL,
+    CreatedBy               UNIQUEIDENTIFIER NULL,
+    UpdatedBy               UNIQUEIDENTIFIER NULL,
+    
+    FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
+    FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
+    FOREIGN KEY (UpdatedBy) REFERENCES dbo.[User](UserId),
+	CONSTRAINT UQ_Vehicle_PlateNo UNIQUE (PlateNo)
 );
 
+CREATE INDEX IX_Vehicle_PlateNo ON dbo.Vehicle(PlateNo);
+CREATE INDEX IX_Vehicle_OwnerId ON dbo.Vehicle(OwnerId);
+CREATE INDEX IX_Vehicle_InspectionNo ON dbo.Vehicle(InspectionNo);
 -- Thêm bảng specification {}
+CREATE TABLE dbo.Specification (
+    SpecificationId         INT IDENTITY(1,1) PRIMARY KEY,
+    PlateNo                 NVARCHAR(20) NOT NULL UNIQUE,  -- Tham chiếu đến Vehicle.PlateNo
+    
+    -- KÍCH THƯỚC - THÔNG SỐ KỸ THUẬT (SPECIFICATIONS)
+    WheelFormula            NVARCHAR(50) NULL,             -- Công thức bánh xe: 4x2, 6x4
+    WheelTread              INT NULL,                      -- Vết bánh xe (mm)
+    
+    -- Kích thước bao (Overall dimensions)
+    OverallLength           INT NULL,                      -- Chiều dài (mm)
+    OverallWidth            INT NULL,                      -- Chiều rộng (mm)
+    OverallHeight           INT NULL,                      -- Chiều cao (mm)
+    
+    -- Kích thước lòng bao thùng xe
+    CargoInsideLength       INT NULL,                      -- Dài (mm)
+    CargoInsideWidth        INT NULL,                      -- Rộng (mm)
+    CargoInsideHeight       INT NULL,                      -- Cao (mm)
+    
+    -- Khoảng cách trục (Wheel base)
+    Wheelbase               INT NULL,                      -- (mm)
+    
+    -- KHỐI LƯỢNG (WEIGHT)
+    KerbWeight              DECIMAL(10,2) NULL,            -- Khối lượng bản thân (kg)
+    AuthorizedCargoWeight   DECIMAL(10,2) NULL,            -- Khối lượng hàng CC theo TK/CP-N (kg)
+    AuthorizedTowedWeight   DECIMAL(10,2) NULL,            -- Khối lượng kéo theo TK/CP-N (kg)
+    AuthorizedTotalWeight   DECIMAL(10,2) NULL,            -- Khối lượng toàn bộ theo TK/CP-N (kg)
+    
+    -- Số người cho phép chở
+    SeatingCapacity         INT NULL,                      -- Chở ngồi
+    StandingCapacity        INT NULL,                      -- Chở đứng
+    LyingCapacity           INT NULL,                      -- Chở nằm
+    
+    -- ĐỘNG CƠ (ENGINE)
+    EngineType              NVARCHAR(100) NULL,            -- Loại động cơ
+    EnginePosition          NVARCHAR(50) NULL,             -- Vị trí đặt động cơ
+    EngineModel             NVARCHAR(50) NULL,             -- Ký hiệu động cơ
+    EngineDisplacement      INT NULL,                      -- Thể tích làm việc (cm³)
+    MaxPower                DECIMAL(10,2) NULL,            -- Công suất lớn nhất (kW)
+    MaxPowerRPM             INT NULL,                      -- Tốc độ quay tại công suất max (rpm)
+    FuelType                NVARCHAR(50) NULL,             -- Loại nhiên liệu
+    
+    -- ĐỘNG CƠ ĐIỆN (MOTOR)
+    MotorType               NVARCHAR(100) NULL,            -- Loại động cơ điện
+    NumberOfMotors          INT NULL,                      -- Số lượng động cơ điện
+    MotorModel              NVARCHAR(50) NULL,             -- Ký hiệu động cơ điện
+    TotalMotorPower         DECIMAL(10,2) NULL,            -- Tổng công suất (kW)
+    MotorVoltage            DECIMAL(10,2) NULL,            -- Điện áp (V)
+    
+    -- ẮC QUY (BATTERY)
+    BatteryType             NVARCHAR(100) NULL,            -- Loại ắc quy
+    BatteryVoltage          DECIMAL(10,2) NULL,            -- Điện áp (V)
+    BatteryCapacity         DECIMAL(10,2) NULL,            -- Dung lượng (kWh)
+    
+    -- LỐP XE (TIRES)
+    TireCount               INT NULL,                      -- Số lượng lốp
+    TireSize                NVARCHAR(50) NULL,             -- Cỡ lốp
+    TireAxleInfo            NVARCHAR(100) NULL,            -- Thông tin trục
+    
+    -- THÔNG TIN KIỂM ĐỊNH
+    InspectionReportNo      NVARCHAR(50) NULL,             -- Số phiếu kiểm định
+    IssuedDate              DATE NULL,                     -- Ngày cấp
+    InspectionCenter        NVARCHAR(200) NULL,            -- Cơ sở đăng kiểm
+    
+    -- VỊ TRÍ THIẾT BỊ
+    ImagePosition           NVARCHAR(100) NULL,            -- Vị trí hình ảnh
+    
+    -- TRANG THIẾT BỊ
+    HasTachograph           BIT NULL DEFAULT 0,            -- Có thiết bị giám sát hành trình
+    HasDriverCamera         BIT NULL DEFAULT 0,            -- Có camera ghi nhận lái xe
+    NotIssuedStamp          BIT NULL DEFAULT 0,            -- PT không được cấp tem
+    
+    -- GHI CHÚ
+    Notes                   NVARCHAR(1000) NULL,
+    
+    -- TIMESTAMPS
+    CreatedAt               DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    UpdatedAt               DATETIME2 NULL,
+    CreatedBy               UNIQUEIDENTIFIER NULL,
+    UpdatedBy               UNIQUEIDENTIFIER NULL,
+    
+    FOREIGN KEY (PlateNo) REFERENCES dbo.Vehicle(PlateNo) ON DELETE CASCADE,
+    FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
+    FOREIGN KEY (UpdatedBy) REFERENCES dbo.[User](UserId)
+);
 
+CREATE INDEX IX_Specification_PlateNo ON dbo.Specification(PlateNo);
+CREATE INDEX IX_Specification_InspectionReportNo ON dbo.Specification(InspectionReportNo);
 
+DROP TABLE Specification
+DROP TABLE Vehicle
 
 -- Thêm bảng cải tạo
+
 
 CREATE INDEX IX_Vehicle_OwnerId ON dbo.Vehicle(OwnerId);
 

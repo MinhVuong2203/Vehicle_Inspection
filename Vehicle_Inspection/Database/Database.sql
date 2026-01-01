@@ -373,34 +373,82 @@ CREATE INDEX IX_Vehicle_OwnerId ON dbo.Vehicle(OwnerId);
 -- =========================
 -- 3) NHÓM CẤU HÌNH DÂY TRUYỀN - CÔNG ĐOẠN - CHỈ TIÊU
 -- =========================
+-- 1. Bảng Lane
 CREATE TABLE dbo.Lane (
     LaneId      INT IDENTITY(1,1) PRIMARY KEY,
     LaneCode    NVARCHAR(20) NOT NULL UNIQUE,
-    LaneName    NVARCHAR(100) NOT NULL UNIQUE,
+    LaneName    NVARCHAR(100) NOT NULL,
     IsActive    BIT NOT NULL DEFAULT 1
 );
 
--- Danh mục công đoạn
+-- 2.Bảng Stage 
 CREATE TABLE dbo.Stage (
     StageId     INT IDENTITY(1,1) PRIMARY KEY,
-    StageCode   NVARCHAR(30) NOT NULL UNIQUE,  -- EXTERIOR, BRAKE, EMISSION...
-    StageName   NVARCHAR(120) NOT NULL UNIQUE,
-    SortOrder   INT NOT NULL
+    StageCode   NVARCHAR(30) NOT NULL UNIQUE,
+    StageName   NVARCHAR(120) NOT NULL, 
+    SortOrder   INT NOT NULL,
+    IsActive    BIT DEFAULT 1         
 );
 
--- Danh mục chỉ tiêu trong từng công đoạn
+-- 3.Bảng LaneStage
+CREATE TABLE dbo.LaneStage (
+    LaneStageId INT IDENTITY(1,1) PRIMARY KEY,
+    LaneId      INT NOT NULL,
+    StageId     INT NOT NULL,
+    SortOrder   INT NOT NULL,   
+    IsRequired  BIT DEFAULT 1,        -- Bắt buộc hay tùy chọn
+    IsActive    BIT DEFAULT 1,
+    
+    FOREIGN KEY (LaneId) REFERENCES dbo.Lane(LaneId),
+    FOREIGN KEY (StageId) REFERENCES dbo.Stage(StageId),
+    CONSTRAINT UQ_LaneStage UNIQUE (LaneId, StageId)
+);
+CREATE INDEX IX_LaneStage_LaneId ON dbo.LaneStage(LaneId);
+
+-- 4.Bảng StageItem
 CREATE TABLE dbo.StageItem (
-    ItemId          INT IDENTITY(1,1) PRIMARY KEY,
-    StageId         INT NOT NULL,
-    ItemCode        NVARCHAR(40) NOT NULL,
-    ItemName        NVARCHAR(160) NOT NULL,
-    Unit            NVARCHAR(20) NULL,
-    DataType        NVARCHAR(20) NOT NULL DEFAULT N'NUMBER', -- NUMBER / TEXT / BOOL
-    MinValue        DECIMAL(18,4) NULL,
-    MaxValue        DECIMAL(18,4) NULL,
-    IsRequired      BIT NOT NULL DEFAULT 1,
+    ItemId      INT IDENTITY(1,1) PRIMARY KEY,
+    StageId     INT NOT NULL,
+    ItemCode    NVARCHAR(40) NOT NULL,
+    ItemName    NVARCHAR(160) NOT NULL,
+    Unit        NVARCHAR(20) NULL,
+    DataType    NVARCHAR(20) NOT NULL 
+        CHECK (DataType IN ('NUMBER','TEXT','BOOL')),
+    SortOrder   INT NULL,           
+    Description NVARCHAR(500) NULL,  
+    IsRequired  BIT NOT NULL DEFAULT 1,
+    
     FOREIGN KEY (StageId) REFERENCES dbo.Stage(StageId),
     CONSTRAINT UQ_StageItem UNIQUE(StageId, ItemCode)
+);
+
+-- 5.Bảng VehicleType (Loại xe đề sắp tiêu chuẩn đánh già)
+CREATE TABLE dbo.VehicleType (
+    VehicleTypeId INT IDENTITY(1,1) PRIMARY KEY,
+    TypeCode      NVARCHAR(20) NOT NULL UNIQUE,
+    TypeName      NVARCHAR(100) NOT NULL,
+    Description   NVARCHAR(500) NULL,
+    IsActive      BIT DEFAULT 1
+);
+
+-- 6.Bảng StageItemThreshold (Tiêu chuẩn đánh giá)
+CREATE TABLE dbo.StageItemThreshold (
+    ThresholdId     INT IDENTITY(1,1) PRIMARY KEY,
+    ItemId          INT NOT NULL,
+    VehicleTypeId   INT NOT NULL,
+    MinValue        DECIMAL(18,4) NULL,
+    MaxValue        DECIMAL(18,4) NULL,
+    PassCondition   NVARCHAR(200) NULL,  -- VD: "> 50 AND < 100"
+    AllowedValues   NVARCHAR(500) NULL,  -- VD: "ĐẠT;KHÔNG ĐẠT;N/A"
+    FailAction      NVARCHAR(20) NULL    -- STOP / WARN / CONTINUE
+        CHECK (FailAction IN ('STOP','WARN','CONTINUE')),
+    IsActive        BIT DEFAULT 1,
+    EffectiveDate   DATE DEFAULT GETDATE(),
+    
+    FOREIGN KEY (ItemId) REFERENCES dbo.StageItem(ItemId),
+    FOREIGN KEY (VehicleTypeId) REFERENCES dbo.VehicleType(VehicleTypeId),
+    CONSTRAINT UQ_ItemVehicleDate 
+    UNIQUE (ItemId, VehicleTypeId, EffectiveDate)
 );
 
 -- =========================

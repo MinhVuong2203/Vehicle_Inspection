@@ -6,6 +6,7 @@ GO
 USE VehicleInspectionCenter;
 GO
 
+
 -- =========================
 -- 1) NHÓM NGƯỜI DÙNG - NHÂN SỰ - PHÂN QUYỀN
 -- =========================
@@ -17,7 +18,6 @@ CREATE TABLE dbo.Role(
 	RoleIcon    NVARCHAR(255),
 	RoleHref    NVARCHAR(255)
 );
-
 
 INSERT INTO Role(RoleCode, RoleAcronym, RoleName, RoleIcon)
 VALUES ('LOGIN', N'Đăng nhập', N'Đăng nhập hệ thống', 'fa-solid fa-arrow-right-to-bracket'),
@@ -36,11 +36,40 @@ CREATE TABLE Position(
 	PositionName NVARCHAR(100) NOT NULL,
 )
 
+INSERT INTO dbo.Position (PoitionCode, PositionName)
+VALUES  
+		('BV',   N'Bảo vệ / an ninh'),	
+		('CSKH', N'Lễ tân / CSKH'),
+		('GSV',  N'Giám sát viên'),
+		('TTDC', N'Tổ trưởng dây chuyền'),
+		('KTV',  N'Kỹ thuật viên'),
+		('HS',   N'Nhân viên hồ sơ'),
+		('TN',   N'Thu ngân'),
+		('KT',   N'Kế toán'),
+		('TB',   N'Nhân viên thiết bị'),
+		('IT',   N'Quản trị hệ thống'),
+		('GD',   N'Giám đốc'),
+		('PGD',  N'Phó Giám đốc');
+		
+
 CREATE TABLE Team(
 	TeamId  INT IDENTITY(1,1) PRIMARY KEY,
 	TeamCode NVARCHAR(100) NOT NULL,
 	TeamName NVARCHAR(100) NOT NULL,
 )
+
+INSERT INTO dbo.Team (TeamCode, TeamName)
+VALUES
+	('AN',   N'Tổ an ninh'),
+	('DC1',  N'Dây chuyền 1'),
+	('DC2',  N'Dây chuyền 2'),
+	('HS',   N'Tổ hồ sơ - tiếp nhận'),
+	('TC',   N'Tổ thu ngân'),
+	('KT',   N'Tổ kế toán - tài chính'),
+	('TBHC', N'Tổ thiết bị - hiệu chuẩn'),
+	('IT',   N'Tổ CNTT'),
+	('BGD',  N'Ban giám đốc');
+	
 
 
 CREATE TABLE dbo.[User] (
@@ -55,18 +84,91 @@ CREATE TABLE dbo.[User] (
 	ImageUrl		NVARCHAR(255),  -- Sau này cần bổ sung thêm default
 	PositionId		INT DEFAULT 1,          -- Giám đốc / Phó / KTV / NV nghiệp vụ / Kế toán...
 	TeamId			INT DEFAULT 1,         -- Ban giám đốc / Tổ kiểm định / Tổ nghiệp vụ / Tổ kế toán (nếu bạn muốn lưu)
+	[Level]			NVARCHAR(50),
     IsActive        BIT NOT NULL DEFAULT 1,
     CreatedAt       DATETIME NOT NULL DEFAULT GETDATE(),
-	FOREIGN KEY (PositionId) REFERENCES Position(PositionId)
+	FOREIGN KEY (PositionId) REFERENCES Position(PositionId),
+	FOREIGN KEY (TeamId) REFERENCES Team(TeamId)
 );
 
-CREATE TABLE User_Role(
-	EmployeeID UNIQUEIDENTIFIER,
-	RoleId INT,
-	PRIMARY KEY (EmployeeID, OperationId),
-	FOREIGN KEY (EmployeeID) REFERENCES Employee(EmployeeID) ON DELETE CASCADE,
-	FOREIGN KEY (RoleId) REFERENCES Role(RoleId) ON DELETE CASCADE
-)
+DROP TABLE User_Role
+DROP TABLE PasswordRecovery
+DROP TABLE Account
+DROP TABLE [User]
+
+
+-- Insert USERS theo PositionCode + TeamCode (an toàn, không phụ thuộc PositionId/TeamId mặc định)
+
+INSERT INTO [User](FullName, Phone, Email, BirthDate, CCCD, Address, Gender, ImageUrl, PositionId, TeamId, [Level], IsActive)
+SELECT v.FullName, v.Phone, v.Email, v.BirthDate, v.CCCD, v.Address, v.Gender, v.ImageUrl,
+       p.PositionId, t.TeamId, v.[Level], v.IsActive
+FROM (VALUES
+-- =========================
+-- Ban giám đốc (BGD)
+-- =========================
+(N'Nguyễn Văn Hùng',  N'0901000001', N'hung.gd@ttdk.local',  CONVERT(date,'1980-05-12'), N'079080000001', N'TP.HCM', N'Nam', NULL, N'GD',  N'BGD', N'Senior', 1),
+(N'Trần Thị Mai',     N'0901000002', N'mai.pgd@ttdk.local',  CONVERT(date,'1985-09-21'), N'079085000002', N'TP.HCM', N'Nữ',  NULL, N'PGD', N'BGD', N'Senior', 1),
+
+-- =========================
+-- CSKH / Lễ tân
+-- =========================
+(N'Phạm Thu Ngân',    N'0901100001', N'ngan.cskh@ttdk.local',CONVERT(date,'1999-03-10'), N'079099000001', N'TP.HCM', N'Nữ',  NULL, N'CSKH', N'HS', N'Junior', 1),
+
+-- =========================
+-- Hồ sơ - tiếp nhận (HS)
+-- =========================
+(N'Phạm Ngọc Lan',    N'0902000001', N'lan.hoso@ttdk.local', CONVERT(date,'1996-03-08'), N'079096000001', N'TP.HCM', N'Nữ',  NULL, N'HS', N'HS', N'Mid', 1),
+(N'Võ Thanh Tâm',     N'0902000002', N'tam.hoso@ttdk.local', CONVERT(date,'1995-07-18'), N'079095000002', N'TP.HCM', N'Nam', NULL, N'HS', N'HS', N'Mid', 1),
+
+-- =========================
+-- Thu ngân (TC)
+-- =========================
+(N'Đặng Thị Hòa',     N'0903000001', N'hoa.thungan@ttdk.local',CONVERT(date,'1994-12-02'),N'079094000001', N'TP.HCM', N'Nữ', NULL, N'TN', N'TC', N'Mid', 1),
+
+-- =========================
+-- Kế toán (KT)
+-- =========================
+(N'Nguyễn Quốc Bảo',  N'0903000002', N'bao.ketoan@ttdk.local',CONVERT(date,'1992-06-25'),N'079092000002', N'TP.HCM', N'Nam',NULL, N'KT', N'KT', N'Senior', 1),
+
+-- =========================
+-- Giám sát / Tổ trưởng (DC1)
+-- =========================
+(N'Hoàng Văn Đức',    N'0904000001', N'duc.gsv@ttdk.local',   CONVERT(date,'1988-04-14'),N'079088000001', N'TP.HCM', N'Nam',NULL, N'GSV',  N'DC1', N'Senior', 1),
+(N'Ngô Hải Long',     N'0904000002', N'long.ttdc@ttdk.local', CONVERT(date,'1990-01-09'),N'079090000002', N'TP.HCM', N'Nam',NULL, N'TTDC', N'DC1', N'Senior', 1),
+
+-- =========================
+-- Kỹ thuật viên - Dây chuyền 1 (DC1)
+-- =========================
+(N'Nguyễn Động Cơ',   N'0905000001', N'dongco.ktv@ttdk.local',CONVERT(date,'1993-08-16'),N'079093000001', N'TP.HCM', N'Nam',NULL, N'KTV', N'DC1', N'Mid', 1),
+(N'Lê Khí Thải',      N'0905000002', N'khithai.ktv@ttdk.local',CONVERT(date,'1997-02-20'),N'079097000002',N'TP.HCM', N'Nam',NULL, N'KTV', N'DC1', N'Junior', 1),
+(N'Phạm Văn Phanh',   N'0905000003', N'phanh.ktv@ttdk.local', CONVERT(date,'1994-09-30'),N'079094000003', N'TP.HCM', N'Nam',NULL, N'KTV', N'DC1', N'Mid', 1),
+
+-- =========================
+-- Kỹ thuật viên - Dây chuyền 2 (DC2)
+-- =========================
+(N'Nguyễn Khung Sườn',N'0905000004', N'khungsuon.ktv@ttdk.local',CONVERT(date,'1995-10-10'),N'079095000004',N'TP.HCM', N'Nam',NULL, N'KTV', N'DC2', N'Mid', 1),
+(N'Huỳnh Văn Đèn',    N'0905000005', N'den.ktv@ttdk.local',   CONVERT(date,'1996-01-05'),N'079096000005', N'TP.HCM', N'Nam',NULL, N'KTV', N'DC2', N'Junior', 1),
+(N'Võ Khung Gầm',     N'0905000006', N'khunggam.ktv@ttdk.local',CONVERT(date,'1992-03-19'),N'079092000006',N'TP.HCM', N'Nam',NULL, N'KTV', N'DC2', N'Senior', 1),
+
+-- =========================
+-- Thiết bị - hiệu chuẩn (TBHC)
+-- =========================
+(N'Trần Quốc Thiết',  N'0906000001', N'thietbi@ttdk.local',   CONVERT(date,'1989-07-07'),N'079089000001', N'TP.HCM', N'Nam',NULL, N'TB', N'TBHC', N'Mid', 1),
+
+-- =========================
+-- CNTT (IT)
+-- =========================
+(N'Phan Minh IT',     N'0906000002', N'itadmin@ttdk.local',   CONVERT(date,'1998-05-29'),N'079098000002', N'TP.HCM', N'Nam',NULL, N'IT', N'IT', N'Senior', 1),
+
+-- =========================
+-- An ninh / bảo vệ (AN)
+-- =========================
+(N'Bùi Văn Bảo Vệ',   N'0906000003', N'baove@ttdk.local',     CONVERT(date,'1979-12-12'),N'079079000003', N'TP.HCM', N'Nam',NULL, N'BV', N'AN', N'Mid', 1)
+) v(FullName, Phone, Email, BirthDate, CCCD, Address, Gender, ImageUrl, PositionCode, TeamCode, [Level], IsActive)
+JOIN dbo.Position p ON p.PoitionCode = v.PositionCode
+JOIN dbo.Team t     ON t.TeamCode    = v.TeamCode;
+
+
 
 CREATE TABLE dbo.Account (
     UserId          UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
@@ -87,7 +189,7 @@ CREATE TABLE PasswordRecovery(
 	FOREIGN KEY (UserId) REFERENCES [User](UserId) ON DELETE CASCADE
 )
 
-CREATE TABLE dbo.UserRole (
+CREATE TABLE dbo.User_Role (
     UserId  UNIQUEIDENTIFIER NOT NULL,
     RoleId  INT NOT NULL,
     PRIMARY KEY (UserId, RoleId),

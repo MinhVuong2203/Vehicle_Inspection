@@ -1,0 +1,83 @@
+﻿@model IEnumerable<Vehicle_Inspection.Models.User>
+@{
+    ViewData["Title"] = "Employee List";
+    var query = ViewContext.HttpContext.Request.Query;
+}
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Employee List</h2>
+
+    <!-- Search and Filter Form -->
+    <form method="get" class="mb-4">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <input type="text" name="search" class="form-control" placeholder="Search by name or email" value="@(query["search"].ToString())" />
+            </div>
+            <div class="col-md-2">
+                <select name="position" class="form-select">
+                    <option value="">All Positions</option>
+                    @foreach (var position in ViewBag.Positions as List<Vehicle_Inspection.Models.Position>)
+                    {
+                        var selected = query["position"].ToString() == position.PositionId.ToString() ? "selected" : string.Empty;
+                        <option value="@position.PositionId" selected="@selected">@position.PositionName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="team" class="form-select">
+                    <option value="">All Teams</option>
+                    @foreach (var team in ViewBag.Teams as List<Vehicle_Inspection.Models.Team>)
+                    {
+                        var selected = query["team"].ToString() == team.TeamId.ToString() ? "selected" : string.Empty;
+                        <option value="@team.TeamId" selected="@selected">@team.TeamName</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="gender" class="form-select">
+                    <option value="">All Genders</option>
+                    <option value="Male" selected="@(query["gender"].ToString() == "Male" ? "selected" : string.Empty)">Male</option>
+                    <option value="Female" selected="@(query["gender"].ToString() == "Female" ? "selected" : string.Empty)">Female</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <div class="form-check">
+                    <input type="checkbox" name="isActive" class="form-check-input" id="isActive" @(query["isActive"].ToString() == "on" ? "checked" : string.Empty) />
+                    <label class="form-check-label" for="isActive">Active Only</label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Employee Table -->
+    <table class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th><a href="?sort=FullName">Name</a></th>
+                <th>Email</th>
+                <th>Gender</th>
+                <th><a href="?sort=Position">Position</a></th>
+                <th><a href="?sort=BirthDate">Birth Date</a></th>
+                <th><a href="?sort=CreatedAt">Created At</a></th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model)
+            {
+                <tr>
+                    <td>@user.FullName</td>
+                    <td>@user.Email</td>
+                    <td>@user.Gender</td>
+                    <td>@user.Position?.PositionName</td>
+                    <td>@user.BirthDate?.ToString("yyyy-MM-dd")</td>
+                    <td>@user.CreatedAt.ToString("yyyy-MM-dd")</td>
+                    <td>@(user.IsActive ? "Active" : "Inactive")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

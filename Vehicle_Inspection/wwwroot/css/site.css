@@ -124,3 +124,25 @@ body {
         transform: translateY(0);
     }
 }
+
+.icon-link-top{
+    padding: 0;
+
+}
+
+.icon-top {
+    padding: 2px;
+    background-color: transparent;
+    color: white;
+    border: none;
+    border-radius: 50%;
+/*    width: 30px;*/
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+    .icon-top:hover {
+        color: rgb(252, 186, 3);
+    }
+
+    

@@ -35,8 +35,12 @@
                 </div>
                 <div class="user-links d-flex align-items-center">
                     <small class="me-2">Welcome,</small>
-                    <a href="#" class="text-decoration-none">Account</a>
-                    <a href="#" class="text-decoration-none">Help</a>
+                    <a href="#" class="icon-top text-decoration-none"><i class="fa-solid fa-circle-user fa-xl"></i></a>
+                    <a href="#" class="icon-top text-decoration-none">Help</a>
+                    <form method="post" asp-action="Logout" asp-controller="Account" style="display: inline;">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="icon-top"><i class="fa-solid fa-right-from-bracket fa-xl"></i></button>
+                    </form>
                 </div>
             </div>
         </div>

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Vehicle_Inspection.Service;
 using Vehicle_Inspection.Models;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace Vehicle_Inspection.Controllers
 {
@@ -19,8 +20,8 @@ namespace Vehicle_Inspection.Controllers
         // GET: Account/Login (Login page)
         public IActionResult Login()
         {
-            string a = BCrypt.Net.BCrypt.HashPassword("ThiMai@123");
-            Debug.WriteLine("-------------------- " + a + " ------------------");
+            //string a = BCrypt.Net.BCrypt.HashPassword("ThiMai@123");
+            //Debug.WriteLine("-------------------- " + a + " ------------------");
             // Nếu user đã đăng nhập, redirect về trang chủ
             if (User.Identity?.IsAuthenticated == true)
             {
@@ -73,6 +74,16 @@ namespace Vehicle_Inspection.Controllers
             return RedirectToAction("Login", new { error = true });
         }
 
-       
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            return RedirectToAction("Login", "Account");
+        }
+
+
+
+
     }
 }

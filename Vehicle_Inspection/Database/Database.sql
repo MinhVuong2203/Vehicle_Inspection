@@ -19,15 +19,15 @@ CREATE TABLE dbo.Role(
 	RoleHref    NVARCHAR(255)
 );
 
-INSERT INTO Role(RoleCode, RoleAcronym, RoleName, RoleIcon)
-VALUES ('LOGIN', N'Đăng nhập', N'Đăng nhập hệ thống', 'fa-solid fa-arrow-right-to-bracket'),
-	   ('EMPLOYEE', N'Nhân sự', N'Quản lý nhân sự', 'fa-regular fa-address-book'),
-	   ('RECEIVE PROFILE', N'Hồ sơ', N'Tiếp nhận hồ sơ', 'fa-regular fa-address-card'),
-	   ('INSPECTION', N'Kiểm định', N'Tạo lượt kiểm định', 'fa-solid fa-magnifying-glass'),
-	   ('TOLL', N'Thu phí', N'Thu phí, in biên nhận', 'fa-solid fa-coins'),
-	   ('RESULT', N'Kết quả', N'Nhập kết quả kiểm định theo công đoạn', 'fa-regular fa-pen-to-square'),
-	   ('CONCLUSION', N'Kết luận', N'Chốt kết luận đạt/không đạt', 'fa-regular fa-handshake'),
-	   ('REPORT', N'Xem báo cáo', N'Xem báo cáo', 'fa-solid fa-chart-pie')
+INSERT INTO Role(RoleCode, RoleAcronym, RoleName, RoleIcon, RoleHref)
+VALUES ('LOGIN', N'Đăng nhập', N'Đăng nhập hệ thống', 'fa-solid fa-arrow-right-to-bracket', ''),
+	   ('EMPLOYEE', N'Nhân sự', N'Quản lý nhân sự', 'fa-regular fa-address-book', 'employee'),
+	   ('RECEIVE PROFILE', N'Hồ sơ', N'Tiếp nhận hồ sơ', 'fa-regular fa-address-card', 'receive-profile'),
+	   ('INSPECTION', N'Kiểm định', N'Tạo lượt kiểm định', 'fa-solid fa-magnifying-glass', 'inspection'),
+	   ('TOLL', N'Thu phí', N'Thu phí, in biên nhận', 'fa-solid fa-coins', 'toll'),
+	   ('RESULT', N'Kết quả', N'Nhập kết quả kiểm định theo công đoạn', 'fa-regular fa-pen-to-square', 'result'),
+	   ('CONCLUSION', N'Kết luận', N'Chốt kết luận đạt/không đạt', 'fa-regular fa-handshake', 'conclusion'),
+	   ('REPORT', N'Xem báo cáo', N'Xem báo cáo', 'fa-solid fa-chart-pie', 'report')
 
 
 CREATE TABLE Position(
@@ -210,7 +210,7 @@ CREATE TABLE dbo.UserStage (
 -- 2) NHÓM CHỦ XE PHƯƠNG TIỆN
 -- =========================
 CREATE TABLE dbo.Owner (
-    OwnerId         INT IDENTITY(1,1) PRIMARY KEY,
+    OwnerId         UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     OwnerType       NVARCHAR(20) NOT NULL DEFAULT N'PERSON',  -- PERSON / COMPANY
     FullName        NVARCHAR(150) NOT NULL,
     CCCD            NVARCHAR(30) NULL,  
@@ -219,6 +219,7 @@ CREATE TABLE dbo.Owner (
     Address         NVARCHAR(255) NULL,
     CreatedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
+
 
 CREATE TABLE dbo.Vehicle(
     VehicleId               INT IDENTITY(1,1) PRIMARY KEY,
@@ -255,7 +256,7 @@ CREATE TABLE dbo.Vehicle(
     HasModification         BIT NULL DEFAULT 0,                        -- Có cải tạo (Modification)
     
     -- QUAN HỆ CHỦ XE
-    OwnerId                 INT NOT NULL,
+    OwnerId                 UNIQUEIDENTIFIER NOT NULL,
     
     -- TIMESTAMPS
     CreatedAt               DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
@@ -272,7 +273,7 @@ CREATE TABLE dbo.Vehicle(
 CREATE INDEX IX_Vehicle_PlateNo ON dbo.Vehicle(PlateNo);
 CREATE INDEX IX_Vehicle_OwnerId ON dbo.Vehicle(OwnerId);
 CREATE INDEX IX_Vehicle_InspectionNo ON dbo.Vehicle(InspectionNo);
--- Thêm bảng specification {}
+
 CREATE TABLE dbo.Specification (
     SpecificationId         INT IDENTITY(1,1) PRIMARY KEY,
     PlateNo                 NVARCHAR(20) NOT NULL UNIQUE,  -- Tham chiếu đến Vehicle.PlateNo
@@ -286,7 +287,7 @@ CREATE TABLE dbo.Specification (
     OverallWidth            INT NULL,                      -- Chiều rộng (mm)
     OverallHeight           INT NULL,                      -- Chiều cao (mm)
     
-    -- Kích thước lòng bao thùng xe
+    -- Kích thước lòng bao thùng xe 
     CargoInsideLength       INT NULL,                      -- Dài (mm)
     CargoInsideWidth        INT NULL,                      -- Rộng (mm)
     CargoInsideHeight       INT NULL,                      -- Cao (mm)
@@ -463,7 +464,7 @@ CREATE TABLE dbo.Inspection (
     
     -- THÔNG TIN PHƯƠNG TIỆN & CHỦ XE
     VehicleId INT NOT NULL,
-    OwnerId INT NOT NULL,
+    OwnerId UNIQUEIDENTIFIER NOT NULL,
     
     -- PHÂN LOẠI KIỂM ĐỊNH
     InspectionType NVARCHAR(20) NOT NULL DEFAULT N'FIRST',  
@@ -592,7 +593,7 @@ CREATE INDEX IX_InspStage_AssignedUserId ON dbo.InspectionStage(AssignedUserId) 
 -- 4.3) Bảng InspectionDetail (Kết quả đo chi tiết từng chỉ tiêu)
 CREATE TABLE dbo.InspectionDetail (
     DetailId INT IDENTITY(1,1) PRIMARY KEY,
-    InspStageId INT NOT NULL,-- Thuộc công đoạn nào
+    InspStageId BIGINT NOT NULL,-- Thuộc công đoạn nào
     ItemId INT NOT NULL,-- Chỉ tiêu nào
     
     -- TIÊU CHUẨN (Lấy từ StageItemThreshold theo VehicleType)
@@ -788,26 +789,23 @@ CREATE TABLE dbo.Payment (
     -- THÔNG TIN BIÊN NHẬN
     ReceiptNo NVARCHAR(40) NULL UNIQUE, -- Số biên nhận
     ReceiptPrintCount INT DEFAULT 0, -- Số lần in biên nhận
-    
+
     -- THỜI GIAN
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
     PaidAt DATETIME2 NULL, -- Thời điểm thanh toán
-    --RefundedAt DATETIME2 NULL, -- Thời điểm hoàn tiền
-    
     -- NGƯỜI THỰC HIỆN
     CreatedBy UNIQUEIDENTIFIER NULL,  -- Thu ngân tạo phiếu
     PaidBy UNIQUEIDENTIFIER NULL,  -- Thu ngân nhận tiền
-    --RefundedBy UNIQUEIDENTIFIER NULL, -- Người thực hiện hoàn tiền
+   
     
     -- GHI CHÚ
     Notes NVARCHAR(500) NULL,
-    --RefundReason NVARCHAR(500) NULL,-- Lý do hoàn tiền
+    
     
     FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId),
     FOREIGN KEY (FeeScheduleId) REFERENCES dbo.FeeSchedule(FeeId),
     FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
     FOREIGN KEY (PaidBy) REFERENCES dbo.[User](UserId),
-    FOREIGN KEY (RefundedBy) REFERENCES dbo.[User](UserId),
     CONSTRAINT CK_Payment_Status CHECK (PaymentStatus BETWEEN 0 AND 3),
     CONSTRAINT CK_Payment_Amount CHECK (TotalAmount >= 0),
     CONSTRAINT UQ_Payment_Inspection UNIQUE (InspectionId)  -- Mỗi hồ sơ 1 phiếu thu
@@ -858,7 +856,6 @@ CREATE TABLE dbo.Certificate (
     
     FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId),
     FOREIGN KEY (IssuedBy) REFERENCES dbo.[User](UserId),
-    FOREIGN KEY (RevokedBy) REFERENCES dbo.[User](UserId),
     CONSTRAINT CK_Certificate_Status CHECK (Status BETWEEN 1 AND 4),
     CONSTRAINT CK_Certificate_Dates CHECK (ExpiryDate > IssueDate),
     CONSTRAINT UQ_Certificate_Inspection UNIQUE (InspectionId)

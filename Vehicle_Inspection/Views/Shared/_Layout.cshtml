@@ -21,22 +21,26 @@
         <div class="admin-topbar sticky-top">
             <div class="container d-flex align-items-center py-2">
                 <div class="d-flex align-items-center me-3">
-                    <span class="brand text-white">Bootstrap Admin Template</span>
+                    <b class="brand text-white">TRUNG TÂM ĐĂNG KIỂM</b>
                 </div>
                 <div class="flex-grow-1 d-flex justify-content-center">
                     <form class="w-100 d-flex justify-content-center">
                         <div class="search-box w-75 w-sm-50">
                             <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Search..." aria-label="Search">
+                                <input type="text" class="form-control" placeholder="Tìm kiếm..." aria-label="Search">
                                 <button class="btn btn-outline-light" type="button">🔍</button>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="user-links d-flex align-items-center">
-                    <small class="me-2">Welcome,</small>
-                    <a href="#" class="icon-top text-decoration-none"><i class="fa-solid fa-circle-user fa-xl"></i></a>
-                    <a href="#" class="icon-top text-decoration-none">Help</a>
+                    <b class="me-2">Welcome</b>
+                    <a href="#" class="m-0">
+                        <div class="icon-top"><i class="fa-solid fa-circle-user fa-xl"></i></div>
+                    </a>
+                    <a href="#" class="m-0">
+                        <div class="icon-top"><i class="fa-solid fa-circle-info fa-xl"></i></div>
+                    </a>
                     <form method="post" asp-action="Logout" asp-controller="Account" style="display: inline;">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="icon-top"><i class="fa-solid fa-right-from-bracket fa-xl"></i></button>

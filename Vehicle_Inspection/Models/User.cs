@@ -53,18 +53,67 @@ public partial class User
     [InverseProperty("User")]
     public virtual Account? Account { get; set; }
 
+    [InverseProperty("IssuedByNavigation")]
+    public virtual ICollection<Certificate> Certificates { get; set; } = new List<Certificate>();
+
+    [InverseProperty("ConcludedByNavigation")]
+    public virtual ICollection<Inspection> InspectionConcludedByNavigations { get; set; } = new List<Inspection>();
+
+    [InverseProperty("CreatedByNavigation")]
+    public virtual ICollection<Inspection> InspectionCreatedByNavigations { get; set; } = new List<Inspection>();
+
+    [InverseProperty("CreatedByNavigation")]
+    public virtual ICollection<InspectionDefect> InspectionDefectCreatedByNavigations { get; set; } = new List<InspectionDefect>();
+
+    [InverseProperty("VerifiedByNavigation")]
+    public virtual ICollection<InspectionDefect> InspectionDefectVerifiedByNavigations { get; set; } = new List<InspectionDefect>();
+
+    [InverseProperty("RecordedByNavigation")]
+    public virtual ICollection<InspectionDetail> InspectionDetails { get; set; } = new List<InspectionDetail>();
+
+    [InverseProperty("ChangedByNavigation")]
+    public virtual ICollection<InspectionHistory> InspectionHistories { get; set; } = new List<InspectionHistory>();
+
+    [InverseProperty("ReceivedByNavigation")]
+    public virtual ICollection<Inspection> InspectionReceivedByNavigations { get; set; } = new List<Inspection>();
+
+    [InverseProperty("AssignedUser")]
+    public virtual ICollection<InspectionStage> InspectionStages { get; set; } = new List<InspectionStage>();
+
     [InverseProperty("User")]
     public virtual ICollection<PasswordRecovery> PasswordRecoveries { get; set; } = new List<PasswordRecovery>();
+
+    [InverseProperty("CreatedByNavigation")]
+    public virtual ICollection<Payment> PaymentCreatedByNavigations { get; set; } = new List<Payment>();
+
+    [InverseProperty("PaidByNavigation")]
+    public virtual ICollection<Payment> PaymentPaidByNavigations { get; set; } = new List<Payment>();
 
     [ForeignKey("PositionId")]
     [InverseProperty("Users")]
     public virtual Position? Position { get; set; }
 
+    [InverseProperty("CreatedByNavigation")]
+    public virtual ICollection<Specification> SpecificationCreatedByNavigations { get; set; } = new List<Specification>();
+
+    [InverseProperty("UpdatedByNavigation")]
+    public virtual ICollection<Specification> SpecificationUpdatedByNavigations { get; set; } = new List<Specification>();
+
     [ForeignKey("TeamId")]
     [InverseProperty("Users")]
     public virtual Team? Team { get; set; }
 
+    [InverseProperty("CreatedByNavigation")]
+    public virtual ICollection<Vehicle> VehicleCreatedByNavigations { get; set; } = new List<Vehicle>();
+
+    [InverseProperty("UpdatedByNavigation")]
+    public virtual ICollection<Vehicle> VehicleUpdatedByNavigations { get; set; } = new List<Vehicle>();
+
     [ForeignKey("UserId")]
     [InverseProperty("Users")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    [ForeignKey("UserId")]
+    [InverseProperty("Users")]
+    public virtual ICollection<Stage> Stages { get; set; } = new List<Stage>();
 }

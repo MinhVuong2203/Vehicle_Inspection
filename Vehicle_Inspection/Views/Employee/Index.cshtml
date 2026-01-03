@@ -4,7 +4,7 @@
     var query = ViewContext.HttpContext.Request.Query;
 }
 
-<div class="container mt-4">
+<div class="">
     <h2 class="text-center mb-4">Employee List</h2>
 
     <!-- Search and Filter Form -->
@@ -65,7 +65,7 @@
                 <th>Status</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody> 
             @foreach (var user in Model)
             {
                 <tr>
@@ -81,3 +81,5 @@
         </tbody>
     </table>
 </div>
+
+

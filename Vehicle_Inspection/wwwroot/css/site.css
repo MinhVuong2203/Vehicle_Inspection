@@ -1,4 +1,4 @@
-html {
+﻿html {
   font-size: 14px;
 }
 
@@ -22,10 +22,70 @@ body {
 }
 
 /* Admin top header styles inspired by the provided image */
+.header-main {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+    /* Khi scroll xuống - thu gọn header */
+    .header-main.scrolled .admin-topbar {
+        padding: 0.25rem 0;
+    }
+
+/*        .header-main.scrolled .admin-topbar .brand,
+        .header-main.scrolled .admin-topbar .search-box,
+        .header-main.scrolled .admin-topbar .user-links b {
+            opacity: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }*/
+
+/*        .header-main.scrolled .admin-topbar .user-links {
+            gap: 0.5rem;
+        }*/
+
+    /* Thu gọn navigation khi scroll */
+    .header-main.scrolled {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+/*        .header-main.scrolled .admin-subnav .nav-pills .nav-link {
+            padding: 0.3rem 0.8rem;
+            min-width: 4rem;
+        }*/
+
+/*            .header-main.scrolled .admin-subnav .nav-pills .nav-link i {
+                font-size: 1.3rem;
+                margin-bottom: 0;
+            }*/
+
+            /* Ẩn text khi scroll */
+            .header-main.scrolled .admin-subnav .nav-pills .nav-link div {
+                max-height: 0;
+                opacity: 0;
+                overflow: hidden;
+                transition: all 0.3s ease;
+            }
+
+            /* Hiện text khi hover */
+            .header-main.scrolled .admin-subnav .nav-pills .nav-link:hover div {
+                max-height: 50px;
+                opacity: 1;
+                margin-top: 0.25rem;
+            }
+
+            .header-main.scrolled .admin-subnav .nav-pills .nav-link:hover {
+                min-width: 7rem;
+            }
+
 
 .admin-topbar {
     background: #10a37f; /* green */
     color: #fff;
+    transition: all 0.3s ease;
 }
 
     .admin-topbar .brand {
@@ -50,18 +110,24 @@ body {
 .admin-subnav {
     background: #f8f9fa;
     border-bottom: 1px solid #e6e6e6;
+    transition: all 0.3s ease;
 }
+    
+
 
     .admin-subnav .nav-pills .nav-link {
         border-radius: 0;
         color: #666;
         padding: 0.4rem 1rem;
-        text-align: center;
         font-size: 0.7rem;
         text-transform: uppercase;
         font-weight: bold;
         min-width: 7rem;
-        border-right: 1px solid rgba(0,0,0,0.1);    
+        border: 1px solid rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+     
     }
 
         .admin-subnav .nav-pills .nav-link i {
@@ -72,14 +138,20 @@ body {
         }
 
         .admin-subnav .nav-pills .nav-link.active {
-            background: rgba(16, 163, 127, 0.3);
+            background: rgba(16, 163, 127, 0.15);
             border-bottom: 3px solid #10a37f;
-            color: #333;
+            color: #10A37F;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
         }
 
         .admin-subnav .nav-pills .nav-link:hover {
-            background: #e6e6e6;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
         }
+
 /* small tweak so sticky headers don't overlap page content */
 .page-main {
     padding-top: 0.75rem;
@@ -103,7 +175,7 @@ body {
 /* Transition and fade-in animation for nav links */
 .admin-subnav .nav .nav-link {
     transition: background-color 0.4s ease, color 0.4s ease, transform 0.4s ease, opacity 0.4s ease;
-    opacity: 0.9;
+    opacity: 0.9;                                                                                                                                   
 }
 
     .admin-subnav .nav .nav-link.active {

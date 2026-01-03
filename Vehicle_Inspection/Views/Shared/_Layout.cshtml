@@ -2,7 +2,6 @@
 @using System.Linq
 @inject Vehicle_Inspection.Data.VehInsContext _context
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,18 +12,20 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet" />
 
-    
+    <style>
+
+    </style>
 </head>
 <body>
-    <header>
+    <header class="header-main">
         <!-- Primary green top bar -->
-        <div class="admin-topbar sticky-top">
-            <div class="container d-flex align-items-center py-2">
+        <div class="admin-topbar px-3">
+            <div class=" d-flex align-items-center py-2">
                 <div class="d-flex align-items-center me-3">
                     <b class="brand text-white">TRUNG TÂM ĐĂNG KIỂM</b>
                 </div>
                 <div class="flex-grow-1 d-flex justify-content-center">
-                    <form class="w-100 d-flex justify-content-center">
+                    <form class="w-100 d-flex justify-content-center no-loading">
                         <div class="search-box w-75 w-sm-50">
                             <div class="input-group">
                                 <input type="text" class="form-control" placeholder="Tìm kiếm..." aria-label="Search">
@@ -41,7 +42,7 @@
                     <a href="#" class="m-0">
                         <div class="icon-top"><i class="fa-solid fa-circle-info fa-xl"></i></div>
                     </a>
-                    <form method="post" asp-action="Logout" asp-controller="Account" style="display: inline;">
+                    <form method="post" asp-action="Logout" asp-controller="Account" style="display: inline;" class="no-loading">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="icon-top"><i class="fa-solid fa-right-from-bracket fa-xl"></i></button>
                     </form>
@@ -50,10 +51,12 @@
         </div>
 
         <!-- Secondary navigation (tabs) with icons -->
-        <div class="admin-subnav">
-            <div class="container">
+        <div class="admin-subnav px-3">
+            <div class="p">
                 <ul class="nav nav-pills align-items-center">
-                    @{ var roles = _context.Roles.ToList(); }
+                    @{
+                        var roles = _context.Roles.ToList();
+                    }
                     @if (roles != null && roles.Any())
                     {
                         foreach (var role in roles)
@@ -62,7 +65,9 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="@role.RoleHref">
                                     <i class="@role.RoleIcon"></i>
-                                    @role.RoleAcronym
+                                    <div>
+                                        @role.RoleAcronym
+                                    </div>
                                 </a>
                             </li>
                         }
@@ -72,8 +77,8 @@
         </div>
     </header>
 
-    <div class="container page-main">
-        <main role="main" class="pb-3">
+    <div class="page-main">
+        <main role="main" class="px-3">
             @RenderBody()
         </main>
     </div>
@@ -83,22 +88,17 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
-    <script>    
-        $(function () {
-            $('.admin-subnav .nav').on('click', '.nav-link', function (e) {
-                var href = $(this).attr('href');
-                if (!href || href === '#') {
-                    e.preventDefault();
-                }
-
-                // Remove active from other links and add to clicked one
-                $('.admin-subnav .nav .nav-link').removeClass('active');
-                $(this).addClass('active');
-            });
+    <script>
+               // Sticky header với scroll detection
+        $(window).on('scroll', function() {
+            if ($(window).scrollTop() > 50) {
+                $('.header-main').addClass('scrolled');
+            } else {
+                $('.header-main').removeClass('scrolled');
+            }
         });
-    </script>
 
+    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

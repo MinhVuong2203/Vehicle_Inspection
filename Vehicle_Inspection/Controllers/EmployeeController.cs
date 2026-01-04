@@ -1,10 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Vehicle_Inspection.Data;
 using Vehicle_Inspection.Models;
@@ -23,6 +25,50 @@ namespace Vehicle_Inspection.Controllers
             _employeeService = employeeService;
         }
 
+        private List<ProvinceDto> LoadProvinces()
+        {
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Database", "SauXacNhap.json");
+            var json = System.IO.File.ReadAllText(filePath);
+
+            try
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<List<ProvinceDto>>(json, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                }) ?? new List<ProvinceDto>();
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                // đặt breakpoint ở đây để xem ex.Path (nó sẽ chỉ ra field nào gây lỗi)
+                throw;
+            }
+        }
+
+
+        private void ParseAddressToFields(User employee)
+        {
+            if (string.IsNullOrWhiteSpace(employee.Address))
+                return;
+
+            var parts = employee.Address
+                .Split('|', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .ToArray();
+
+            if (parts.Length == 3)
+            {
+                employee.AddressLine = parts[0];
+                employee.WardName = parts[1];
+                employee.ProvinceName = parts[2];
+                return;
+            }
+
+            // fallback nếu dữ liệu cũ
+            employee.AddressLine = employee.Address;
+        }
+
+
+        //[GET]: Employee/Index
         public IActionResult Index(string search, int? position, string gender, bool isActive, string sort)
         {
             var employees = _context.Users
@@ -87,17 +133,15 @@ namespace Vehicle_Inspection.Controllers
         public async Task<IActionResult> Edit(Guid id)
         {
             var employee = await _employeeService.GetEmployeeByIdAsync(id);
-            if (employee == null)
-            {
-                return NotFound();
-            }
+            if (employee == null) return NotFound();
 
-            // Load provinces from SauXacNhap.json
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Database", "SauXacNhap.json");
-            var jsonData = System.IO.File.ReadAllText(filePath);
-            var provinces = JsonConvert.DeserializeObject<List<dynamic>>(jsonData);
+            // Đảm bảo Account không null (vì bạn có bind Account.Username/PasswordHash)
+            employee.Account ??= new Account();
 
-            ViewBag.Provinces = provinces;
+            var provinces = LoadProvinces();
+            ParseAddressToFields(employee);
+
+            ViewBag.Provinces = provinces; // dùng để render tỉnh và JS
             ViewBag.Positions = _context.Positions.ToList();
             ViewBag.Teams = _context.Teams.ToList();
 
@@ -108,19 +152,49 @@ namespace Vehicle_Inspection.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(Guid id, User employee)
         {
-            if (id != employee.UserId)
+            if (id != employee.UserId) return BadRequest();
+
+            // 1) Validate 3 field địa chỉ tách
+            if (string.IsNullOrWhiteSpace(employee.AddressLine))
+                ModelState.AddModelError(nameof(employee.AddressLine), "Vui lòng nhập số nhà / đường");
+
+            if (string.IsNullOrWhiteSpace(employee.WardName))
+                ModelState.AddModelError(nameof(employee.WardName), "Vui lòng chọn phường / xã");
+
+            if (string.IsNullOrWhiteSpace(employee.ProvinceName))
+                ModelState.AddModelError(nameof(employee.ProvinceName), "Vui lòng chọn tỉnh / thành phố");
+
+            // 2) GHÉP Address TRƯỚC khi IsValid
+            if (!string.IsNullOrWhiteSpace(employee.AddressLine)
+                && !string.IsNullOrWhiteSpace(employee.WardName)
+                && !string.IsNullOrWhiteSpace(employee.ProvinceName))
             {
-                return BadRequest();
+                employee.Address =
+                    $"{employee.AddressLine.Trim()} | {employee.WardName.Trim()} | {employee.ProvinceName.Trim()}";
+
+                // Address trước đó fail vì form không post Address -> remove để không giữ lỗi cũ
+                ModelState.Remove("Address");
             }
 
-            if (ModelState.IsValid)
+            // 3) Bỏ validate navigation Account.User (do implicit required)
+            ModelState.Remove("Account.User");
+
+            if (!ModelState.IsValid)
             {
-                await _employeeService.UpdateEmployeeAsync(employee);
-                return RedirectToAction("Index");
+                ViewBag.Provinces = LoadProvinces();
+                ViewBag.Positions = _context.Positions.ToList();
+                ViewBag.Teams = _context.Teams.ToList();
+                return View(employee);
             }
-            ViewBag.Positions = _context.Positions.ToList();
-            ViewBag.Teams = _context.Teams.ToList();
-            return View(employee);
+
+            await _employeeService.UpdateEmployeeAsync(employee);
+            TempData["SuccessMessage"] = "Cập nhật nhân viên thành công!";
+            return RedirectToAction(nameof(Index));
+        }
+
+        private string nameof(object address)
+        {
+            throw new NotImplementedException();
         }
     }
 }

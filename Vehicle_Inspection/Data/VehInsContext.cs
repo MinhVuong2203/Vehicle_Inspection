@@ -64,6 +64,10 @@ public partial class VehInsContext : DbContext
         {
             entity.HasKey(e => e.UserId).HasName("PK__Account__1788CC4C455BB54A");
 
+            entity.HasIndex(e => e.Username, "UX_Account_Username_NotNull")
+                .IsUnique()
+                .HasFilter("([Username] IS NOT NULL)");
+
             entity.Property(e => e.UserId).ValueGeneratedNever();
 
             entity.HasOne(d => d.User).WithOne(p => p.Account).HasConstraintName("FK_Account_User");

@@ -15,34 +15,34 @@ public partial class User
     [Key]
     public Guid UserId { get; set; }
 
-    // [StringLength(120)]
+    [StringLength(120)]
     public string FullName { get; set; } = null!;
 
-    // [StringLength(20)]
+    [StringLength(20)]
     public string Phone { get; set; } = null!;
 
-    // [StringLength(120)]
+    [StringLength(120)]
     public string Email { get; set; } = null!;
 
     public DateOnly? BirthDate { get; set; }
 
-    // [StringLength(20)]
+    [StringLength(20)]
     public string CCCD { get; set; } = null!;
 
-    // [StringLength(255)]
+    [StringLength(255)]
     public string Address { get; set; } = null!;
 
-    // [StringLength(10)]
+    [StringLength(10)]
     public string? Gender { get; set; }
 
-    // [StringLength(255)]
+    [StringLength(255)]
     public string? ImageUrl { get; set; }
 
     public int? PositionId { get; set; }
 
     public int? TeamId { get; set; }
 
-    // [StringLength(50)]
+    [StringLength(50)]
     public string? Level { get; set; }
 
     public bool IsActive { get; set; }

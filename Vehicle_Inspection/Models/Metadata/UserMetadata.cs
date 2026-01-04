@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Vehicle_Inspection.Models
 {
-    [MetadataType(typeof(UserMetadata))]
+    [ModelMetadataType(typeof(UserMetadata))]
     public partial class User
     {
     }

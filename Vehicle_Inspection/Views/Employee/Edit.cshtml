@@ -3,6 +3,11 @@
 @{
     ViewData["Title"] = "Edit Employee";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var provinces = (List<Vehicle_Inspection.Models.ProvinceDto>)ViewBag.Provinces;
+    var provincesJson = System.Text.Json.JsonSerializer.Serialize(provinces);
+    // JSON encode để tránh lỗi tiếng Việt / dấu nháy
+    var currentProvinceJson = System.Text.Json.JsonSerializer.Serialize(Model.ProvinceName ?? "");
+    var currentWardJson = System.Text.Json.JsonSerializer.Serialize(Model.WardName ?? "");
 }
 
 @section Styles {
@@ -45,15 +50,30 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="Address" class="font-weight-bold">Địa chỉ</label>
-        <select asp-for="Address" class="form-control">
-            <option value="">Chọn địa chỉ</option>
-            @foreach (var province in (List<dynamic>)ViewBag.Provinces)
+        <label class="font-weight-bold">Số nhà / Đường</label>
+        <input asp-for="AddressLine" class="form-control" placeholder="Ví dụ: 12 Nguyễn Trãi, P. ..." />
+        <span asp-validation-for="AddressLine" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Tỉnh / Thành phố</label>
+        <select asp-for="ProvinceName" class="form-control" id="provinceSelect">
+            <option value="">Chọn tỉnh/thành</option>
+            @foreach (var p in provinces)
             {
-                <option value="@province.tentinhmoi">@province.tentinhmoi</option>
+                <option value="@p.tentinhmoi">@p.tentinhmoi</option>
             }
         </select>
-        <span asp-validation-for="Address" class="text-danger"></span>
+        <span asp-validation-for="ProvinceName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Phường / Xã</label>
+        <select asp-for="WardName" class="form-control" id="wardSelect">
+            <option value="">Chọn phường/xã</option>
+            @* Ward sẽ được JS đổ theo tỉnh *@
+        </select>
+        <span asp-validation-for="WardName" class="text-danger"></span>
     </div>
 
     <div class="form-group">
@@ -150,4 +170,55 @@
             reader.readAsDataURL(event.target.files[0]);
         }
     </script>
+
+    <script>
+        const provinces = @Html.Raw(provincesJson);
+        const currentProvince = @Html.Raw(currentProvinceJson);
+        const currentWard = @Html.Raw(currentWardJson);
+
+        const provinceSelect = document.getElementById('provinceSelect');
+        const wardSelect = document.getElementById('wardSelect');
+
+        const norm = (s) => (s ?? "").toString().trim();
+
+        function renderWards(provinceName, selectedWard) {
+            wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+
+            const pName = norm(provinceName);
+            if (!pName) return;
+
+            const p = provinces.find(x => norm(x.tentinhmoi) === pName);
+            if (!p || !p.phuongxa) return;
+
+            const sw = norm(selectedWard);
+
+            p.phuongxa.forEach(w => {
+                const wn = norm(w.tenphuongxa);
+                const opt = document.createElement('option');
+                opt.value = wn;
+                opt.textContent = wn;
+
+                if (sw && wn === sw) opt.selected = true;
+
+                wardSelect.appendChild(opt);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1) Set tỉnh từ dữ liệu đã parse
+            if (currentProvince) {
+                provinceSelect.value = currentProvince;
+            }
+
+            // 2) Đổ phường theo tỉnh đang selected và chọn đúng phường
+            renderWards(provinceSelect.value, currentWard);
+        });
+
+        provinceSelect.addEventListener('change', function () {
+            // Khi đổi tỉnh, đổ lại phường và reset lựa chọn
+            renderWards(this.value, null);
+        });
+    </script>
+
+
 }

@@ -38,10 +38,45 @@ namespace Vehicle_Inspection.Service
             await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateEmployeeAsync(User employee)
+        public async Task UpdateEmployeeAsync(User model)
         {
-            _context.Users.Update(employee);
+            var entity = await _context.Users
+                .Include(u => u.Account)
+                .FirstOrDefaultAsync(u => u.UserId == model.UserId);
+
+            if (entity == null) throw new Exception("Employee not found");
+
+            // Update field đơn
+            entity.FullName = model.FullName;
+            entity.Phone = model.Phone;
+            entity.Email = model.Email;
+            entity.BirthDate = model.BirthDate;
+            entity.CCCD = model.CCCD;
+            entity.Gender = model.Gender;
+            entity.Level = model.Level;
+            entity.PositionId = model.PositionId;
+            entity.TeamId = model.TeamId;
+            entity.Address = model.Address;
+
+            // Account: chỉ update khi có object và có dữ liệu
+            if (model.Account != null)
+            {
+                entity.Account ??= new Account { UserId = entity.UserId };
+
+                // Username có thể null
+                entity.Account.Username = string.IsNullOrWhiteSpace(model.Account.Username)
+                    ? null
+                    : model.Account.Username.Trim();
+
+                // PasswordHash có thể null: chỉ set khi người dùng nhập
+                if (!string.IsNullOrWhiteSpace(model.Account.PasswordHash))
+                {
+                    entity.Account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Account.PasswordHash);
+                }
+            }
+
             await _context.SaveChangesAsync();
         }
+
     }
 }

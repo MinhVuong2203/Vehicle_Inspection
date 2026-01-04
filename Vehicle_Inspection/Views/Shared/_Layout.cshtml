@@ -77,6 +77,22 @@
         </div>
     </header>
 
+
+    <div class="toast-container position-fixed top-0 end-0 p-3">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="toast show align-items-center text-bg-success border-0">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        @TempData["SuccessMessage"]
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                            data-bs-dismiss="toast"></button>
+                </div>
+            </div>
+        }
+    </div>
+
     <div class="page-main">
         <main role="main" class="px-3">
             @RenderBody()

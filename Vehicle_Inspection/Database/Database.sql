@@ -178,13 +178,19 @@ JOIN dbo.Team t     ON t.TeamCode    = v.TeamCode;
 
 CREATE TABLE dbo.Account (
     UserId          UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
-    Username        NVARCHAR(50) NOT NULL UNIQUE,
-    PasswordHash    NVARCHAR(255) NOT NULL,
+    Username        NVARCHAR(50) NULL,
+    PasswordHash    NVARCHAR(255) NULL,
     IsLocked        BIT NOT NULL DEFAULT 0,
     FailedCount     INT NOT NULL DEFAULT 0,  -- Số lần thất bại
     LastLoginAt     DATETIME2 NULL,  -- Lần đăng nhập cuối cùng
     CONSTRAINT FK_Account_User FOREIGN KEY (UserId) REFERENCES dbo.[User](UserId) ON DELETE CASCADE
 );
+-- Tạo unique index có điều kiện
+CREATE UNIQUE INDEX UX_Account_Username_NotNull
+ON dbo.Account (Username)
+WHERE Username IS NOT NULL;
+
+
 
 CREATE TABLE PasswordRecovery(
 	PasswordRecoveryId INT PRIMARY KEY IDENTITY(1,1),

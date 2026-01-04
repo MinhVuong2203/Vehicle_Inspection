@@ -7,17 +7,16 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Account")]
-[Index("Username", Name = "UQ__Account__536C85E479D7B1E2", IsUnique = true)]
 public partial class Account
 {
     [Key]
     public Guid UserId { get; set; }
 
     [StringLength(50)]
-    public string Username { get; set; } = null!;
+    public string? Username { get; set; }
 
     [StringLength(255)]
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
 
     public bool IsLocked { get; set; }
 

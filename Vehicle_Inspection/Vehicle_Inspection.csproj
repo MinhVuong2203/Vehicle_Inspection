@@ -7,15 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Models\Metadata\AccountMetadata.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Folder Include="Database\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="Models\Metadata\AccountMetadata.cs" />
   </ItemGroup>
 
   <ItemGroup>

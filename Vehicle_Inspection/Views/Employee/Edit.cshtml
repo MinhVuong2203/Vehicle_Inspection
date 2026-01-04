@@ -1,0 +1,153 @@
+﻿@model Vehicle_Inspection.Models.User
+
+@{
+    ViewData["Title"] = "Edit Employee";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/employee/edit.css" />
+}
+
+<h2 class="text-center text-primary">Edit Employee</h2>
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light form-em-edit">
+    <input type="hidden" asp-for="UserId" />
+
+    <div class="form-group">
+        <label asp-for="FullName" class="font-weight-bold"></label>
+        <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Phone" class="font-weight-bold"></label>
+        <input asp-for="Phone" class="form-control" placeholder="Nhập số điện thoại" />
+        <span asp-validation-for="Phone" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email" class="font-weight-bold"></label>
+        <input asp-for="Email" class="form-control" placeholder="Nhập email" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="BirthDate" class="font-weight-bold"></label>
+        <input asp-for="BirthDate" type="date" class="form-control" />
+        <span asp-validation-for="BirthDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CCCD" class="font-weight-bold"></label>
+        <input asp-for="CCCD" class="form-control" placeholder="Nhập CCCD" />
+        <span asp-validation-for="CCCD" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Address" class="font-weight-bold">Địa chỉ</label>
+        <select asp-for="Address" class="form-control">
+            <option value="">Chọn địa chỉ</option>
+            @foreach (var province in (List<dynamic>)ViewBag.Provinces)
+            {
+                <option value="@province.tentinhmoi">@province.tentinhmoi</option>
+            }
+        </select>
+        <span asp-validation-for="Address" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Gender" class="font-weight-bold">Giới tính</label>
+        <select asp-for="Gender" class="form-control">
+            <option value="">Chọn giới tính</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+        </select>
+        <span asp-validation-for="Gender" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PositionId" class="font-weight-bold">Chức vụ</label>
+        <select asp-for="PositionId" class="form-control">
+            <option value="">Chọn chức vụ</option>
+            @foreach (var position in (List<Vehicle_Inspection.Models.Position>)ViewBag.Positions)
+            {
+                <option value="@position.PositionId" selected="@(Model.PositionId == position.PositionId)">
+                    @position.PositionName</option>
+            }
+        </select>
+        <span asp-validation-for="PositionId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="TeamId" class="font-weight-bold">Đội nhóm</label>
+        <select asp-for="TeamId" class="form-control">
+            <option value="">Chọn đội nhóm</option>
+            @foreach (var team in (List<Vehicle_Inspection.Models.Team>)ViewBag.Teams)
+            {
+                <option value="@team.TeamId" selected="@(Model.TeamId == team.TeamId)">@team.TeamName</option>
+            }
+        </select>
+        <span asp-validation-for="TeamId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Level" class="font-weight-bold">Cấp bậc</label>
+        <input asp-for="Level" class="form-control" placeholder="Nhập cấp bậc" />
+        <span asp-validation-for="Level" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Ảnh đại diện</label>
+        <input type="file" name="ProfilePicture" class="form-control-file" onchange="previewImage(event)" />
+        <div class="image-preview mt-3">
+            <img id="profileImagePreview" src="#" alt="Profile Preview" class="img-thumbnail"
+                style="width: 120px; height: 160px; display: none;" />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Account.Username" class="font-weight-bold">Tên đăng nhập</label>
+        <input asp-for="Account.Username" class="form-control" placeholder="Nhập tên đăng nhập" />
+        <span asp-validation-for="Account.Username" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Account.PasswordHash" class="font-weight-bold">Mật khẩu</label>
+        <div class="input-group">
+            <input asp-for="Account.PasswordHash" type="password" class="form-control" placeholder="Nhập mật khẩu"
+                id="passwordField" />
+            <div class="input-group-append">
+                <button type="button" class="btn btn-outline-secondary"
+                    onclick="togglePasswordVisibility()">Hiện</button>
+            </div>
+        </div>
+        <span asp-validation-for="Account.PasswordHash" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">Lưu thay đổi</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById('passwordField');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+            } else {
+                passwordField.type = 'password';
+            }
+        }
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function () {
+                const output = document.getElementById('profileImagePreview');
+                output.src = reader.result;
+                output.style.display = 'block';
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    </script>
+}

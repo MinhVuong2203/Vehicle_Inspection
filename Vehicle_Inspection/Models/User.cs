@@ -7,42 +7,42 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("User")]
-[Index("Phone", Name = "UQ__User__5C7E359E72C1AE14", IsUnique = true)]
-[Index("CCCD", Name = "UQ__User__A955A0AAE181CA80", IsUnique = true)]
-[Index("Email", Name = "UQ__User__A9D10534A5911383", IsUnique = true)]
+[Index("CCCD", Name = "UQ_User_CCCD", IsUnique = true)]
+[Index("Email", Name = "UQ_User_Email", IsUnique = true)]
+[Index("Phone", Name = "UQ_User_Phone", IsUnique = true)]
 public partial class User
 {
     [Key]
     public Guid UserId { get; set; }
 
-    [StringLength(120)]
+    // [StringLength(120)]
     public string FullName { get; set; } = null!;
 
-    [StringLength(20)]
-    public string? Phone { get; set; }
+    // [StringLength(20)]
+    public string Phone { get; set; } = null!;
 
-    [StringLength(120)]
-    public string? Email { get; set; }
+    // [StringLength(120)]
+    public string Email { get; set; } = null!;
 
     public DateOnly? BirthDate { get; set; }
 
-    [StringLength(20)]
-    public string? CCCD { get; set; }
+    // [StringLength(20)]
+    public string CCCD { get; set; } = null!;
 
-    [StringLength(255)]
-    public string? Address { get; set; }
+    // [StringLength(255)]
+    public string Address { get; set; } = null!;
 
-    [StringLength(10)]
+    // [StringLength(10)]
     public string? Gender { get; set; }
 
-    [StringLength(255)]
+    // [StringLength(255)]
     public string? ImageUrl { get; set; }
 
     public int? PositionId { get; set; }
 
     public int? TeamId { get; set; }
 
-    [StringLength(50)]
+    // [StringLength(50)]
     public string? Level { get; set; }
 
     public bool IsActive { get; set; }

@@ -35,6 +35,9 @@ builder.Services.Scan(scan => scan
         .WithScopedLifetime());
 
 
+
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

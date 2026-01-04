@@ -75,11 +75,11 @@ VALUES
 CREATE TABLE dbo.[User] (
     UserId          UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     FullName        NVARCHAR(120) NOT NULL,
-    Phone           NVARCHAR(20) UNIQUE,
-    Email           NVARCHAR(120) UNIQUE,
+    Phone           NVARCHAR(20)  NOT NULL,
+    Email           NVARCHAR(120) NOT NULL,
 	BirthDate		DATE NULL,
-	CCCD			NVARCHAR(20) UNIQUE,
-	Address			NVARCHAR(255),
+	CCCD			NVARCHAR(20)  NOT NULL,
+	Address			NVARCHAR(255) NOT NULL,
 	Gender			NVARCHAR(10),
 	ImageUrl		NVARCHAR(255),  -- Sau này cần bổ sung thêm default
 	PositionId		INT DEFAULT 1,          -- Giám đốc / Phó / KTV / NV nghiệp vụ / Kế toán...
@@ -90,6 +90,12 @@ CREATE TABLE dbo.[User] (
 	FOREIGN KEY (PositionId) REFERENCES Position(PositionId),
 	FOREIGN KEY (TeamId) REFERENCES Team(TeamId)
 );
+ALTER TABLE [User] ADD CONSTRAINT UQ_User_Phone UNIQUE(Phone);
+ALTER TABLE [User] ADD CONSTRAINT UQ_User_CCCD UNIQUE(CCCD);
+ALTER TABLE [User] ADD CONSTRAINT UQ_User_Email UNIQUE(Email);
+
+
+
 
 DROP TABLE User_Role
 DROP TABLE PasswordRecovery

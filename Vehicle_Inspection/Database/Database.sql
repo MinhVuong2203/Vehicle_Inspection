@@ -493,7 +493,7 @@ CREATE TABLE dbo.Inspection (
                         -- FIRST: Đăng kiểm lần đầu
                         -- PERIODIC: Định kỳ
                         -- RE_INSPECTION: Tái kiểm (sau khi sửa)
-    ParentInspectionId INT NULL,-- Liên kết tái kiểm với lượt trước
+    --ParentInspectionId INT NULL,-- Liên kết tái kiểm với lượt trước
     
     -- PHÂN DÂY CHUYỀN
      LaneId INT NULL,-- Dây chuyền được gán
@@ -543,7 +543,7 @@ CREATE TABLE dbo.Inspection (
     
     FOREIGN KEY (VehicleId) REFERENCES dbo.Vehicle(VehicleId),
     FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
-    FOREIGN KEY (ParentInspectionId) REFERENCES dbo.Inspection(InspectionId),
+    --FOREIGN KEY (ParentInspectionId) REFERENCES dbo.Inspection(InspectionId),
     FOREIGN KEY (LaneId) REFERENCES dbo.Lane(LaneId),
     FOREIGN KEY (ConcludedBy) REFERENCES dbo.[User](UserId),
     FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
@@ -588,10 +588,6 @@ CREATE TABLE dbo.InspectionStage (
         3: KHUYẾT ĐIỂM - Đạt nhưng có lỗi nhỏ cần lưu ý
     */
     
-    -- THỜI GIAN THỰC HIỆN
-    StartTime DATETIME2 NULL,-- Bắt đầu công đoạn
-    EndTime DATETIME2 NULL,-- Kết thúc công đoạn
-    DurationMinutes INT NULL,-- Thời gian thực hiện (phút)
     
     -- GHI CHÚ
     Notes NVARCHAR(500) NULL,-- Ghi chú của KTV
@@ -648,7 +644,7 @@ CREATE TABLE dbo.InspectionDetail (
     DeviceId NVARCHAR(50) NULL,-- ID thiết bị đo (nếu có)
     
     -- THÔNG TIN GHI NHẬN
-    RecordedBy UNIQUEIDENTIFIER NULL,-- KTV ghi nhận
+    --RecordedBy UNIQUEIDENTIFIER NULL,-- KTV ghi nhận
     RecordedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
     
     -- ẢNH CHỤP 
@@ -659,7 +655,7 @@ CREATE TABLE dbo.InspectionDetail (
     
     FOREIGN KEY (InspStageId) REFERENCES dbo.InspectionStage(InspStageId) ON DELETE CASCADE,
     FOREIGN KEY (ItemId) REFERENCES dbo.StageItem(ItemId),
-    FOREIGN KEY (RecordedBy) REFERENCES dbo.[User](UserId),
+    --FOREIGN KEY (RecordedBy) REFERENCES dbo.[User](UserId),
     CONSTRAINT UQ_InspDetail UNIQUE (InspStageId, ItemId)
 );
 
@@ -696,16 +692,14 @@ CREATE TABLE dbo.InspectionDefect (
     IsFixed BIT NOT NULL DEFAULT 0,-- Đã sửa chữa?
     FixedNote NVARCHAR(500) NULL,-- Ghi chú về việc sửa chữa
     VerifiedBy UNIQUEIDENTIFIER NULL,-- KTV xác nhận đã sửa (tái kiểm)
-    VerifiedAt DATETIME2 NULL,
     
     -- NGƯỜI PHÁT HIỆN
-    CreatedBy UNIQUEIDENTIFIER NULL,-- KTV phát hiện lỗi
-    CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    --CreatedBy UNIQUEIDENTIFIER NULL,-- KTV phát hiện lỗi
     
     FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
     FOREIGN KEY (InspStageId) REFERENCES dbo.InspectionStage(InspStageId),
     FOREIGN KEY (ItemId) REFERENCES dbo.StageItem(ItemId),
-    FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
+    --FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
     FOREIGN KEY (VerifiedBy) REFERENCES dbo.[User](UserId),
     CONSTRAINT CK_Defect_Severity CHECK (Severity BETWEEN 1 AND 3)
 );
@@ -716,27 +710,27 @@ CREATE INDEX IX_Defect_IsFixed ON dbo.InspectionDefect(IsFixed) WHERE Severity >
 
 -- 4.5) Bảng InspectionHistory (Lịch sử thay đổi trạng thái)
 -- Audit trail cho việc chuyển trạng thái hồ sơ
-CREATE TABLE dbo.InspectionHistory (
-    HistoryId BIGINT IDENTITY(1,1) PRIMARY KEY,
-    InspectionId INT NOT NULL,
+--CREATE TABLE dbo.InspectionHistory (
+--    HistoryId BIGINT IDENTITY(1,1) PRIMARY KEY,
+--    InspectionId INT NOT NULL,
     
     -- THAY ĐỔI TRẠNG THÁI
-    FromStatus SMALLINT NULL, -- Trạng thái cũ
-    ToStatus SMALLINT NOT NULL, -- Trạng thái mới
+--    FromStatus SMALLINT NULL, -- Trạng thái cũ
+--    ToStatus SMALLINT NOT NULL, -- Trạng thái mới
     
     -- NGƯỜI THỰC HIỆN VÀ THỜI GIAN
-    ChangedBy UNIQUEIDENTIFIER NULL,
-    ChangedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+--    ChangedBy UNIQUEIDENTIFIER NULL,
+--    ChangedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
     
     -- GHI CHÚ
-    Notes NVARCHAR(500) NULL,-- Lý do thay đổi
+--    Notes NVARCHAR(500) NULL,-- Lý do thay đổi
     
-    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
-    FOREIGN KEY (ChangedBy) REFERENCES dbo.[User](UserId)
-);
+--    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
+--    FOREIGN KEY (ChangedBy) REFERENCES dbo.[User](UserId)
+--);
 
-CREATE INDEX IX_History_InspectionId ON dbo.InspectionHistory(InspectionId);
-CREATE INDEX IX_History_ChangedAt ON dbo.InspectionHistory(ChangedAt);
+--CREATE INDEX IX_History_InspectionId ON dbo.InspectionHistory(InspectionId);
+--CREATE INDEX IX_History_ChangedAt ON dbo.InspectionHistory(ChangedAt);
 
 -- 5) NHÓM THU PHÍ - CHỨNG NHẬN - THIẾT KẾ LẠI
 

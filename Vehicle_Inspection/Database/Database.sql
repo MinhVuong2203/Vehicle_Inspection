@@ -225,12 +225,23 @@ CREATE TABLE dbo.Owner (
     OwnerId         UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     OwnerType       NVARCHAR(20) NOT NULL DEFAULT N'PERSON',  -- PERSON / COMPANY
     FullName        NVARCHAR(150) NOT NULL,
-    CCCD            NVARCHAR(30) NULL,  
-    Phone           NVARCHAR(20) NULL,
+    CCCD            NVARCHAR(30) NULL UNIQUE,  
+    Phone           NVARCHAR(20) NULL UNIQUE,
     Email           NVARCHAR(120) NULL,
     Address         NVARCHAR(255) NULL,
     CreatedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
+ALTER TABLE dbo.Owner
+ADD
+    CompanyName         NVARCHAR(200) NULL,
+    TaxCode             NVARCHAR(30)  NULL, -- MST
+GO
+-- MST chỉ unique với công ty
+CREATE UNIQUE INDEX UX_Owner_TaxCode_Company
+ON dbo.Owner(TaxCode)
+WHERE OwnerType = N'COMPANY' AND TaxCode IS NOT NULL;
+GO
+
 
 
 CREATE TABLE dbo.Vehicle(
@@ -345,14 +356,14 @@ CREATE TABLE dbo.Specification (
     TireAxleInfo            NVARCHAR(100) NULL,            -- Thông tin trục
     
     -- THÔNG TIN KIỂM ĐỊNH
-    InspectionReportNo      NVARCHAR(50) NULL,             -- Số phiếu kiểm định
-    IssuedDate              DATE NULL,                     -- Ngày cấp
-    InspectionCenter        NVARCHAR(200) NULL,            -- Cơ sở đăng kiểm
+   -- InspectionReportNo      NVARCHAR(50) NULL,             -- Số phiếu kiểm định
+    --IssuedDate              DATE NULL,                     -- Ngày cấp
+    --InspectionCenter        NVARCHAR(200) NULL,            -- Cơ sở đăng kiểm
     
     -- VỊ TRÍ THIẾT BỊ
     ImagePosition           NVARCHAR(100) NULL,            -- Vị trí hình ảnh
     
-    -- TRANG THIẾT BỊ
+    -- TRANG THIẾT BỊ đẩy xuống kia 5.3
     HasTachograph           BIT NULL DEFAULT 0,            -- Có thiết bị giám sát hành trình
     HasDriverCamera         BIT NULL DEFAULT 0,            -- Có camera ghi nhận lái xe
     NotIssuedStamp          BIT NULL DEFAULT 0,            -- PT không được cấp tem
@@ -382,7 +393,6 @@ DROP TABLE Vehicle
 
 CREATE INDEX IX_Vehicle_OwnerId ON dbo.Vehicle(OwnerId);
 
-
 -- =========================
 -- 3) NHÓM CẤU HÌNH DÂY TRUYỀN - CÔNG ĐOẠN - CHỈ TIÊU
 -- =========================
@@ -399,7 +409,7 @@ CREATE TABLE dbo.Stage (
     StageId     INT IDENTITY(1,1) PRIMARY KEY,
     StageCode   NVARCHAR(30) NOT NULL UNIQUE,
     StageName   NVARCHAR(120) NOT NULL, 
-    SortOrder   INT NOT NULL,
+    -- SortOrder   INT NOT NULL,
     IsActive    BIT DEFAULT 1         
 );
 
@@ -486,7 +496,7 @@ CREATE TABLE dbo.Inspection (
     ParentInspectionId INT NULL,-- Liên kết tái kiểm với lượt trước
     
     -- PHÂN DÂY CHUYỀN
-    LaneId INT NULL,-- Dây chuyền được gán
+     LaneId INT NULL,-- Dây chuyền được gán
     
     -- TRẠNG THÁI QUY TRÌNH 
     Status SMALLINT NOT NULL DEFAULT 0,
@@ -528,7 +538,7 @@ CREATE TABLE dbo.Inspection (
     
     -- GHI CHÚ & METADATA
     Notes               NVARCHAR(1000) NULL,-- Ghi chú chung
-    Priority            SMALLINT DEFAULT 1,-- Mức ưu tiên (1: Thường, 2: Cao, 3: Khẩn cấp)
+    -- Priority            SMALLINT DEFAULT 1,-- Mức ưu tiên (1: Thường, 2: Cao, 3: Khẩn cấp)
     IsDeleted           BIT NOT NULL DEFAULT 0,
     
     FOREIGN KEY (VehicleId) REFERENCES dbo.Vehicle(VehicleId),
@@ -775,7 +785,7 @@ CREATE INDEX IX_FeeSchedule_Effective ON dbo.FeeSchedule(EffectiveFrom, Effectiv
 CREATE TABLE dbo.Payment (
     PaymentId INT IDENTITY(1,1) PRIMARY KEY,
     InspectionId INT NOT NULL,
-    
+     
     -- CHI TIẾT PHÍ
     FeeScheduleId INT NULL,-- Tham chiếu bảng giá
     BaseFee DECIMAL(18,2) NOT NULL,-- Phí cơ bản
@@ -823,7 +833,7 @@ CREATE TABLE dbo.Payment (
     CONSTRAINT UQ_Payment_Inspection UNIQUE (InspectionId)  -- Mỗi hồ sơ 1 phiếu thu
 );
 
-CREATE INDEX IX_Payment_Status ON dbo.Payment(PaymentStatus);
+CREATE INDEX IX_Payment_Status ON dbo.Payment(PaymentStatus); 
 CREATE INDEX IX_Payment_PaidAt ON dbo.Payment(PaidAt);
 CREATE INDEX IX_Payment_ReceiptNo ON dbo.Payment(ReceiptNo);
 

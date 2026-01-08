@@ -21,5 +21,5 @@ namespace Vehicle_Inspection.Models
         //[DataType(DataType.Password)]
         [Display(Name = "Mật khẩu")]
         public string PasswordHash { get; set; }
-    }
+    } 
 }

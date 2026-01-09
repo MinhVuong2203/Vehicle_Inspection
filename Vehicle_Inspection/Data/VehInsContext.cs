@@ -327,6 +327,21 @@ public partial class VehInsContext : DbContext
                         j.HasKey("UserId", "RoleId").HasName("PK__User_Rol__AF2760AD5C9B09C9");
                         j.ToTable("User_Role");
                     });
+
+            entity.HasMany(d => d.Stages).WithMany(p => p.Users)
+                .UsingEntity<Dictionary<string, object>>(
+                    "UserStage",
+                    r => r.HasOne<Stage>().WithMany()
+                        .HasForeignKey("StageId")
+                        .HasConstraintName("FK__UserStage__Stage__2F9A1060"),
+                    l => l.HasOne<User>().WithMany()
+                        .HasForeignKey("UserId")
+                        .HasConstraintName("FK__UserStage__UserI__2EA5EC27"),
+                    j =>
+                    {
+                        j.HasKey("UserId", "StageId").HasName("PK__UserStag__87B67BE1DFA7944D");
+                        j.ToTable("UserStage");
+                    });
         });
 
         modelBuilder.Entity<Vehicle>(entity =>

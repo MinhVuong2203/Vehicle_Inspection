@@ -103,4 +103,8 @@ public partial class User
     [ForeignKey("UserId")]
     [InverseProperty("Users")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
+
+    [ForeignKey("UserId")]
+    [InverseProperty("Users")]
+    public virtual ICollection<Stage> Stages { get; set; } = new List<Stage>();
 }

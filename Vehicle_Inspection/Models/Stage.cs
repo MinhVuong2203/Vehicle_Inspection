@@ -29,4 +29,8 @@ public partial class Stage
 
     [InverseProperty("Stage")]
     public virtual ICollection<StageItem> StageItems { get; set; } = new List<StageItem>();
+
+    [ForeignKey("StageId")]
+    [InverseProperty("Stages")]
+    public virtual ICollection<User> Users { get; set; } = new List<User>();
 }

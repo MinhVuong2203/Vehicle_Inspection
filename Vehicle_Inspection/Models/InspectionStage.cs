@@ -23,12 +23,6 @@ public partial class InspectionStage
 
     public int? StageResult { get; set; }
 
-    public DateTime? StartTime { get; set; }
-
-    public DateTime? EndTime { get; set; }
-
-    public int? DurationMinutes { get; set; }
-
     [StringLength(500)]
     public string? Notes { get; set; }
 

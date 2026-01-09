@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Lane")]
-[Index("LaneCode", Name = "UQ__Lane__8A8AD4B9B52479DF", IsUnique = true)]
+[Index("LaneCode", Name = "UQ__Lane__8A8AD4B986F5A427", IsUnique = true)]
 public partial class Lane
 {
     [Key]

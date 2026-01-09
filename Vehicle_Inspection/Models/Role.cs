@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Role")]
-[Index("RoleCode", Name = "UQ__Role__D62CB59CB48F1A17", IsUnique = true)]
+[Index("RoleCode", Name = "UQ__Role__D62CB59CA88E294F", IsUnique = true)]
 public partial class Role
 {
     [Key]

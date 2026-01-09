@@ -7,9 +7,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Vehicle")]
-[Index("InspectionNo", Name = "IX_Vehicle_InspectionNo")]
-[Index("OwnerId", Name = "IX_Vehicle_OwnerId")]
-[Index("PlateNo", Name = "IX_Vehicle_PlateNo")]
 [Index("PlateNo", Name = "UQ_Vehicle_PlateNo", IsUnique = true)]
 public partial class Vehicle
 {

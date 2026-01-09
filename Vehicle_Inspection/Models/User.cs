@@ -62,17 +62,8 @@ public partial class User
     [InverseProperty("CreatedByNavigation")]
     public virtual ICollection<Inspection> InspectionCreatedByNavigations { get; set; } = new List<Inspection>();
 
-    [InverseProperty("CreatedByNavigation")]
-    public virtual ICollection<InspectionDefect> InspectionDefectCreatedByNavigations { get; set; } = new List<InspectionDefect>();
-
     [InverseProperty("VerifiedByNavigation")]
-    public virtual ICollection<InspectionDefect> InspectionDefectVerifiedByNavigations { get; set; } = new List<InspectionDefect>();
-
-    [InverseProperty("RecordedByNavigation")]
-    public virtual ICollection<InspectionDetail> InspectionDetails { get; set; } = new List<InspectionDetail>();
-
-    [InverseProperty("ChangedByNavigation")]
-    public virtual ICollection<InspectionHistory> InspectionHistories { get; set; } = new List<InspectionHistory>();
+    public virtual ICollection<InspectionDefect> InspectionDefects { get; set; } = new List<InspectionDefect>();
 
     [InverseProperty("ReceivedByNavigation")]
     public virtual ICollection<Inspection> InspectionReceivedByNavigations { get; set; } = new List<Inspection>();
@@ -112,8 +103,4 @@ public partial class User
     [ForeignKey("UserId")]
     [InverseProperty("Users")]
     public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
-
-    [ForeignKey("UserId")]
-    [InverseProperty("Users")]
-    public virtual ICollection<Stage> Stages { get; set; } = new List<Stage>();
 }

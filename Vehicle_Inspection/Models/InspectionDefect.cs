@@ -39,16 +39,6 @@ public partial class InspectionDefect
 
     public Guid? VerifiedBy { get; set; }
 
-    public DateTime? VerifiedAt { get; set; }
-
-    public Guid? CreatedBy { get; set; }
-
-    public DateTime CreatedAt { get; set; }
-
-    [ForeignKey("CreatedBy")]
-    [InverseProperty("InspectionDefectCreatedByNavigations")]
-    public virtual User? CreatedByNavigation { get; set; }
-
     [ForeignKey("InspStageId")]
     [InverseProperty("InspectionDefects")]
     public virtual InspectionStage? InspStage { get; set; }
@@ -62,6 +52,6 @@ public partial class InspectionDefect
     public virtual StageItem? Item { get; set; }
 
     [ForeignKey("VerifiedBy")]
-    [InverseProperty("InspectionDefectVerifiedByNavigations")]
+    [InverseProperty("InspectionDefects")]
     public virtual User? VerifiedByNavigation { get; set; }
 }

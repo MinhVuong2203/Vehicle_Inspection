@@ -46,8 +46,6 @@ public partial class InspectionDetail
     [StringLength(50)]
     public string? DeviceId { get; set; }
 
-    public Guid? RecordedBy { get; set; }
-
     public DateTime RecordedAt { get; set; }
 
     [StringLength(1000)]
@@ -63,8 +61,4 @@ public partial class InspectionDetail
     [ForeignKey("ItemId")]
     [InverseProperty("InspectionDetails")]
     public virtual StageItem Item { get; set; } = null!;
-
-    [ForeignKey("RecordedBy")]
-    [InverseProperty("InspectionDetails")]
-    public virtual User? RecordedByNavigation { get; set; }
 }

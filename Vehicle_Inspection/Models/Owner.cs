@@ -7,6 +7,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Owner")]
+[Index("Phone", Name = "UQ__Owner__5C7E359EF5AF1145", IsUnique = true)]
+[Index("CCCD", Name = "UQ__Owner__A955A0AA2271E273", IsUnique = true)]
 public partial class Owner
 {
     [Key]
@@ -17,6 +19,12 @@ public partial class Owner
 
     [StringLength(150)]
     public string FullName { get; set; } = null!;
+
+    [StringLength(200)]
+    public string? CompanyName { get; set; }
+
+    [StringLength(30)]
+    public string? TaxCode { get; set; }
 
     [StringLength(30)]
     public string? CCCD { get; set; }

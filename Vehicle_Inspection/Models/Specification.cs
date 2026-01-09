@@ -7,9 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Specification")]
-[Index("InspectionReportNo", Name = "IX_Specification_InspectionReportNo")]
-[Index("PlateNo", Name = "IX_Specification_PlateNo")]
-[Index("PlateNo", Name = "UQ__Specific__48227C0CD1F73E18", IsUnique = true)]
+[Index("PlateNo", Name = "UQ__Specific__48227C0CF3DBA0DE", IsUnique = true)]
 public partial class Specification
 {
     [Key]
@@ -104,14 +102,6 @@ public partial class Specification
 
     [StringLength(100)]
     public string? TireAxleInfo { get; set; }
-
-    [StringLength(50)]
-    public string? InspectionReportNo { get; set; }
-
-    public DateOnly? IssuedDate { get; set; }
-
-    [StringLength(200)]
-    public string? InspectionCenter { get; set; }
 
     [StringLength(100)]
     public string? ImagePosition { get; set; }

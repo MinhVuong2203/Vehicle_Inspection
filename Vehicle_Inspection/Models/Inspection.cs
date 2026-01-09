@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Inspection")]
-[Index("InspectionCode", Name = "UQ__Inspecti__2DDF04D245C48AA4", IsUnique = true)]
+[Index("InspectionCode", Name = "UQ__Inspecti__2DDF04D2CF37556A", IsUnique = true)]
 public partial class Inspection
 {
     [Key]
@@ -22,8 +22,6 @@ public partial class Inspection
 
     [StringLength(20)]
     public string InspectionType { get; set; } = null!;
-
-    public int? ParentInspectionId { get; set; }
 
     public int? LaneId { get; set; }
 
@@ -57,8 +55,6 @@ public partial class Inspection
     [StringLength(1000)]
     public string? Notes { get; set; }
 
-    public short? Priority { get; set; }
-
     public bool IsDeleted { get; set; }
 
     [InverseProperty("Inspection")]
@@ -76,13 +72,7 @@ public partial class Inspection
     public virtual ICollection<InspectionDefect> InspectionDefects { get; set; } = new List<InspectionDefect>();
 
     [InverseProperty("Inspection")]
-    public virtual ICollection<InspectionHistory> InspectionHistories { get; set; } = new List<InspectionHistory>();
-
-    [InverseProperty("Inspection")]
     public virtual ICollection<InspectionStage> InspectionStages { get; set; } = new List<InspectionStage>();
-
-    [InverseProperty("ParentInspection")]
-    public virtual ICollection<Inspection> InverseParentInspection { get; set; } = new List<Inspection>();
 
     [ForeignKey("LaneId")]
     [InverseProperty("Inspections")]
@@ -91,10 +81,6 @@ public partial class Inspection
     [ForeignKey("OwnerId")]
     [InverseProperty("Inspections")]
     public virtual Owner Owner { get; set; } = null!;
-
-    [ForeignKey("ParentInspectionId")]
-    [InverseProperty("InverseParentInspection")]
-    public virtual Inspection? ParentInspection { get; set; }
 
     [InverseProperty("Inspection")]
     public virtual Payment? Payment { get; set; }

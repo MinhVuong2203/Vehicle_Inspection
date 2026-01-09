@@ -8,8 +8,8 @@ namespace Vehicle_Inspection.Models;
 
 [Table("Certificate")]
 [Index("InspectionId", Name = "UQ_Certificate_Inspection", IsUnique = true)]
-[Index("StickerNo", Name = "UQ__Certific__49D9EC730738CA0E", IsUnique = true)]
-[Index("CertificateNo", Name = "UQ__Certific__BBF8ECEBE3E65E91", IsUnique = true)]
+[Index("StickerNo", Name = "UQ__Certific__49D9EC73D64638A9", IsUnique = true)]
+[Index("CertificateNo", Name = "UQ__Certific__BBF8ECEB422987A9", IsUnique = true)]
 public partial class Certificate
 {
     [Key]

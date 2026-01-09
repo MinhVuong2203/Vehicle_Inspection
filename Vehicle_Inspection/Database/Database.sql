@@ -175,7 +175,6 @@ JOIN dbo.Position p ON p.PoitionCode = v.PositionCode
 JOIN dbo.Team t     ON t.TeamCode    = v.TeamCode;
 
 
-
 CREATE TABLE dbo.Account (
     UserId          UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
     Username        NVARCHAR(50) NULL,
@@ -189,6 +188,10 @@ CREATE TABLE dbo.Account (
 CREATE UNIQUE INDEX UX_Account_Username_NotNull
 ON dbo.Account (Username)
 WHERE Username IS NOT NULL;
+
+--- Lấy ID thực tế của thằng này nhé !!!
+INSERT INTO Account(UserId, Username, PasswordHash)
+VALUES ('C957DE92-03F6-4DFF-A90F-948A75956684', 'PhanMinh', 'PhanMinh@123')
 
 
 
@@ -225,17 +228,14 @@ CREATE TABLE dbo.Owner (
     OwnerId         UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     OwnerType       NVARCHAR(20) NOT NULL DEFAULT N'PERSON',  -- PERSON / COMPANY
     FullName        NVARCHAR(150) NOT NULL,
+	CompanyName         NVARCHAR(200) NULL,
+    TaxCode             NVARCHAR(30)  NULL, -- MST
     CCCD            NVARCHAR(30) NULL UNIQUE,  
     Phone           NVARCHAR(20) NULL UNIQUE,
     Email           NVARCHAR(120) NULL,
     Address         NVARCHAR(255) NULL,
     CreatedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
-ALTER TABLE dbo.Owner
-ADD
-    CompanyName         NVARCHAR(200) NULL,
-    TaxCode             NVARCHAR(30)  NULL, -- MST
-GO
 -- MST chỉ unique với công ty
 CREATE UNIQUE INDEX UX_Owner_TaxCode_Company
 ON dbo.Owner(TaxCode)
@@ -550,7 +550,7 @@ CREATE TABLE dbo.Inspection (
     FOREIGN KEY (ReceivedBy) REFERENCES dbo.[User](UserId),
     CONSTRAINT CK_Inspection_Status CHECK (Status BETWEEN 0 AND 8),
     CONSTRAINT CK_Inspection_FinalResult CHECK (FinalResult IN (1,2,3) OR FinalResult IS NULL),
-    CONSTRAINT CK_Inspection_Priority CHECK (Priority BETWEEN 1 AND 3)
+   -- CONSTRAINT CK_Inspection_Priority CHECK (Priority BETWEEN 1 AND 3)
 );
 
 CREATE INDEX IX_Inspection_VehicleId ON dbo.Inspection(VehicleId);

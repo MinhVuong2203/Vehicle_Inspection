@@ -8,7 +8,7 @@ namespace Vehicle_Inspection.Models;
 
 [Table("Payment")]
 [Index("InspectionId", Name = "UQ_Payment_Inspection", IsUnique = true)]
-[Index("ReceiptNo", Name = "UQ__Payment__CC0B72A63B9E42E3", IsUnique = true)]
+[Index("ReceiptNo", Name = "UQ__Payment__CC0B72A65D3A5FE8", IsUnique = true)]
 public partial class Payment
 {
     [Key]

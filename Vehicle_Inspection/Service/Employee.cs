@@ -58,17 +58,21 @@ namespace Vehicle_Inspection.Service
             entity.TeamId = model.TeamId;
             entity.Address = model.Address;
 
+            // Giữ nguyên ImageUrl nếu không có ảnh mới
+            if (!string.IsNullOrWhiteSpace(model.ImageUrl))
+            {
+                entity.ImageUrl = model.ImageUrl;
+            }
+
             // Account: chỉ update khi có object và có dữ liệu
             if (model.Account != null)
             {
                 entity.Account ??= new Account { UserId = entity.UserId };
 
-                // Username có thể null
                 entity.Account.Username = string.IsNullOrWhiteSpace(model.Account.Username)
                     ? null
                     : model.Account.Username.Trim();
 
-                // PasswordHash có thể null: chỉ set khi người dùng nhập
                 if (!string.IsNullOrWhiteSpace(model.Account.PasswordHash))
                 {
                     entity.Account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(model.Account.PasswordHash);

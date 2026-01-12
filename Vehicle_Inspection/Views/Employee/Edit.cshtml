@@ -18,6 +18,8 @@
 
 <form asp-action="Edit" method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light form-em-edit">
     <input type="hidden" asp-for="UserId" />
+    <input type="hidden" asp-for="IsActive" />
+    <input type="hidden" asp-for="CreatedAt" />
 
     <div class="form-group">
         <label asp-for="FullName" class="font-weight-bold"></label>

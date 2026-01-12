@@ -13,10 +13,50 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet" />
     @RenderSection("styles", required: false)
     <style>
+        .notification-toast {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 350px;
+            animation: slideIn 0.3s ease-out;
+        }
 
+        @@keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .fade-out {
+            animation: fadeOut 0.3s ease-out forwards;
+        }
+
+        @@keyframes fadeOut {
+            to {
+                opacity: 0;
+                transform: translateX(400px);
+            }
+        }
     </style>
 </head>
 <body>
+
+    <!-- DEBUG TEMPDATA - XÓA SAU KHI TEST XONG -->
+    <div style="position: fixed; bottom: 10px; left: 10px; background: yellow; padding: 10px; z-index: 99999; font-size: 12px;">
+        <strong>DEBUG TempData:</strong><br />
+        SuccessMessage: @(TempData["SuccessMessage"] ?? "NULL")<br />
+        ErrorMessage: @(TempData["ErrorMessage"] ?? "NULL")<br />
+        TempData Count: @TempData.Count<br />
+        Keys: @string.Join(", ", TempData.Keys)
+    </div>
+
     <header class="header-main">
         <!-- Primary green top bar -->
         <div class="admin-topbar px-3">
@@ -78,20 +118,42 @@
     </header>
 
 
-    <div class="toast-container position-fixed top-0 end-0 p-3">
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="toast show align-items-center text-bg-success border-0">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        @TempData["SuccessMessage"]
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                            data-bs-dismiss="toast"></button>
-                </div>
-            </div>
-        }
-    </div>
+    <!-- Notification Area -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible notification-toast" role="alert" id="notification">
+            <i class="fa-solid fa-circle-check me-2"></i>
+            <strong>Thành công!</strong> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" onclick="closeNotification()"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible notification-toast" role="alert" id="notification">
+            <i class="fa-solid fa-circle-xmark me-2"></i>
+            <strong>Lỗi!</strong> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" onclick="closeNotification()"></button>
+        </div>
+    }
+
+    @if (TempData["InfoMessage"] != null)
+    {
+        <div class="alert alert-info alert-dismissible notification-toast" role="alert" id="notification">
+            <i class="fa-solid fa-circle-info me-2"></i>
+            <strong>Thông báo!</strong> @TempData["InfoMessage"]
+            <button type="button" class="btn-close" onclick="closeNotification()"></button>
+        </div>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <div class="alert alert-warning alert-dismissible notification-toast" role="alert" id="notification">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>
+            <strong>Cảnh báo!</strong> @TempData["WarningMessage"]
+            <button type="button" class="btn-close" onclick="closeNotification()"></button>
+        </div>
+    }
 
     <div class="page-main">
         <main role="main" class="px-3">
@@ -105,7 +167,7 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
-               // Sticky header với scroll detection
+        // Sticky header
         $(window).on('scroll', function() {
             if ($(window).scrollTop() > 50) {
                 $('.header-main').addClass('scrolled');
@@ -114,7 +176,24 @@
             }
         });
 
+        // Auto close notification after 3 seconds
+        function closeNotification() {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                notification.classList.add('fade-out');
+                setTimeout(() => notification.remove(), 300);
+            }
+        }
+
+        // Auto hide after 3 seconds
+        window.addEventListener('DOMContentLoaded', function() {
+            const notification = document.getElementById('notification');
+            if (notification) {
+                setTimeout(closeNotification, 3000);
+            }
+        });
     </script>
+
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

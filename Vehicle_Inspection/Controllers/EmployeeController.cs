@@ -164,20 +164,34 @@ namespace Vehicle_Inspection.Controllers
             if (string.IsNullOrWhiteSpace(employee.ProvinceName))
                 ModelState.AddModelError(nameof(employee.ProvinceName), "Vui lòng chọn tỉnh / thành phố");
 
-            // 2) GHÉP Address TRƯỚC khi IsValid
+            // 2) GHÉP Address TRƯỚC khi kiểm tra ModelState
             if (!string.IsNullOrWhiteSpace(employee.AddressLine)
                 && !string.IsNullOrWhiteSpace(employee.WardName)
                 && !string.IsNullOrWhiteSpace(employee.ProvinceName))
             {
-                employee.Address =
-                    $"{employee.AddressLine.Trim()} | {employee.WardName.Trim()} | {employee.ProvinceName.Trim()}";
-
-                // Address trước đó fail vì form không post Address -> remove để không giữ lỗi cũ
+                employee.Address = $"{employee.AddressLine.Trim()} | {employee.WardName.Trim()} | {employee.ProvinceName.Trim()}";
                 ModelState.Remove("Address");
             }
 
-            // 3) Bỏ validate navigation Account.User (do implicit required)
+            // 3) Bỏ validate navigation properties
             ModelState.Remove("Account.User");
+            ModelState.Remove("Position");
+            ModelState.Remove("Team");
+            ModelState.Remove("Certificates");
+            ModelState.Remove("InspectionConcludedByNavigations");
+            ModelState.Remove("InspectionCreatedByNavigations");
+            ModelState.Remove("InspectionDefects");
+            ModelState.Remove("InspectionReceivedByNavigations");
+            ModelState.Remove("InspectionStages");
+            ModelState.Remove("PasswordRecoveries");
+            ModelState.Remove("PaymentCreatedByNavigations");
+            ModelState.Remove("PaymentPaidByNavigations");
+            ModelState.Remove("SpecificationCreatedByNavigations");
+            ModelState.Remove("SpecificationUpdatedByNavigations");
+            ModelState.Remove("VehicleCreatedByNavigations");
+            ModelState.Remove("VehicleUpdatedByNavigations");
+            ModelState.Remove("Roles");
+            ModelState.Remove("Stages");
 
             if (!ModelState.IsValid)
             {
@@ -187,14 +201,26 @@ namespace Vehicle_Inspection.Controllers
                 return View(employee);
             }
 
-            await _employeeService.UpdateEmployeeAsync(employee);
-            TempData["SuccessMessage"] = "Cập nhật nhân viên thành công!";
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await _employeeService.UpdateEmployeeAsync(employee);
+                TempData["SuccessMessage"] = "Cập nhật nhân viên thành công!";
+                // Debug: Kiểm tra TempData có được set không
+                Console.WriteLine($"TempData set: {TempData["SuccessMessage"]}");
+                return RedirectToAction(nameof(Index), new { showSuccess = "true" });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Có lỗi xảy ra: {ex.Message}";
+                // Debug: Kiểm tra TempData có được set không
+                Console.WriteLine($"TempData set: {TempData["ErrorMessage"]}");
+                ViewBag.Provinces = LoadProvinces();
+                ViewBag.Positions = _context.Positions.ToList();
+                ViewBag.Teams = _context.Teams.ToList();
+                return View(employee);
+            }
         }
 
-        private string nameof(object address)
-        {
-            throw new NotImplementedException();
-        }
+
     }
 }

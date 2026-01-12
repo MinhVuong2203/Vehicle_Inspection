@@ -46,7 +46,6 @@ namespace Vehicle_Inspection.Service
 
             if (entity == null) throw new Exception("Employee not found");
 
-            // Update field đơn
             entity.FullName = model.FullName;
             entity.Phone = model.Phone;
             entity.Email = model.Email;
@@ -56,15 +55,15 @@ namespace Vehicle_Inspection.Service
             entity.Level = model.Level;
             entity.PositionId = model.PositionId;
             entity.TeamId = model.TeamId;
+
+            // Address split columns
             entity.Address = model.Address;
+            entity.Ward = model.Ward;
+            entity.Province = model.Province;
 
-            // Giữ nguyên ImageUrl nếu không có ảnh mới
             if (!string.IsNullOrWhiteSpace(model.ImageUrl))
-            {
                 entity.ImageUrl = model.ImageUrl;
-            }
 
-            // Account: chỉ update khi có object và có dữ liệu
             if (model.Account != null)
             {
                 entity.Account ??= new Account { UserId = entity.UserId };
@@ -81,6 +80,7 @@ namespace Vehicle_Inspection.Service
 
             await _context.SaveChangesAsync();
         }
+
 
     }
 }

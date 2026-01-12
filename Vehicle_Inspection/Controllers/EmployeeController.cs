@@ -50,37 +50,6 @@ namespace Vehicle_Inspection.Controllers
             }
         }
 
-        private void ParseAddressToFields(User employee)
-        {
-            if (string.IsNullOrWhiteSpace(employee.Address))
-                return;
-
-            var parts = employee.Address
-                .Split('|', StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => x.Trim())
-                .ToArray();
-
-            if (parts.Length == 3)
-            {
-                employee.AddressLine = parts[0];
-                employee.WardName = parts[1];
-                employee.ProvinceName = parts[2];
-            }
-            else
-            {
-                employee.AddressLine = employee.Address;
-            }
-        }
-
-        private void CombineAddressFields(User employee)
-        {
-            if (!string.IsNullOrWhiteSpace(employee.AddressLine) &&
-                !string.IsNullOrWhiteSpace(employee.WardName) &&
-                !string.IsNullOrWhiteSpace(employee.ProvinceName))
-            {
-                employee.Address = $"{employee.AddressLine.Trim()} | {employee.WardName.Trim()} | {employee.ProvinceName.Trim()}";
-            }
-        }
 
         private void LoadViewBagData()
         {
@@ -154,7 +123,7 @@ namespace Vehicle_Inspection.Controllers
             User employee)
         {
             // Ghép địa chỉ
-            CombineAddressFields(employee);
+            //CombineAddressFields(employee);
 
             if (!ModelState.IsValid)
             {
@@ -189,9 +158,6 @@ namespace Vehicle_Inspection.Controllers
             // Đảm bảo Account không null
             employee.Account ??= new Account();
 
-            // Parse địa chỉ
-            ParseAddressToFields(employee);
-
             LoadViewBagData();
 
             return View(employee);
@@ -201,7 +167,7 @@ namespace Vehicle_Inspection.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(
             Guid id,
-            [Bind("UserId,FullName,Phone,Email,BirthDate,CCCD,AddressLine,WardName,ProvinceName,Gender,PositionId,TeamId,Level,IsActive,CreatedAt,ImageUrl,Account")]
+            [Bind("UserId,FullName,Phone,Email,BirthDate,CCCD,Gender,Address,Ward,Province,PositionId,TeamId,Level,IsActive,CreatedAt,ImageUrl,Account")]
             User employee)
         {
             if (id != employee.UserId)
@@ -210,27 +176,27 @@ namespace Vehicle_Inspection.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Validate các field địa chỉ
-            if (string.IsNullOrWhiteSpace(employee.AddressLine))
-            {
-                ModelState.AddModelError(nameof(employee.AddressLine), "Vui lòng nhập số nhà / đường");
-            }
+            //// Validate các field địa chỉ
+            //if (string.IsNullOrWhiteSpace(employee.AddressLine))
+            //{
+            //    ModelState.AddModelError(nameof(employee.AddressLine), "Vui lòng nhập số nhà / đường");
+            //}
 
-            if (string.IsNullOrWhiteSpace(employee.WardName))
-            {
-                ModelState.AddModelError(nameof(employee.WardName), "Vui lòng chọn phường / xã");
-            }
+            //if (string.IsNullOrWhiteSpace(employee.WardName))
+            //{
+            //    ModelState.AddModelError(nameof(employee.WardName), "Vui lòng chọn phường / xã");
+            //}
 
-            if (string.IsNullOrWhiteSpace(employee.ProvinceName))
-            {
-                ModelState.AddModelError(nameof(employee.ProvinceName), "Vui lòng chọn tỉnh / thành phố");
-            }
+            //if (string.IsNullOrWhiteSpace(employee.ProvinceName))
+            //{
+            //    ModelState.AddModelError(nameof(employee.ProvinceName), "Vui lòng chọn tỉnh / thành phố");
+            //}
 
             // Ghép địa chỉ
-            CombineAddressFields(employee);
 
             if (!ModelState.IsValid)
             {
+                TempData["ErrorMessage"] = "Form không hợp lệ.";
                 LoadViewBagData();
                 return View(employee);
             }
@@ -239,7 +205,7 @@ namespace Vehicle_Inspection.Controllers
             {
                 await _employeeService.UpdateEmployeeAsync(employee);
                 TempData["SuccessMessage"] = "Cập nhật nhân viên thành công!";
-                return RedirectToAction(nameof(Index));
+                return LocalRedirect(Url.Action("Index", "Employee")!);
             }
             catch (DbUpdateConcurrencyException)
             {

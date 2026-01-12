@@ -32,10 +32,10 @@ namespace Vehicle_Inspection.Models
         [Display(Name = "CCCD")]
         public string CCCD { get; set; }
 
-        [Required(ErrorMessage = "Địa chỉ không được để trống")]
-        [StringLength(255, ErrorMessage = "Địa chỉ không được vượt quá 255 ký tự")]
-        [Display(Name = "Địa chỉ")]
-        public string Address { get; set; }
+        //[Required(ErrorMessage = "Địa chỉ không được để trống")]
+        //[StringLength(255, ErrorMessage = "Địa chỉ không được vượt quá 255 ký tự")]
+        //[Display(Name = "Địa chỉ")]
+        //public string Address { get; set; }
 
         [Required(ErrorMessage = "Giới tính không được để trống")]
         [StringLength(10, ErrorMessage = "Giới tính không được vượt quá 10 ký tự")]

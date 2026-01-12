@@ -2,6 +2,9 @@
 @using System.Linq
 @inject Vehicle_Inspection.Data.VehInsContext _context
 
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -93,26 +96,40 @@
         <!-- Secondary navigation (tabs) with icons -->
         <div class="admin-subnav px-3">
             <div class="p">
+               @{
+                    var path = (Context.Request.Path.Value ?? "").ToLower();
+               }
+
                 <ul class="nav nav-pills align-items-center">
                     @{
                         var roles = _context.Roles.ToList();
                     }
+
                     @if (roles != null && roles.Any())
                     {
                         foreach (var role in roles)
                         {
-                            if (@role.RoleCode == "LOGIN") continue;
+                            if (role.RoleCode == "LOGIN") continue;
+                     
+                                // chuẩn hóa href: luôn bắt đầu bằng /
+                                var href = role.RoleHref?.StartsWith("/") == true ? role.RoleHref! : "/" + (role.RoleHref ?? "");
+                                var hrefLower = href.ToLower();
+
+                                // Active nếu đúng path hoặc là trang con
+                                // Ví dụ: /employee/edit/... => active /employee
+                                var isActive = path == hrefLower || path.StartsWith(hrefLower + "/");
+
+
                             <li class="nav-item">
-                                <a class="nav-link" href="@role.RoleHref">
+                                <a class="nav-link @(isActive ? "active" : "")" href="@href">
                                     <i class="@role.RoleIcon"></i>
-                                    <div>
-                                        @role.RoleAcronym
-                                    </div>
+                                    <div>@role.RoleAcronym</div>
                                 </a>
                             </li>
                         }
                     }
                 </ul>
+
             </div>
         </div>
     </header>

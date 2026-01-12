@@ -29,9 +29,6 @@ public partial class User
     [StringLength(20)]
     public string CCCD { get; set; } = null!;
 
-    [StringLength(255)]
-    public string Address { get; set; } = null!;
-
     [StringLength(10)]
     public string? Gender { get; set; }
 
@@ -49,6 +46,15 @@ public partial class User
 
     [Column(TypeName = "datetime")]
     public DateTime CreatedAt { get; set; }
+
+    [StringLength(100)]
+    public string? Address { get; set; }
+
+    [StringLength(100)]
+    public string? Ward { get; set; }
+
+    [StringLength(100)]
+    public string? Province { get; set; }
 
     [InverseProperty("User")]
     public virtual Account? Account { get; set; }

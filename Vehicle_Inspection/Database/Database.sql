@@ -79,7 +79,9 @@ CREATE TABLE dbo.[User] (
     Email           NVARCHAR(120) NOT NULL,
 	BirthDate		DATE NULL,
 	CCCD			NVARCHAR(20)  NOT NULL,
-	Address			NVARCHAR(255) NOT NULL,
+	[Address] NVARCHAR(100),
+	Ward NVARCHAR(100),
+	Province NVARCHAR(100),
 	Gender			NVARCHAR(10),
 	ImageUrl		NVARCHAR(255),  -- Sau này cần bổ sung thêm default
 	PositionId		INT DEFAULT 1,          -- Giám đốc / Phó / KTV / NV nghiệp vụ / Kế toán...
@@ -94,6 +96,9 @@ ALTER TABLE [User] ADD CONSTRAINT UQ_User_Phone UNIQUE(Phone);
 ALTER TABLE [User] ADD CONSTRAINT UQ_User_CCCD UNIQUE(CCCD);
 ALTER TABLE [User] ADD CONSTRAINT UQ_User_Email UNIQUE(Email);
 
+ALTER TABLE [User] ADD Address NVARCHAR(100);
+ALTER TABLE [User] ADD Ward NVARCHAR(100);
+ALTER TABLE [User] ADD Province NVARCHAR(100);
 
 
 

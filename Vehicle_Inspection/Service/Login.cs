@@ -19,8 +19,8 @@ namespace Vehicle_Inspection.Service
                 var account = _context.Accounts.FirstOrDefault(a => a.Username == username && !a.IsLocked);
                 if (account == null || string.IsNullOrEmpty(account.PasswordHash))
                     return null;
-                //if (!BCrypt.Net.BCrypt.Verify(password, account.PasswordHash))
-                if (account.PasswordHash != password)
+                if (!BCrypt.Net.BCrypt.Verify(password, account.PasswordHash))
+                //if (account.PasswordHash != password)
                     return null;
                 return account;
             }

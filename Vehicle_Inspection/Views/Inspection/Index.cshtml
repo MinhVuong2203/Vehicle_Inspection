@@ -1,0 +1,537 @@
+﻿@{
+	ViewData["Title"] = "Danh Sách Hồ Sơ Kiểm Định Xe Cơ Giới";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/Inspection/Inspection.css" asp-append-version="true"/>
+
+@section Styles {
+    @* <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> *@
+}
+
+<div class="inspection-page">
+    <div class="container">
+        <h1>DANH SÁCH HỒ SƠ KIỂM ĐỊNH XE CƠ GIỚI</h1>
+
+        <div class="filter-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Tìm kiếm theo mã hồ sơ, tên chủ xe, biển số...">
+                <button onclick="searchRecords()"><i class="fa-solid fa-search"></i> Tìm kiếm</button>
+            </div>
+            <div class="filter-bar">
+                <select id="filterStatus" onchange="filterRecords()">
+                    <option value="">-- Tất cả trạng thái --</option>
+                    <option value="0">Nháp</option>
+                    <option value="1">Đã tiếp nhận</option>
+                    <option value="2">Đã thu phí</option>
+                    <option value="3">Đang kiểm định</option>
+                    <option value="4">Hoàn thành</option>
+                    <option value="5">Đạt</option>
+                    <option value="6">Không đạt</option>
+                    <option value="7">Đã cấp chứng nhận</option>
+                </select>
+                <select id="filterType" onchange="filterRecords()">
+                    <option value="">-- Loại kiểm định --</option>
+                    <option value="FIRST">Lần đầu</option>
+                    <option value="PERIODIC">Định kỳ</option>
+                    <option value="RE_INSPECTION">Tái kiểm</option>
+                </select>
+                <input type="date" id="filterDate" onchange="filterRecords()" placeholder="Ngày kiểm định">
+            </div>
+        </div>
+
+        <table id="recordsTable">
+            <thead>
+                <tr>
+                    <th>STT</th>
+                    <th>Mã Hồ Sơ</th>
+                    <th>Biển Số Xe</th>
+                    <th>Chủ Xe</th>
+                    <th>Loại KĐ</th>
+                    <th>Dây Chuyền</th>
+                    <th>Ngày Tạo</th>
+                    <th>Trạng Thái</th>
+                    <th>Kết Quả</th>
+                    <th>Hành Động</th>
+                </tr>
+            </thead>
+            <tbody id="recordsBody">
+                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modal Chi Tiết Hồ Sơ -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+
+            <div class="certificate-container">
+                <div class="certificate-header">
+                    <h2>BỘ GIAO THÔNG VẬN TẢI<br>CỤC ĐĂNG KIỂM VIỆT NAM<br>MOT - Vietnam Register</h2>
+                    <p class="serial-number">No: <span id="detailSerialNo"></span></p>
+                    <h1 class="cert-title">CHỨNG NHẬN KIỂM ĐỊNH</h1>
+                    <p class="cert-subtitle">AN TOÀN KỸ THUẬT VÀ BẢO VỆ MÔI TRƯỜNG<br>XE CƠ GIỚI</p>
+                    <p class="cert-desc">PERIODICAL INSPECTION CERTIFICATE<br>OF MOTOR VEHICLE FOR COMPLIANCE WITH TECHNICAL SAFETY<br>AND ENVIRONMENTAL PROTECTION REQUIREMENTS</p>
+                </div>
+
+                <div class="certificate-body">
+                    <div class="two-column">
+                        <!-- Cột trái -->
+                        <div class="left-column">
+                            <h3>THÔNG SỐ KỸ THUẬT <span class="en">(SPECIFICATIONS)</span></h3>
+
+                            <div class="field-group">
+                                <label>Công thức bánh xe: <span class="en">(Wheel formula)</span></label>
+                                <span id="detailWheelFormula" class="field-value"></span>
+                            </div>
+
+                            <div class="field-group">
+                                <label>Vết bánh xe: <span class="en">(Wheel tread)</span></label>
+                                <span id="detailWheelTread" class="field-value"></span> mm
+                            </div>
+
+                            <div class="field-group">
+                                <label>Kích thước bao <span class="en">(Overall dimensions)</span>:</label>
+                                <span id="detailDimensions" class="field-value"></span> mm
+                            </div>
+
+                            <div class="field-group">
+                                <label>Kích thước lòng/bao thùng xe/bao ngoài xi tếc:</label>
+                                <span id="detailTankDimensions" class="field-value"></span> mm
+                            </div>
+
+                            <div class="field-group">
+                                <label>Khoảng cách trục <span class="en">(Wheel base)</span>:</label>
+                                <span id="detailWheelbase" class="field-value"></span> mm
+                            </div>
+
+                            <div class="field-group">
+                                <label>Khối lượng bản thân <span class="en">(Kerb mass)</span>:</label>
+                                <span id="detailKerbMass" class="field-value"></span> kg
+                            </div>
+
+                            <div class="field-group">
+                                <label>Khối lượng hàng CC theo TK/CP LN:</label>
+                                <span id="detailCargoMass" class="field-value"></span> kg
+                            </div>
+
+                            <div class="field-group">
+                                <label>Khối lượng kéo theo TK/CP LN:</label>
+                                <span id="detailTowedMass" class="field-value"></span> kg
+                            </div>
+
+                            <div class="field-group">
+                                <label>Khối lượng toàn bộ theo TK/CP LN:</label>
+                                <span id="detailTotalMass" class="field-value"></span> kg
+                            </div>
+
+                            <div class="field-group">
+                                <label>Số người cho phép chở:</label>
+                                <span id="detailSeating" class="field-value"></span> chỗ ngồi;
+                                <span id="detailStanding" class="field-value"></span> chỗ đứng;
+                                <span id="detailLying" class="field-value"></span> chỗ nằm
+                            </div>
+
+                            <div class="field-group">
+                                <label>Loại động cơ đốt trong <span class="en">(Engine type)</span>:</label>
+                                <span id="detailEngineType" class="field-value"></span>
+                            </div>
+
+                            <div class="field-group">
+                                <label>Ký hiệu <span class="en">(Engine model)</span>:</label>
+                                <span id="detailEngineModel" class="field-value"></span>
+                            </div>
+
+                            <div class="field-group">
+                                <label>Thể tích làm việc <span class="en">(Engine displacement)</span>:</label>
+                                <span id="detailEngineDisplacement" class="field-value"></span> cm³
+                            </div>
+
+                            <div class="field-group">
+                                <label>Công suất lớn nhất/tốc độ quay <span class="en">(Max.output/rpm)</span>:</label>
+                                <span id="detailMaxOutput" class="field-value"></span> kW/rpm
+                            </div>
+
+                            <div class="field-group">
+                                <label>Loại nhiên hiệu <span class="en">(Fuel)</span>:</label>
+                                <span id="detailFuel" class="field-value"></span>
+                            </div>
+
+                            <div class="field-group">
+                                <label>Số lượng, ký hiệu động cơ điện:</label>
+                                <span id="detailMotorNumber" class="field-value"></span>
+                            </div>
+
+                            <div class="field-group">
+                                <label>Điện áp/ Tổng công suất của động cơ điện:</label>
+                                <span id="detailMotorPower" class="field-value"></span> V/kW
+                            </div>
+
+                            <div class="field-group">
+                                <label>Loại ắc quy/điện áp-dung lượng:</label>
+                                <span id="detailBattery" class="field-value"></span> V-kWh
+                            </div>
+                        </div>
+
+                        <!-- Cột phải -->
+                        <div class="right-column">
+                            <div class="tire-info">
+                                <label>Số lượng lốp/cỡ lốp/trục <span class="en">(The number of tires / tire size / axle)</span>:</label>
+                                <div id="detailTires" class="field-value"></div>
+                                <p class="issue-date">ngày <span id="detailDay"></span> tháng <span id="detailMonth"></span> năm <span id="detailYear"></span></p>
+                                <p class="en"><span class="en">(Issued on: Day/Month/Year)</span></p>
+                            </div>
+
+                            <div class="inspection-center">
+                                <h3>CƠ SỞ ĐĂNG KIỂM<br><span class="en">(INSPECTION CENTER)</span></h3>
+                                <div class="field-group">
+                                    <label>Số phiếu kiểm định <span class="en">(Inspection report Nº)</span>:</label>
+                                    <span id="detailInspectionNo" class="field-value"></span>
+                                </div>
+                            </div>
+
+                            <div class="validity-box">
+                                <p><strong>Có hiệu lực đến hết ngày</strong> <span class="en">(Valid until)</span>:</p>
+                                <div class="vehicle-image-placeholder">
+                                    <p><em>Vị trí ảnh lồng thể xe cơ giới khi vào kiểm định (kích thước 80 mm x 60 mm); đối với xe miễn kiểm định lần đầu ghi rõ:</em></p>
+                                    <p><strong>"Xe thuộc đối tượng miễn kiểm định lần đầu"</strong></p>
+                                    <p class="en">(Image Position of Vehicle)</p>
+                                </div>
+                            </div>
+
+                            <div class="equipment-check">
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="detailTachograph">
+                                    <label for="detailTachograph">Có lắp thiết bị giám sát hành trình <span class="en">(Equipped with tachograph)</span></label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="detailCamera">
+                                    <label for="detailCamera">Có lắp thiết bị ghi nhận hình ảnh người lái xe <span class="en">(Equipped with camera)</span></label>
+                                </div>
+                                <div class="checkbox-group">
+                                    <input type="checkbox" id="detailNotIssued">
+                                    <label for="detailNotIssued">PT Không được cấp Tem kiểm định <span class="en">(Vehicle not issued with inspection stamp)</span></label>
+                                </div>
+                            </div>
+
+                            <div class="notes">
+                                <label>Ghi chú <span class="en">(Notes)</span>: <sup>(1)</sup></label>
+                                <div id="detailNotes" class="field-value"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phần thông tin đăng ký -->
+                    <div class="registration-section">
+                        <h3>THÔNG TIN ĐĂNG KÝ</h3>
+                        <div class="reg-fields">
+                            <div class="field-group">
+                                <label>Biển đăng ký <span class="en">(Registration plate)</span>:</label>
+                                <span id="detailPlate" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Số quản lý phương tiện <span class="en">(Vehicle inspection Nº)</span>:</label>
+                                <span id="detailVehicleNo" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Nhóm phương tiện <span class="en">(Vehicle's group)</span>:</label>
+                                <span id="detailVehicleGroup" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Loại phương tiện <span class="en">(Vehicle's type)</span>:</label>
+                                <span id="detailVehicleType" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Sử dụng năng lượng sạch, năng lượng xanh, thân thiện môi trường:</label>
+                                <input type="checkbox" id="detailGreenEnergy">
+                            </div>
+                            <div class="field-group">
+                                <label>Cho phép tự động hóa <span class="en">(Allows automation)</span>:</label>
+                                <input type="checkbox" id="detailAutomationPartial"> Một phần <span class="en">(Partially)</span>
+                                <input type="checkbox" id="detailAutomationFull"> Toàn phần <span class="en">(Fully)</span>
+                            </div>
+                            <div class="field-group">
+                                <label>Nhãn hiệu, tên thương mại <span class="en">(Trademark, Commercial name)</span>:</label>
+                                <span id="detailTrademark" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Mã kiểu loại <span class="en">(Model code)</span>:</label>
+                                <span id="detailModelCode" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Số động cơ <span class="en">(Engine Nº)</span>:</label>
+                                <span id="detailEngineNo" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Số khung <span class="en">(Chassis Nº)</span>:</label>
+                                <span id="detailChassisNo" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Năm / Nước sản xuất <span class="en">(Production year / Country)</span>:</label>
+                                <span id="detailProductionYear" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Niên hạn sử dụng <span class="en">(Lifetime Limit (s))</span>:</label>
+                                <span id="detailLifetime" class="field-value"></span>
+                            </div>
+                            <div class="field-group">
+                                <label>Cơ kinh doanh vận tải <span class="en">(Commercial use)</span>:</label>
+                                <input type="checkbox" id="detailCommercialUse">
+                                <label>Có cải tạo <span class="en">(Modification)</span>:</label>
+                                <input type="checkbox" id="detailModification">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phần hướng dẫn -->
+                    <div class="instructions-section">
+                        <h3>CHỦ XE, LÁI XE CẦN BIẾT</h3>
+                        <p class="en">Vehicle owners, drivers should be aware of the followings:</p>
+                        <ol>
+                            <li>Khi tham gia giao thông phải mang theo Chứng nhận kiểm định. Nộp lại Chứng nhận kiểm định và Tem kiểm định khi có thông báo thu hồi của các Cơ sở đăng kiểm.</li>
+                            <li>Không sử dụng Chứng nhận kiểm định, Tem kiểm định bị sửa chữa, tẩy xóa nội dung và làm giả.</li>
+                            <li>Phải bảo dưỡng, sửa chữa để bảo đảm duy trì tình trạng kỹ thuật của phương tiện; chịu trách nhiệm về những thông tin đăng ký/kiểm định không đúng về dữ liệu phương tiện không bảo đảm an toàn kỹ thuật và bảo vệ môi trường tham gia giao thông trên đường phố.</li>
+                            <li>Không cải tạo trái phép; cố ý can thiệp làm sai lệch chỉ số trên động hồ báo quãng đường đã chạy, số ki-lô-mét; hủy bỏ, sửa chữa, đồng loại trái phép có tác động vào nội dung và chức năng các cơ cấu, chi tiết hoặc hệ thống trên xe đã được đăng ký và ghi nhận kết quả tại văn bản kiểm định.</li>
+                            <li>Không truy cập thiệp, thay đổi phần mềm điều khiển của xe; dọng cơ của xe đã được đăng ký và chức năng mục đích liên quan tới kết quả thử nghiệm kiểm định; Không thuê, mượn phụ tùng chỉ để thực hiện việc kiểm định.</li>
+                            <li>Chứng nhận kiểm định, Tem kiểm định sẽ không còn hiệu lực nếu xe bị tai nạn giao thông đến mức không đảm bảo an toàn kỹ thuật và bảo vệ môi trường.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Chọn Dây Chuyền -->
+    <div id="assignLaneModal" class="modal">
+        <div class="modal-content assign-lane-modal">
+            <span class="close" onclick="closeAssignLane()">&times;</span>
+
+            <div class="assign-header">
+                <h2><i class="fa-solid fa-road"></i> PHÂN CÔNG DÂY CHUYỀN</h2>
+            </div>
+
+            <div class="assign-info">
+                <div class="info-row">
+                    <div class="info-col">
+                        <label>Mã hồ sơ:</label>
+                        <span id="assignInspectionCode"></span>
+                    </div>
+                    <div class="info-col">
+                        <label>Biển số xe:</label>
+                        <span id="assignPlateNo"></span>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-col">
+                        <label>Chủ xe:</label>
+                        <span id="assignOwnerName"></span>
+                    </div>
+                    <div class="info-col">
+                        <label>Loại xe:</label>
+                        <span id="assignVehicleType"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lane-assign-section">
+                <h3>Chọn Dây Chuyền Kiểm Định</h3>
+                <p class="help-text"><i class="fa-solid fa-info-circle"></i> Chọn dây chuyền phù hợp với loại xe cần kiểm định</p>
+
+                <div class="lane-cards">
+                    <div class="assign-lane-card" onclick="selectAssignLane(1, 'Dây chuyền 1')">
+                        <div class="lane-number">1</div>
+                        <h4>Dây Chuyền 1</h4>
+                        <p class="lane-desc">Chuyên kiểm định xe con, xe tải nhẹ</p>
+                        <div class="lane-specs">
+                            <div class="spec-item">
+                                <i class="fa-solid fa-car"></i>
+                                <span>Xe con</span>
+                            </div>
+                            <div class="spec-item">
+                                <i class="fa-solid fa-truck-pickup"></i>
+                                <span>Xe tải nhẹ</span>
+                            </div>
+                        </div>
+                        <div class="lane-status available">
+                            <i class="fa-solid fa-circle-check"></i> Sẵn sàng
+                        </div>
+                    </div>
+
+                    <div class="assign-lane-card" onclick="selectAssignLane(2, 'Dây chuyền 2')">
+                        <div class="lane-number">2</div>
+                        <h4>Dây Chuyền 2</h4>
+                        <p class="lane-desc">Chuyên kiểm định xe tải, xe chuyên dụng</p>
+                        <div class="lane-specs">
+                            <div class="spec-item">
+                                <i class="fa-solid fa-truck"></i>
+                                <span>Xe tải</span>
+                            </div>
+                            <div class="spec-item">
+                                <i class="fa-solid fa-truck-moving"></i>
+                                <span>Xe chuyên dụng</span>
+                            </div>
+                        </div>
+                        <div class="lane-status available">
+                            <i class="fa-solid fa-circle-check"></i> Sẵn sàng
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="assign-note">
+                <label><i class="fa-solid fa-sticky-note"></i> Ghi chú phân công (tùy chọn):</label>
+                <textarea id="assignNote" rows="3" placeholder="Nhập ghi chú về việc phân công dây chuyền..."></textarea>
+            </div>
+
+            <div class="assign-actions">
+                <button class="btn-secondary" onclick="closeAssignLane()">
+                    <i class="fa-solid fa-times"></i> Hủy
+                </button>
+                <button class="btn-success" onclick="confirmAssignLane()" id="btnConfirmAssign" disabled>
+                    <i class="fa-solid fa-check"></i> Xác Nhận Phân Công
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Quy Trình Kiểm Định -->
+    <div id="inspectionProcessModal" class="modal">
+        <div class="modal-content process-modal">
+            <span class="close" onclick="closeInspectionProcess()">&times;</span>
+
+            <div class="process-header">
+                <h2>QUY TRÌNH KIỂM ĐỊNH XE CƠ GIỚI</h2>
+                <div class="inspection-info">
+                    <div class="info-item">
+                        <strong>Mã hồ sơ:</strong> <span id="processInspectionCode"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Biển số:</strong> <span id="processPlateNo"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Chủ xe:</strong> <span id="processOwnerName"></span>
+                    </div>
+                    <div class="info-item">
+                        <strong>Loại xe:</strong> <span id="processVehicleType"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chọn Dây Chuyền -->
+            <div class="lane-selection" id="laneSelection">
+                <h3><i class="fa-solid fa-road"></i> Chọn Dây Chuyền Kiểm Định</h3>
+                <div class="lane-options">
+                    <div class="lane-card" onclick="selectLane(1, 'Dây chuyền 1')">
+                        <i class="fa-solid fa-1"></i>
+                        <h4>Dây chuyền 1</h4>
+                        <p>Xe con, xe tải nhẹ</p>
+                    </div>
+                    <div class="lane-card" onclick="selectLane(2, 'Dây chuyền 2')">
+                        <i class="fa-solid fa-2"></i>
+                        <h4>Dây chuyền 2</h4>
+                        <p>Xe tải, xe chuyên dụng</p>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="startInspection()" id="btnStartInspection" disabled>
+                    <i class="fa-solid fa-play"></i> Bắt Đầu Kiểm Định
+                </button>
+            </div>
+
+            <!-- Các Giai Đoạn Kiểm Định -->
+            <div class="inspection-stages" id="inspectionStages" style="display: none;">
+                <div class="stages-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <p class="progress-text"><span id="currentStageNum">0</span> / <span id="totalStages">5</span> công đoạn hoàn thành</p>
+                </div>
+
+                <div class="stages-list" id="stagesList">
+                    <!-- Các giai đoạn sẽ được thêm bằng JavaScript -->
+                </div>
+
+                <div class="stage-detail" id="stageDetail" style="display: none;">
+                    <h3><i class="fa-solid fa-clipboard-check"></i> <span id="stageName"></span></h3>
+                    <p class="stage-description" id="stageDescription"></p>
+
+                    <div class="stage-form" id="stageForm">
+                        <!-- Form nhập liệu sẽ được tạo động -->
+                    </div>
+
+                    <div class="defects-section" id="defectsSection" style="display: none;">
+                        <h4><i class="fa-solid fa-triangle-exclamation"></i> Lỗi Phát Hiện</h4>
+                        <div id="defectsList"></div>
+                        <button class="btn-secondary" onclick="addDefect()">
+                            <i class="fa-solid fa-plus"></i> Thêm Lỗi
+                        </button>
+                    </div>
+
+                    <div class="stage-actions">
+                        <button class="btn-secondary" onclick="previousStage()">
+                            <i class="fa-solid fa-arrow-left"></i> Quay Lại
+                        </button>
+                        <button class="btn-success" onclick="saveStageResult()">
+                            <i class="fa-solid fa-save"></i> Lưu Kết Quả
+                        </button>
+                        <button class="btn-primary" onclick="nextStage()" id="btnNextStage">
+                            Tiếp Theo <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="inspection-conclusion" id="inspectionConclusion" style="display: none;">
+                    <h3><i class="fa-solid fa-file-signature"></i> Kết Luận Kiểm Định</h3>
+
+                    <div class="conclusion-summary">
+                        <div class="summary-card passed">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <h4><span id="passedCount">0</span></h4>
+                            <p>Công đoạn đạt</p>
+                        </div>
+                        <div class="summary-card failed">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                            <h4><span id="failedCount">0</span></h4>
+                            <p>Công đoạn không đạt</p>
+                        </div>
+                        <div class="summary-card defects">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                            <h4><span id="defectsCount">0</span></h4>
+                            <p>Lỗi phát hiện</p>
+                        </div>
+                    </div>
+
+                    <div class="final-result">
+                        <label><strong>Kết luận cuối cùng:</strong></label>
+                        <select id="finalResultSelect" onchange="updateFinalConclusion()">
+                            <option value="">-- Chọn kết luận --</option>
+                            <option value="1">ĐẠT - Cấp chứng nhận</option>
+                            <option value="2">KHÔNG ĐẠT - Yêu cầu sửa chữa</option>
+                            <option value="3">TẠM ĐÌNH CHỈ - Vi phạm nghiêm trọng</option>
+                        </select>
+                    </div>
+
+                    <div class="conclusion-note">
+                        <label><strong>Ghi chú kết luận:</strong></label>
+                        <textarea id="conclusionNote" rows="4" placeholder="Nhập ghi chú kết luận..."></textarea>
+                    </div>
+
+                    <div class="all-defects" id="allDefectsSection" style="display: none;">
+                        <h4><i class="fa-solid fa-list"></i> Tổng Hợp Lỗi</h4>
+                        <div id="allDefectsList"></div>
+                    </div>
+
+                    <div class="conclusion-actions">
+                        <button class="btn-secondary" onclick="backToStages()">
+                            <i class="fa-solid fa-arrow-left"></i> Quay Lại
+                        </button>
+                        <button class="btn-success" onclick="submitConclusion()">
+                            <i class="fa-solid fa-check"></i> Hoàn Thành Kiểm Định
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/js/Inspection/Inspection.js"></script>

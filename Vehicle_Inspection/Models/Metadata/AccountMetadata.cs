@@ -10,16 +10,16 @@ namespace Vehicle_Inspection.Models
 
     public class AccountMetadata
     {
-        //[StringLength(50, MinimumLength = 6, ErrorMessage = "Tên đăng nhập phải từ 6-50 ký tự")]
-        //[RegularExpression(@"^(?=.*[A-Z])(?=.*[a-z])[A-Za-z0-9_]+$",
-        //    ErrorMessage = "Tên đăng nhập phải có chữ hoa, chữ thường, chỉ chứa chữ cái, số và dấu _")]
+        [RegularExpression(@"^(?=.{6,50}$)(?=.*[A-Z])(?=.*[a-z])[A-Za-z0-9_]+$",
+        ErrorMessage = "Tên đăng nhập phải từ 6-50 ký tự, có chữ hoa, chữ thường, chỉ chứa chữ cái, số và dấu _")]
         [Display(Name = "Tên đăng nhập")]
         public string Username { get; set; }
 
-       
-        //[StringLength(255, MinimumLength = 8, ErrorMessage = "Mật khẩu phải từ 8-255 ký tự")]
-        //[DataType(DataType.Password)]
+        [RegularExpression(@"^(?=.{8,255}$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s])\S+$",
+        ErrorMessage = "Mật khẩu phải từ 8-255 ký tự, có chữ hoa, chữ thường, số và ít nhất 1 ký tự đặc biệt, không chứa khoảng trắng")]
+        [DataType(DataType.Password)]
         [Display(Name = "Mật khẩu")]
         public string PasswordHash { get; set; }
-    } 
+
+    }
 }

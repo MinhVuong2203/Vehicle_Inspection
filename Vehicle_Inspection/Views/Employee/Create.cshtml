@@ -1,85 +1,167 @@
-@model Vehicle_Inspection.Models.User
-
+﻿@model Vehicle_Inspection.Models.User
 @{
-    ViewData["Title"] = "Create Employee";
+    ViewData["Title"] = "Thêm nhân viên";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var provinces = (List<Vehicle_Inspection.Models.ProvinceDto>)ViewBag.Provinces;
+    var provincesJson = System.Text.Json.JsonSerializer.Serialize(provinces);
 }
 
-<h2>Create Employee</h2>
+@section Styles {
+    <link rel="stylesheet" href="~/css/employee/edit.css" />
+}
 
-<form asp-action="Create" method="post">
+<h2 class="text-center text-primary">THÊM NHÂN VIÊN</h2>
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light form-em-edit">
+
+
     <div class="form-group">
-        <label asp-for="FullName"></label>
-        <input asp-for="FullName" class="form-control" />
+        <label asp-for="FullName" class="font-weight-bold"></label>
+        <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên" />
         <span asp-validation-for="FullName" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="Phone"></label>
-        <input asp-for="Phone" class="form-control" />
+        <label asp-for="Phone" class="font-weight-bold"></label>
+        <input asp-for="Phone" class="form-control" placeholder="Nhập số điện thoại" />
         <span asp-validation-for="Phone" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="Email"></label>
-        <input asp-for="Email" class="form-control" />
+        <label asp-for="Email" class="font-weight-bold"></label>
+        <input asp-for="Email" class="form-control" placeholder="Nhập email" />
         <span asp-validation-for="Email" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="BirthDate"></label>
+        <label asp-for="BirthDate" class="font-weight-bold">Ngày sinh</label>
         <input asp-for="BirthDate" type="date" class="form-control" />
         <span asp-validation-for="BirthDate" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="CCCD"></label>
-        <input asp-for="CCCD" class="form-control" />
+        <label asp-for="CCCD" class="font-weight-bold"></label>
+        <input asp-for="CCCD" class="form-control" placeholder="Nhập CCCD" />
         <span asp-validation-for="CCCD" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="Address"></label>
+        <label class="font-weight-bold">Số nhà / Đường</label>
         <input asp-for="Address" class="form-control" />
         <span asp-validation-for="Address" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="Gender"></label>
+        <label class="font-weight-bold">Tỉnh / Thành phố</label>
+        <select asp-for="Province" class="form-control" id="provinceSelect">
+            <option value="">Chọn tỉnh/thành</option>
+            @foreach (var p in provinces)
+            {
+                <option value="@p.tentinhmoi">@p.tentinhmoi</option>
+            }
+        </select>
+        <span asp-validation-for="Province" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Phường / Xã</label>
+        <select asp-for="Ward" class="form-control" id="wardSelect">
+            <option value="">Chọn phường/xã</option>
+        </select>
+        <span asp-validation-for="Ward" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Gender" class="font-weight-bold">Giới tính</label>
         <select asp-for="Gender" class="form-control">
-            <option value="">Select Gender</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
+            <option value="">Chọn giới tính</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
         </select>
         <span asp-validation-for="Gender" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="PositionId"></label>
+        <label asp-for="PositionId" class="font-weight-bold">Chức vụ</label>
         <select asp-for="PositionId" class="form-control">
-            <option value="">Select Position</option>
+            <option value="">Chọn chức vụ</option>
             @foreach (var position in (List<Vehicle_Inspection.Models.Position>)ViewBag.Positions)
             {
-                <option value="@position.PositionId">@position.PositionName</option>
+                <option value="@position.PositionId" selected="@(Model.PositionId == position.PositionId)">
+                    @position.PositionName
+                </option>
             }
         </select>
         <span asp-validation-for="PositionId" class="text-danger"></span>
     </div>
 
     <div class="form-group">
-        <label asp-for="TeamId"></label>
+        <label asp-for="TeamId" class="font-weight-bold">Đội nhóm</label>
         <select asp-for="TeamId" class="form-control">
-            <option value="">Select Team</option>
+            <option value="">Chọn đội nhóm</option>
             @foreach (var team in (List<Vehicle_Inspection.Models.Team>)ViewBag.Teams)
             {
-                <option value="@team.TeamId">@team.TeamName</option>
+                <option value="@team.TeamId" selected="@(Model.TeamId == team.TeamId)">@team.TeamName</option>
             }
         </select>
         <span asp-validation-for="TeamId" class="text-danger"></span>
     </div>
 
-    <button type="submit" class="btn btn-primary">Create</button>
+    <div class="form-group">
+        <label asp-for="Level" class="font-weight-bold">Cấp bậc</label>
+        <input asp-for="Level" class="form-control" placeholder="Nhập cấp bậc" />
+        <span asp-validation-for="Level" class="text-danger"></span>
+    </div>
+
+    <!-- Account -->
+    <div class="form-group">
+        <label asp-for="Account.Username" class="font-weight-bold"></label>
+        <input asp-for="Account.Username" class="form-control" />
+        <span asp-validation-for="Account.Username" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Account.PasswordHash" class="font-weight-bold"></label>
+        <input asp-for="Account.PasswordHash" type="password" class="form-control" />
+        <span asp-validation-for="Account.PasswordHash" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Ảnh đại diện</label>
+        <input type="file" name="ProfilePicture" class="form-control-file" />
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block">Tạo nhân viên</button>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        const provinces = @Html.Raw(provincesJson);
+        const provinceSelect = document.getElementById('provinceSelect');
+        const wardSelect = document.getElementById('wardSelect');
+
+        const norm = (s) => (s ?? "").toString().trim();
+
+        function renderWards(provinceName) {
+            wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+            const pName = norm(provinceName);
+            if (!pName) return;
+
+            const p = provinces.find(x => norm(x.tentinhmoi) === pName);
+            if (!p || !p.phuongxa) return;
+
+            p.phuongxa.forEach(w => {
+                const opt = document.createElement('option');
+                opt.value = norm(w.tenphuongxa);
+                opt.textContent = norm(w.tenphuongxa);
+                wardSelect.appendChild(opt);
+            });
+        }
+
+        provinceSelect.addEventListener('change', function () {
+            renderWards(this.value);
+        });
+    </script>
 }

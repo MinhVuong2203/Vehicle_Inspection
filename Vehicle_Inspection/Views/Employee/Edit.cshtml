@@ -1,7 +1,7 @@
 ﻿@model Vehicle_Inspection.Models.User
 
 @{
-    ViewData["Title"] = "Edit Employee";
+    ViewData["Title"] = "Điều chỉnh nhân sự";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var provinces = (List<Vehicle_Inspection.Models.ProvinceDto>)ViewBag.Provinces;
     var provincesJson = System.Text.Json.JsonSerializer.Serialize(provinces);
@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="~/css/employee/edit.css" />
 }
 
-<h2 class="text-center text-primary">Edit Employee</h2>
+<h2 class="text-center text-primary">THÔNG TIN CÁ NHÂN</h2>
 
 <form asp-action="Edit" asp-route-id="@Model.UserId" method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light form-em-edit">
     <input type="hidden" asp-for="UserId" />
@@ -40,7 +40,7 @@
     </div>
 
     <div class="form-group">
-        <label asp-for="BirthDate" class="font-weight-bold"></label>
+        <label asp-for="BirthDate" class="font-weight-bold">Ngày sinh</label>
         <input asp-for="BirthDate" type="date" class="form-control" />
         <span asp-validation-for="BirthDate" class="text-danger"></span>
     </div>

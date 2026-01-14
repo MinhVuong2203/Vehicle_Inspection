@@ -113,8 +113,18 @@ namespace Vehicle_Inspection.Controllers
         public async Task<IActionResult> Create()
         {
             LoadViewBagData();
-            return View();
+
+            // để bind Account.Username/PasswordHash không bị null reference
+            var model = new User
+            {
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                Account = new Account()
+            };
+
+            return View(model);
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -122,9 +132,6 @@ namespace Vehicle_Inspection.Controllers
             [Bind("FullName,Phone,Email,BirthDate,CCCD,AddressLine,WardName,ProvinceName,Gender,PositionId,TeamId,Level,Account")]
             User employee)
         {
-            // Ghép địa chỉ
-            //CombineAddressFields(employee);
-
             if (!ModelState.IsValid)
             {
                 LoadViewBagData();
@@ -204,7 +211,7 @@ namespace Vehicle_Inspection.Controllers
             try
             {
                 await _employeeService.UpdateEmployeeAsync(employee);
-                TempData["SuccessMessage"] = "Cập nhật nhân viên thành công!";
+                TempData["SuccessMessage"] = "Cập nhật " + employee.FullName + " thành công!";
                 return LocalRedirect(Url.Action("Index", "Employee")!);
             }
             catch (DbUpdateConcurrencyException)

@@ -48,6 +48,14 @@ public partial class Certificate
     [StringLength(500)]
     public string? Notes { get; set; }
 
+    [StringLength(50)]
+    public string? InspectionReportNo { get; set; }
+
+    public DateOnly? IssuedDate { get; set; }
+
+    [StringLength(200)]
+    public string? InspectionCenter { get; set; }
+
     [ForeignKey("InspectionId")]
     [InverseProperty("Certificate")]
     public virtual Inspection Inspection { get; set; } = null!;

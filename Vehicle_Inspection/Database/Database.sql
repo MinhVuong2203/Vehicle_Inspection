@@ -881,6 +881,17 @@ CREATE TABLE dbo.Certificate (
     CONSTRAINT CK_Certificate_Dates CHECK (ExpiryDate > IssueDate),
     CONSTRAINT UQ_Certificate_Inspection UNIQUE (InspectionId)
 );
+  
+    -- THÔNG TIN KIỂM ĐỊNH
+   -- InspectionReportNo      NVARCHAR(50) NULL,             -- Số phiếu kiểm định
+    --IssuedDate              DATE NULL,                     -- Ngày cấp
+    --InspectionCenter        NVARCHAR(200) NULL,            -- Cơ sở đăng kiểm
+
+    ALTER TABLE dbo.Certificate 
+	ADD InspectionReportNo  NVARCHAR(50) NULL,					-- Số phiếu kiểm định
+		 IssuedDate DATE NULL,									-- Ngày cấp
+		 InspectionCenter   NVARCHAR(200) NULL;					-- Cơ sở đăng kiểm
+
 
 CREATE INDEX IX_Certificate_Status ON dbo.Certificate(Status);
 CREATE INDEX IX_Certificate_ExpiryDate ON dbo.Certificate(ExpiryDate) WHERE Status = 1;

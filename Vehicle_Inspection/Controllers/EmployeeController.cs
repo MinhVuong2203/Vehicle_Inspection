@@ -62,14 +62,15 @@ namespace Vehicle_Inspection.Controllers
 
         #region Actions
 
-        public IActionResult Index(string search, int? position, string gender, bool? isActive, string sort)
+        public IActionResult Index(string? search, int? position, int? team, string? gender, bool? isActive, string? sort)
         {
             var employees = _context.Users
+          
                 .Include(u => u.Position)
                 .Include(u => u.Team)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(search))
+            if (!string.IsNullOrWhiteSpace(search))
             {
                 search = search.Trim().ToLower();
                 employees = employees.Where(u =>
@@ -79,19 +80,16 @@ namespace Vehicle_Inspection.Controllers
             }
 
             if (position.HasValue)
-            {
-                employees = employees.Where(u => u.PositionId == position);
-            }
+                employees = employees.Where(u => u.PositionId == position.Value);
 
-            if (!string.IsNullOrEmpty(gender))
-            {
+            if (team.HasValue)
+                employees = employees.Where(u => u.TeamId == team.Value);
+
+            if (!string.IsNullOrWhiteSpace(gender))
                 employees = employees.Where(u => u.Gender == gender);
-            }
 
             if (isActive.HasValue)
-            {
                 employees = employees.Where(u => u.IsActive == isActive.Value);
-            }
 
             employees = sort switch
             {
@@ -109,6 +107,7 @@ namespace Vehicle_Inspection.Controllers
 
             return View(employees.ToList());
         }
+
 
         public async Task<IActionResult> Create()
         {
@@ -129,28 +128,91 @@ namespace Vehicle_Inspection.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(
-            [Bind("FullName,Phone,Email,BirthDate,CCCD,AddressLine,WardName,ProvinceName,Gender,PositionId,TeamId,Level,Account")]
-            User employee)
+      [Bind("FullName,Phone,Email,BirthDate,CCCD,Address,Ward,Province,Gender,PositionId,TeamId,Level,Account")] User employee, IFormFile? ProfilePicture)
         {
+            // Set created fields
+            employee.UserId = Guid.NewGuid();
+            employee.CreatedAt = DateTime.Now;
+            employee.IsActive = true;
+
+
+            if (!string.IsNullOrWhiteSpace(employee.Email))
+            {
+                var existsEmail = await _context.Users.AnyAsync(x => x.Email == employee.Email);
+                if (existsEmail) ModelState.AddModelError(nameof(employee.Email), "Email đã tồn tại.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.Phone))
+            {
+                var existsPhone = await _context.Users.AnyAsync(x => x.Phone == employee.Phone);
+                if (existsPhone) ModelState.AddModelError(nameof(employee.Phone), "Số điện thoại đã tồn tại.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(employee.CCCD))
+            {
+                var existsCccd = await _context.Users.AnyAsync(x => x.CCCD == employee.CCCD);
+                if (existsCccd) ModelState.AddModelError(nameof(employee.CCCD), "CCCD đã tồn tại.");
+            }
+
+
+            // (Tuỳ chọn) Check trùng Username nếu DB có unique cho Username
+            if (!string.IsNullOrWhiteSpace(employee.Account?.Username))
+            {
+                var existsUsername = await _context.Accounts.AnyAsync(a => a.Username == employee.Account.Username);
+                if (existsUsername) ModelState.AddModelError("Account.Username", "Tên đăng nhập đã tồn tại.");
+            }
+
+            // Upload ảnh (nếu có) - bạn thay path theo project của bạn
+            if (ProfilePicture != null && ProfilePicture.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "employee");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+
+                var fileName = $"{employee.UserId}{Path.GetExtension(ProfilePicture.FileName)}";
+                var filePath = Path.Combine(uploads, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await ProfilePicture.CopyToAsync(stream);
+                }
+
+                employee.ImageUrl = $"/images/employee/{fileName}";
+            }
+
             if (!ModelState.IsValid)
             {
+                TempData["ErrorMessage"] = "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.";
                 LoadViewBagData();
+                employee.Account ??= new Account();
                 return View(employee);
             }
 
             try
             {
+                // Ensure account exists
+                employee.Account ??= new Account();
+                employee.Account.UserId = employee.UserId;
+
+                // Hash password nếu có nhập
+                if (!string.IsNullOrWhiteSpace(employee.Account.PasswordHash))
+                {
+                    employee.Account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(employee.Account.PasswordHash);
+                }
+
                 await _employeeService.CreateEmployeeAsync(employee);
+
                 TempData["SuccessMessage"] = "Thêm nhân viên thành công!";
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction("Index", "Employee");
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Có lỗi xảy ra: {ex.Message}";
                 LoadViewBagData();
+                employee.Account ??= new Account();
                 return View(employee);
             }
         }
+
 
         public async Task<IActionResult> Edit(Guid id)
         {
@@ -175,7 +237,7 @@ namespace Vehicle_Inspection.Controllers
         public async Task<IActionResult> Edit(
             Guid id,
             [Bind("UserId,FullName,Phone,Email,BirthDate,CCCD,Gender,Address,Ward,Province,PositionId,TeamId,Level,IsActive,CreatedAt,ImageUrl,Account")]
-            User employee)
+            User employee, IFormFile? ProfilePicture)
         {
             if (id != employee.UserId)
             {
@@ -183,23 +245,23 @@ namespace Vehicle_Inspection.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            //// Validate các field địa chỉ
-            //if (string.IsNullOrWhiteSpace(employee.AddressLine))
-            //{
-            //    ModelState.AddModelError(nameof(employee.AddressLine), "Vui lòng nhập số nhà / đường");
-            //}
+            // Upload ảnh (nếu có) - bạn thay path theo project của bạn
+            if (ProfilePicture != null && ProfilePicture.Length > 0)
+            {
+                var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "employee");
+                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
 
-            //if (string.IsNullOrWhiteSpace(employee.WardName))
-            //{
-            //    ModelState.AddModelError(nameof(employee.WardName), "Vui lòng chọn phường / xã");
-            //}
+                var fileName = $"{employee.UserId}{Path.GetExtension(ProfilePicture.FileName)}";
+                var filePath = Path.Combine(uploads, fileName);
 
-            //if (string.IsNullOrWhiteSpace(employee.ProvinceName))
-            //{
-            //    ModelState.AddModelError(nameof(employee.ProvinceName), "Vui lòng chọn tỉnh / thành phố");
-            //}
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await ProfilePicture.CopyToAsync(stream);
+                }
+                employee.ImageUrl = $"/images/employee/{fileName}";
+            }
 
-            // Ghép địa chỉ
+
 
             if (!ModelState.IsValid)
             {
@@ -234,6 +296,41 @@ namespace Vehicle_Inspection.Controllers
         private async Task<bool> EmployeeExists(Guid id)
         {
             return await _context.Users.AnyAsync(e => e.UserId == id);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSoft(Guid id)
+        {
+            try
+            {
+                await _employeeService.DeleteSoftAsync(id);
+                TempData["SuccessMessage"] = "Xoá cán bộ thành công!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Có lỗi xảy ra: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Restore(Guid id)
+        {
+            try
+            {
+                await _employeeService.RestoreAsync(id);
+                TempData["SuccessMessage"] = "Khôi phục cán bộ thành công!";
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Có lỗi xảy ra: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
         #endregion

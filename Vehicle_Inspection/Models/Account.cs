@@ -1,8 +1,9 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace Vehicle_Inspection.Models;
 
@@ -26,5 +27,6 @@ public partial class Account
 
     [ForeignKey("UserId")]
     [InverseProperty("Account")]
+    [ValidateNever]
     public virtual User User { get; set; } = null!;
 }

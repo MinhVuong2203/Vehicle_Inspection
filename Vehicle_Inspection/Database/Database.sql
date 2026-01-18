@@ -27,7 +27,8 @@ VALUES ('LOGIN', N'Đăng nhập', N'Đăng nhập hệ thống', 'fa-solid fa-a
 	   ('TOLL', N'Thu phí', N'Thu phí, in biên nhận', 'fa-solid fa-coins', 'toll'),
 	   ('RESULT', N'Kết quả', N'Nhập kết quả kiểm định theo công đoạn', 'fa-regular fa-pen-to-square', 'result'),
 	   ('CONCLUSION', N'Kết luận', N'Chốt kết luận đạt/không đạt', 'fa-regular fa-handshake', 'conclusion'),
-	   ('REPORT', N'Xem báo cáo', N'Xem báo cáo', 'fa-solid fa-chart-pie', 'report')
+	   ('REPORT', N'Xem báo cáo', N'Xem báo cáo', 'fa-solid fa-chart-pie', 'report'),
+	   ('DECENTRALIZE', N'Quyền truy cập', N'Phân quyền truy cập', 'fa-solid fa-unlock-keyhole', 'decentralize')
 
 
 CREATE TABLE Position(
@@ -85,7 +86,7 @@ CREATE TABLE dbo.[User] (
 	Gender			NVARCHAR(10),
 	ImageUrl		NVARCHAR(255),  -- Sau này cần bổ sung thêm default
 	PositionId		INT DEFAULT 1,          -- Giám đốc / Phó / KTV / NV nghiệp vụ / Kế toán...
-	TeamId			INT DEFAULT 1,         -- Ban giám đốc / Tổ kiểm định / Tổ nghiệp vụ / Tổ kế toán (nếu bạn muốn lưu)
+					INT DEFAULT 1,         -- Ban giám đốc / Tổ kiểm định / Tổ nghiệp vụ / Tổ kế toán (nếu bạn muốn lưu)
 	[Level]			NVARCHAR(50),
     IsActive        BIT NOT NULL DEFAULT 1,
     CreatedAt       DATETIME NOT NULL DEFAULT GETDATE(),
@@ -194,9 +195,6 @@ CREATE UNIQUE INDEX UX_Account_Username_NotNull
 ON dbo.Account (Username)
 WHERE Username IS NOT NULL;
 
---- Lấy ID thực tế của thằng này nhé !!!
-INSERT INTO Account(UserId, Username, PasswordHash)
-VALUES ('C957DE92-03F6-4DFF-A90F-948A75956684', 'PhanMinh', 'PhanMinh@123')
 
 
 
@@ -241,6 +239,14 @@ CREATE TABLE dbo.Owner (
     Address         NVARCHAR(255) NULL,
     CreatedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
+
+ALTER TABLE Owner
+ADD	Ward NVARCHAR(100)
+ALTER TABLE Owner
+ADD	Province NVARCHAR(100)
+
+
+
 -- MST chỉ unique với công ty
 CREATE UNIQUE INDEX UX_Owner_TaxCode_Company
 ON dbo.Owner(TaxCode)

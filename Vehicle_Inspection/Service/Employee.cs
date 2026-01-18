@@ -19,7 +19,7 @@ namespace Vehicle_Inspection.Service
 
         public async Task<List<User>> GetAllEmployeesAsync()
         {
-            return await _context.Users.Include(u => u.Position).Include(u => u.Team).ToListAsync();
+            return await _context.Users.Where(u => u.IsActive).Include(u => u.Position).Include(u => u.Team).ToListAsync();
         }
 
         public async Task<User> GetEmployeeByIdAsync(Guid id)
@@ -34,9 +34,14 @@ namespace Vehicle_Inspection.Service
 
         public async Task CreateEmployeeAsync(User employee)
         {
+            // đảm bảo FK account
+            if (employee.Account != null)
+                employee.Account.UserId = employee.UserId;
+
             _context.Users.Add(employee);
             await _context.SaveChangesAsync();
         }
+
 
         public async Task UpdateEmployeeAsync(User model)
         {
@@ -81,6 +86,20 @@ namespace Vehicle_Inspection.Service
             await _context.SaveChangesAsync();
         }
 
+        public async Task DeleteSoftAsync(Guid id)
+        {
+            var entity = await _context.Users.FindAsync(id);
+            if (entity == null) throw new Exception("Nhân viên không tồn tại");
+            entity.IsActive = false;         
+            await _context.SaveChangesAsync();
+        }
 
+        public async Task RestoreAsync(Guid id)
+        {
+            var entity = await _context.Users.FindAsync(id);
+            if (entity == null) throw new Exception("Cán bộ không tồn tại");
+            entity.IsActive = true;
+            await _context.SaveChangesAsync();
+        }
     }
 }

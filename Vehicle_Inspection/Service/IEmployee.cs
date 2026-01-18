@@ -11,5 +11,10 @@ namespace Vehicle_Inspection.Service
         Task<User> GetEmployeeByIdAsync(Guid id);
         Task CreateEmployeeAsync(User employee);
         Task UpdateEmployeeAsync(User employee);
+
+        Task DeleteSoftAsync(Guid id);
+
+        Task RestoreAsync(Guid id);
+
     }
 }

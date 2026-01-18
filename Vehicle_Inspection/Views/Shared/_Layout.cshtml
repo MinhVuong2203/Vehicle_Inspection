@@ -151,7 +151,8 @@
     {
         <div class="alert alert-danger alert-dismissible notification-toast" role="alert" id="notification">
             <i class="fa-solid fa-circle-xmark me-2"></i>
-            <strong>Lỗi!</strong> @TempData["ErrorMessage"]
+            <strong>Lỗi!</strong>
+            <br />@TempData["ErrorMessage"]
             <button type="button" class="btn-close" onclick="closeNotification()"></button>
         </div>
     }
@@ -160,7 +161,8 @@
     {
         <div class="alert alert-info alert-dismissible notification-toast" role="alert" id="notification">
             <i class="fa-solid fa-circle-info me-2"></i>
-            <strong>Thông báo!</strong> @TempData["InfoMessage"]
+            <strong>Thông báo!</strong>
+            <br />@TempData["InfoMessage"]
             <button type="button" class="btn-close" onclick="closeNotification()"></button>
         </div>
     }
@@ -169,7 +171,8 @@
     {
         <div class="alert alert-warning alert-dismissible notification-toast" role="alert" id="notification">
             <i class="fa-solid fa-triangle-exclamation me-2"></i>
-            <strong>Cảnh báo!</strong> @TempData["WarningMessage"]
+            <strong>Cảnh báo!</strong>
+            <br />@TempData["WarningMessage"]
             <button type="button" class="btn-close" onclick="closeNotification()"></button>
         </div>
     }
@@ -208,7 +211,7 @@
         window.addEventListener('DOMContentLoaded', function() {
             const notification = document.getElementById('notification');
             if (notification) {
-                setTimeout(closeNotification, 3000);
+                setTimeout(closeNotification, 10000);
             }
         });
     </script>

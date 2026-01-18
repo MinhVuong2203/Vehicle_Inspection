@@ -1,8 +1,15 @@
 ﻿@model IEnumerable<Vehicle_Inspection.Models.User>
 @{
     ViewData["Title"] = "Employee List";
-    var query = ViewContext.HttpContext.Request.Query;
+    var q = Context.Request.Query;
+    string searchVal = q["search"];
+    string positionVal = q["position"];
+    string teamVal = q["team"];
+    string genderVal = q["gender"];
+    string isActiveVal = string.IsNullOrWhiteSpace(q["isActive"]) ? "" : q["isActive"].ToString();
+
 }
+
 
 <link rel="stylesheet" href="~/css/employee/main.css" />
 
@@ -13,20 +20,27 @@
         <!-- Left: Filters (fixed) -->
         <div class="col-md-2">
             <div class="filters-container p-3 bg-light rounded">
-                <form method="get">
+                <form method="get" asp-action="Index" asp-controller="Employee">
                     <div class="mb-3">
                         <label class="form-label">Search</label>
-                        <input type="text" name="search" class="form-control" placeholder="Name or email" value="@(query["search"].ToString())" />
+                        <input type="text" name="search" class="form-control"
+                               placeholder="Name or email" value="@searchVal" />
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label">Position</label>
                         <select name="position" class="form-select">
                             <option value="">All Positions</option>
-                            @foreach (var position in ViewBag.Positions as List<Vehicle_Inspection.Models.Position>)
+                            @foreach (var p in (List<Vehicle_Inspection.Models.Position>)ViewBag.Positions)
                             {
-                                var selected = query["position"].ToString() == position.PositionId.ToString() ? "selected" : string.Empty;
-                                <option value="@position.PositionId" selected="@selected">@position.PositionName</option>
+                                if (positionVal == p.PositionId.ToString())
+                                {
+                                    <option value="@p.PositionId" selected>@p.PositionName</option>
+                                }
+                                else
+                                {
+                                    <option value="@p.PositionId">@p.PositionName</option>
+                                }
                             }
                         </select>
                     </div>
@@ -35,10 +49,16 @@
                         <label class="form-label">Team</label>
                         <select name="team" class="form-select">
                             <option value="">All Teams</option>
-                            @foreach (var team in ViewBag.Teams as List<Vehicle_Inspection.Models.Team>)
+                            @foreach (var t in (List<Vehicle_Inspection.Models.Team>)ViewBag.Teams)
                             {
-                                var selected = query["team"].ToString() == team.TeamId.ToString() ? "selected" : string.Empty;
-                                <option value="@team.TeamId" selected="@selected">@team.TeamName</option>
+                                if (teamVal == t.TeamId.ToString())
+                                {
+                                    <option value="@t.TeamId" selected>@t.TeamName</option>
+                                }
+                                else
+                                {
+                                    <option value="@t.TeamId">@t.TeamName</option>
+                                }
                             }
                         </select>
                     </div>
@@ -47,20 +67,52 @@
                         <label class="form-label">Gender</label>
                         <select name="gender" class="form-select">
                             <option value="">All Genders</option>
-                            <option value="Male" selected="@(query["gender"].ToString() == "Male" ? "selected" : string.Empty)">Male</option>
-                            <option value="Female" selected="@(query["gender"].ToString() == "Female" ? "selected" : string.Empty)">Female</option>
+
+                            @if (genderVal == "Nam")
+                            {
+                                <option value="Nam" selected>Nam</option>
+                                <option value="Nữ">Nữ</option>
+                            }
+                            else if (genderVal == "Nữ")
+                            {
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ" selected>Nữ</option>
+                            }
+                            else
+                            {
+                                <option value="Nam">Nam</option>
+                                <option value="Nữ">Nữ</option>
+                            }
                         </select>
                     </div>
 
-                    <div class="form-check mb-3">
-                        <input type="checkbox" name="isActive" class="form-check-input" id="isActive" @(query["isActive"].ToString() == "on" ? "checked" : string.Empty) />
-                        <label class="form-check-label" for="isActive">Active Only</label>
+                    <div class="mb-3">
+                      
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="isActive" id="isActive_all"
+                                   value="" @(isActiveVal == "" ? "checked" : null) />
+                            <label class="form-check-label" for="isActive_all">Tất cả</label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="isActive" id="isActive_true"
+                                   value="true" @(isActiveVal == "true" ? "checked" : null) />
+                            <label class="form-check-label" for="isActive_true">Đang hoạt động</label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="isActive" id="isActive_false"
+                                   value="false" @(isActiveVal == "false" ? "checked" : null) />
+                            <label class="form-check-label" for="isActive_false">Đã nghỉ</label>
+                        </div>
                     </div>
+
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Filter</button>
                     </div>
                 </form>
+
             </div>
         </div>
 
@@ -69,26 +121,80 @@
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
                 @foreach (var user in Model)
                 {
-                    <div class="col">
-                        <div class="card employee-card h-100">
+                    <div class="col">                       
+                        <div class="d-flex employee-card h-100 justify-content-between">
                             <a asp-controller="Employee" asp-action="Edit" asp-route-id="@user.UserId" class="d-flex align-items-center p-3 text-decoration-none text-dark">
                                 <div class="me-3">
-                                    <img src="@(string.IsNullOrEmpty(user.ImageUrl) ? Url.Content("~/images/employee/anh34.jpeg") : user.ImageUrl)" alt="Avatar" class="employee-avatar" />
+                                    <img src="@(string.IsNullOrEmpty(user.ImageUrl) ? Url.Content("~/images/employee/anh34.jpg") : user.ImageUrl)" alt="Avatar" class="employee-avatar" />
                                 </div>
                                 <div class="flex-grow-1">
-                                    <p class="mb-1" style="display: none"><strong>ID:</strong> @user.UserId</p>
-                                    <p class="mb-1"><strong>Name:</strong> @user.FullName</p>
-                                    <p class="mb-1"><strong>Birth:</strong> @(user.BirthDate?.ToString("yyyy-MM-dd") ?? "-")</p>
-                                    <p class="mb-1"><strong>Position:</strong> @user.Position?.PositionName</p>
+                                    <p class="mb-0" style="display: none"><strong>ID:</strong> @user.UserId</p>
+                                    <p class="mb-0"><strong>Name:</strong> @user.FullName</p>
+                                    <p class="mb-0"><strong>Birth:</strong> @(user.BirthDate?.ToString("yyyy-MM-dd") ?? "-")</p>
+                                    <p class="mb-0"><strong>Position:</strong> @user.Position?.PositionName</p>
                                     <p class="mb-0"><strong>Level:</strong> @(string.IsNullOrEmpty(user.Level) ? "-" : user.Level)</p>
-                                </div>                               
+                                    <p class="mb-0">
+                                        <strong>Trạng thái:
+                                            <span class="@(user.IsActive ? "text-success" : "text-danger")">
+                                                @(user.IsActive ? "Đang hoạt động" : "Đã nghỉ")
+                                            </span>
+                                         </strong>
+                                     </p>
+                                </div>
                             </a>
+                            @if (!user.IsActive)
+                            {
+                                <form asp-controller="Employee" asp-action="Restore" asp-route-id="@user.UserId"
+                                      method="post" style="display:inline"
+                                      class="no-loading"
+                                      onsubmit="if(!confirm('Xác nhận khôi phục cán bộ @user.FullName?')) return false; showFullScreenLoading('Đang xử lý...');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link px-2 btnDelete">
+                                        <i class="fa-solid fa-arrow-rotate-left fa-xl" style="color: #f33939;"></i>
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form asp-controller="Employee" asp-action="DeleteSoft" asp-route-id="@user.UserId"
+                                      method="post" style="display:inline"
+                                      class="no-loading"
+                                      onsubmit="if(!confirm('Xác nhận xóa cán bộ @user.FullName?')) return false; showFullScreenLoading('Đang xử lý...');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-link px-2 btnDelete">
+                                        <i class="fa-solid fa-delete-left fa-2xl" style="color:#10A37F;"></i>
+                                    </button>
+                                </form>
+
+                            }
+
                         </div>
+                        
+                        
+                        
                     </div>
+                }
+                @if (isActiveVal != "false")
+                {
+                    <div class="col">
+                    <div class="card employee-card h-100">
+                        <a asp-controller="Employee" asp-action="Create" class="d-flex align-items-center p-3 text-decoration-none text-dark">
+                            <div class="me-3">
+                                <img src="/images/employee/add-user.png" alt="Avatar" class="employee-avatar" style="object-fit: contain" />
+                            </div>
+                            <div class="flex-grow-1">
+                                
+                                <p class="mb-1"><strong>Name:</strong>...</p>
+                                <p class="mb-1"><strong>Birth:</strong>...</p>
+                                <p class="mb-1"><strong>Position:</strong>...</p>
+                                <p class="mb-0"><strong>Level:</strong>...</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>                  
                 }
             </div>
         </div>
-        <a asp-controller="Employee" asp-action="Create" class="btn btn-success">+ Bổ sung nhân sự</a>
 
     </div>
 </div>

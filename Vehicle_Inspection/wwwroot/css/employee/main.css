@@ -11,14 +11,21 @@
 	border-radius: 8px;
 	box-shadow: 0 1px 4px rgba(0,0,0,0.1);
 	transition: all 0.3s ease;
+
+	word-wrap: break-word;
+	background-color: #fff;
+	border: 1px solid rgba(0, 0, 0, .125);
 }
 	.employee-card:hover {
 		background: rgba(16, 163, 127, 0.15);
 		border-right: 5px solid #10a37f;
 		transform: translateY(-2px);
 		box-shadow: 0 5px 10px rgba(0,0,0,0.4);
-		transition: all 0.3s ease;
+		transition: all 0.3s ease;	
 	}
+		.employee-card:hover .btnDelete {
+			display: inline-block;
+		}
 
 
 	.employee-card .employee-avatar {
@@ -36,6 +43,10 @@
 
 @media (max-width: 767.98px) {
 	.filters-container { position: static; max-height: none; margin-bottom: 1rem; }
+}
+
+.btnDelete{
+	display: none;
 }
 
 

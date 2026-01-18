@@ -65,7 +65,7 @@ namespace Vehicle_Inspection.Controllers
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
-
+                TempData["InfoMessage"] = "Chào mừng bạn trở lại!";
                 return RedirectToAction("Index", "Home");
             }
 

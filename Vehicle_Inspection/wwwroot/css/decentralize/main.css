@@ -1,0 +1,167 @@
+﻿
+@keyframes rgbTitle {
+    0% {
+        color: red;
+    }
+
+    33% {
+        color: green;
+    }
+
+    66% {
+        color: blue;
+    }
+
+    100% {
+        color: red;
+    }
+}
+
+h4 {
+    font-size: 1.5rem;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    animation: rgbTitle 3s infinite;
+    text-align: center
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th,
+td {
+    padding: 15px;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid #ddd;
+}
+
+th {
+    background: #007bffa1;
+    position: relative;
+}
+
+
+.btn {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+    .btn:hover {
+        background: #0056b3;
+    }
+
+.legend {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+    .legend-color.assigned {
+        background: #28a745;
+    }
+
+    .legend-color.unassigned {
+        background: #ddd;
+    }
+
+/* Thêm kiểu cho checkbox */
+.role-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+@keyframes rgbBorderBottomGradient {
+    0% {
+        background: linear-gradient(to right, red, orange);
+    }
+
+    33% {
+        background: linear-gradient(to right, green, yellow);
+    }
+
+    66% {
+        background: linear-gradient(to right, blue, purple);
+    }
+
+    100% {
+        background: linear-gradient(to right, red, orange);
+    }
+}
+
+thead {
+    position: static;
+}
+
+    thead::after {
+        content: none;
+    }
+
+@keyframes hoverEffect {
+    0% {
+        background-color: rgba(255, 0, 0, 0.2);
+    }
+
+    50% {
+        background-color: rgba(0, 255, 0, 0.2);
+    }
+
+    100% {
+        background-color: rgba(0, 0, 255, 0.2);
+    }
+}
+
+tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 5px rgba(0, 0, 0, 0.3);
+    transition: all 0.4s ease;
+/*    animation: none;*/
+    background: linear-gradient(135deg, rgba(255,0,0, .1) 0, rgba(0, 0, 255, .4) 100%);
+}
+
+
+/* Highlight the row and column on hover */
+table {
+    position: relative;
+    border-collapse: collapse;
+}
+
+td,
+th {
+    position: relative;
+}
+
+
+
+    td:hover,
+    td:hover ~ td,
+    table tr td:nth-child(hover) {
+        background-color: rgba(0, 123, 255, 0.2);
+    }
+
+.role-checkbox:hover {
+    transform: scale(1.2);
+    transition: transform 0.2s ease;
+}

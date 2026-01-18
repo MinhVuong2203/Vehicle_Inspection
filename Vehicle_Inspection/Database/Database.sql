@@ -27,8 +27,7 @@ VALUES ('LOGIN', N'Đăng nhập', N'Đăng nhập hệ thống', 'fa-solid fa-a
 	   ('TOLL', N'Thu phí', N'Thu phí, in biên nhận', 'fa-solid fa-coins', 'toll'),
 	   ('RESULT', N'Kết quả', N'Nhập kết quả kiểm định theo công đoạn', 'fa-regular fa-pen-to-square', 'result'),
 	   ('CONCLUSION', N'Kết luận', N'Chốt kết luận đạt/không đạt', 'fa-regular fa-handshake', 'conclusion'),
-	   ('REPORT', N'Xem báo cáo', N'Xem báo cáo', 'fa-solid fa-chart-pie', 'report'),
-	   ('DECENTRALIZE', N'Quyền truy cập', N'Phân quyền truy cập', 'fa-solid fa-unlock-keyhole', 'decentralize')
+	   ('REPORT', N'Xem báo cáo', N'Xem báo cáo', 'fa-solid fa-chart-pie', 'report')
 
 
 CREATE TABLE Position(
@@ -86,7 +85,7 @@ CREATE TABLE dbo.[User] (
 	Gender			NVARCHAR(10),
 	ImageUrl		NVARCHAR(255),  -- Sau này cần bổ sung thêm default
 	PositionId		INT DEFAULT 1,          -- Giám đốc / Phó / KTV / NV nghiệp vụ / Kế toán...
-					INT DEFAULT 1,         -- Ban giám đốc / Tổ kiểm định / Tổ nghiệp vụ / Tổ kế toán (nếu bạn muốn lưu)
+	TeamId			INT DEFAULT 1,         -- Ban giám đốc / Tổ kiểm định / Tổ nghiệp vụ / Tổ kế toán (nếu bạn muốn lưu)
 	[Level]			NVARCHAR(50),
     IsActive        BIT NOT NULL DEFAULT 1,
     CreatedAt       DATETIME NOT NULL DEFAULT GETDATE(),
@@ -195,6 +194,9 @@ CREATE UNIQUE INDEX UX_Account_Username_NotNull
 ON dbo.Account (Username)
 WHERE Username IS NOT NULL;
 
+--- Lấy ID thực tế của thằng này nhé !!!
+INSERT INTO Account(UserId, Username, PasswordHash)
+VALUES ('C957DE92-03F6-4DFF-A90F-948A75956684', 'PhanMinh', 'PhanMinh@123')
 
 
 
@@ -239,14 +241,6 @@ CREATE TABLE dbo.Owner (
     Address         NVARCHAR(255) NULL,
     CreatedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
-
-ALTER TABLE Owner
-ADD	Ward NVARCHAR(100)
-ALTER TABLE Owner
-ADD	Province NVARCHAR(100)
-
-
-
 -- MST chỉ unique với công ty
 CREATE UNIQUE INDEX UX_Owner_TaxCode_Company
 ON dbo.Owner(TaxCode)
@@ -255,6 +249,9 @@ GO
 
 ALTER TABLE dbo.Owner
 Add Ward NVARCHAR(100), Province NVARCHAR(100);
+
+ALTER TABLE dbo.Owner
+Add ImageUrl NVARCHAR(255);
 
 CREATE TABLE dbo.Vehicle(
     VehicleId               INT IDENTITY(1,1) PRIMARY KEY,
@@ -407,6 +404,22 @@ INSERT INTO dbo.Vehicle (PlateNo, InspectionNo, VehicleGroup, VehicleType, Energ
 INSERT INTO dbo.Specification (PlateNo, WheelFormula, WheelTread, OverallLength, OverallWidth, OverallHeight, CargoInsideLength, CargoInsideWidth, CargoInsideHeight, Wheelbase, 
 KerbWeight, AuthorizedCargoWeight, AuthorizedTowedWeight, AuthorizedTotalWeight, SeatingCapacity, StandingCapacity, LyingCapacity, EngineType, EnginePosition, EngineModel, EngineDisplacement, MaxPower, MaxPowerRPM, FuelType, MotorType, NumberOfMotors, MotorModel, TotalMotorPower, MotorVoltage, BatteryType, BatteryVoltage, BatteryCapacity, TireCount, TireSize, TireAxleInfo, ImagePosition, HasTachograph, HasDriverCamera, NotIssuedStamp, Notes) 
 VALUES (N'51A-12345', N'4x2', 1510, 4425, 1730, 1475, NULL, NULL, NULL, 2550, 1075.00, 400.00, 0.00, 1695.00, 5, 0, 0, N'Xăng 4 kỳ', N'Trước ngang', N'2NR-FE', 1496, 79.00, 6000, N'Xăng RON 95', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 4, N'185/60R15', N'Trục 1: 185/60R15, Trục 2: 185/60R15', NULL, 0, 1, 0, N'Xe gia đình, bảo dưỡng định kỳ');
+
+-- 1. INSERT Owner
+INSERT INTO dbo.Owner (OwnerId, OwnerType, FullName, CompanyName, TaxCode, CCCD, Phone, Email, Address, Ward, Province, ImageUrl) VALUES 
+(NEWID(), N'PERSON', N'Nguyễn Văn An', NULL, NULL, N'001234567890', N'0912345678', N'nguyenvanan@email.com', N'123 Đường Lê Lợi', N'Phường Bến Nghé', N'TP Hồ Chí Minh', NULL);
+
+-- Lấy OwnerId vừa tạo
+DECLARE @OwnerId UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner ORDER BY CreatedAt DESC);
+
+-- 2. INSERT Vehicle
+INSERT INTO dbo.Vehicle (PlateNo, InspectionNo, VehicleGroup, VehicleType, EnergyType, IsCleanEnergy, UsagePermission, Brand, Model, EngineNo, Chassis, ManufactureYear, ManufactureCountry, LifetimeLimitYear, HasCommercialModification, HasModification, OwnerId) VALUES 
+(N'51A-12245', N'VN-HCM-2024-001234', N'Xe con', N'Sedan', N'Xăng', 0, N'Không', N'Toyota', N'Vios 1.5E MT', N'3NR-FE-1234567', N'VNKKG5E18P0123456', 2023, N'Việt Nam', 2043, 0, 0, @OwnerId);
+
+-- 3. INSERT Specification
+INSERT INTO dbo.Specification (PlateNo, WheelFormula, WheelTread, OverallLength, OverallWidth, OverallHeight, CargoInsideLength, CargoInsideWidth, CargoInsideHeight, Wheelbase, KerbWeight, AuthorizedCargoWeight, AuthorizedTowedWeight, AuthorizedTotalWeight, SeatingCapacity, 
+StandingCapacity, LyingCapacity, EngineType, EnginePosition, EngineModel, EngineDisplacement, MaxPower, MaxPowerRPM, FuelType, MotorType, NumberOfMotors, MotorModel, TotalMotorPower, MotorVoltage, BatteryType, BatteryVoltage, BatteryCapacity, TireCount, TireSize, TireAxleInfo, ImagePosition, HasTachograph, HasDriverCamera, NotIssuedStamp, Notes) VALUES 
+(N'51A-12245', N'4x2', 1460, 4425, 1730, 1475, NULL, NULL, NULL, 2550, 1025.00, 450.00, 0.00, 1650.00, 5, 0, 0, N'Xăng 4 kỳ, 4 xi-lanh thẳng hàng', N'Phía trước', N'3NR-FE', 1496, 79.00, 6000, N'Xăng RON 95', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 4, N'185/60R15', N'Trục trước: 185/60R15; Trục sau: 185/60R15', N'Góc trên bên phải kính lái', 0, 0, 0, N'Xe đăng ký lần đầu, tình trạng tốt');
 
 DROP TABLE Specification
 DROP TABLE Vehicle

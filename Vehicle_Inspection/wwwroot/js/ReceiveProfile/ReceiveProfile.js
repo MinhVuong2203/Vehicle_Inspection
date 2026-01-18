@@ -1,7 +1,6 @@
 ﻿// ==================== GLOBAL STATE ====================
 let currentData = null;
 let originalData = null;
-let provincesData = [];
 let recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
 
 // ==================== INITIALIZE ====================
@@ -14,23 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
 // ==================== LOAD PROVINCES ====================
 async function loadProvincesData() {
     try {
+        console.log('🔍 [loadProvincesData] Bắt đầu fetch...');
+
         const response = await fetch('/api/receive-profile/provinces');
+        console.log('🔍 [loadProvincesData] Response status:', response.status);
+
         const result = await response.json();
+        console.log('🔍 [loadProvincesData] Result:', result);
 
-        if (result.success) {
-            provincesData = result.data;
-
-            // 🔍 DEBUG: Xem cấu trúc JSON thực tế
-            console.log('📦 RAW DATA:', result.data);
-            console.log('📦 Type:', typeof result.data);
-            console.log('📦 Is Array:', Array.isArray(result.data));
-
-            if (Array.isArray(result.data) && result.data.length > 0) {
-                console.log('📦 First province:', result.data[0]);
-                console.log('📦 Keys of first province:', Object.keys(result.data[0]));
-            }
-
-            console.log('✅ Đã tải:', provincesData.length, 'tỉnh/thành phố');
+        if (result.success && result.data) {
+            console.log('✅ Đã tải:', result.data.length, 'tỉnh/thành phố');
         } else {
             console.error('❌ API không success:', result);
         }
@@ -41,52 +33,40 @@ async function loadProvincesData() {
 }
 
 // ==================== POPULATE COMBOBOX ====================
-function populateProvinceCombobox(selectedProvince = '') {
+async function populateProvinceCombobox(selectedProvince = '') {
     const select = document.getElementById('owner-province');
-
-    console.log('🔍 populateProvinceCombobox được gọi');
-    console.log('🔍 provincesData:', provincesData);
-    console.log('🔍 provincesData.length:', provincesData?.length);
-    console.log('🔍 selectedProvince:', selectedProvince);
 
     if (!select) {
         console.error('❌ Không tìm thấy element #owner-province');
         return;
     }
 
-    if (!provincesData || provincesData.length === 0) {
-        console.error('❌ provincesData trống hoặc undefined');
-        return;
-    }
+    try {
+        const response = await fetch('/api/receive-profile/provinces');
+        const result = await response.json();
 
-    select.innerHTML = '<option value="">-- Chọn Tỉnh/Thành phố --</option>';
-
-    let count = 0;
-    provincesData.forEach((province, index) => {
-        console.log(`  Province[${index}]:`, province);
-
-        const option = document.createElement('option');
-
-        // Thử nhiều cách lấy tên tỉnh
-        const provinceName = province.tentinhtp || province.Name || province.name || province.TenTinhTP;
-
-        if (!provinceName) {
-            console.warn(`  ⚠️ Province[${index}] không có tên:`, province);
+        if (!result.success || !result.data) {
+            console.error('❌ Không có dữ liệu tỉnh/thành phố');
             return;
         }
 
-        option.value = provinceName;
-        option.textContent = provinceName;
-        option.selected = (provinceName === selectedProvince);
-        select.appendChild(option);
-        count++;
-    });
+        select.innerHTML = '<option value="">-- Chọn Tỉnh/Thành phố --</option>';
 
-    console.log(`✅ Đã thêm ${count} options vào combobox`);
-    console.log(`✅ Tổng options trong select:`, select.options.length);
+        result.data.forEach(provinceName => {
+            const option = document.createElement('option');
+            option.value = provinceName;
+            option.textContent = provinceName;
+            option.selected = (provinceName === selectedProvince);
+            select.appendChild(option);
+        });
+
+        console.log(`✅ Đã thêm ${result.data.length} options vào combobox`);
+    } catch (error) {
+        console.error('❌ Lỗi populate provinces:', error);
+    }
 }
 
-function populateWardCombobox(provinceName, selectedWard = '') {
+async function populateWardCombobox(provinceName, selectedWard = '') {
     const select = document.getElementById('owner-ward');
     select.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
 
@@ -97,45 +77,47 @@ function populateWardCombobox(provinceName, selectedWard = '') {
 
     select.disabled = false;
 
-    // Tìm tỉnh/thành phố theo tên TIẾNG VIỆT
-    const province = provincesData.find(p =>
-        p.tentinhtp === provinceName || p.Name === provinceName
-    );
+    try {
+        const response = await fetch(`/api/receive-profile/wards?province=${encodeURIComponent(provinceName)}`);
+        const result = await response.json();
 
-    if (!province) {
-        console.warn('Không tìm thấy tỉnh:', provinceName);
-        return;
-    }
+        if (!result.success || !result.data) {
+            console.warn('❌ Không có dữ liệu phường/xã cho:', provinceName);
+            return;
+        }
 
-    // Duyệt qua các quận/huyện (cấu trúc: quanhuyen -> phuongxa)
-    if (province.quanhuyen && Array.isArray(province.quanhuyen)) {
-        province.quanhuyen.forEach(district => {
-            if (district.phuongxa && Array.isArray(district.phuongxa)) {
-                district.phuongxa.forEach(ward => {
-                    const option = document.createElement('option');
-                    option.value = ward.tenphuongxa;
-                    option.textContent = `${ward.tenphuongxa} (${district.tenquanhuyen})`;
-                    option.selected = (ward.tenphuongxa === selectedWard);
-                    select.appendChild(option);
-                });
-            }
+        result.data.forEach(ward => {
+            const option = document.createElement('option');
+            option.value = ward.tenphuongxa;
+            // ✅ Không hiển thị quận/huyện vì không có trong data
+            option.textContent = ward.tenphuongxa;
+            option.selected = (ward.tenphuongxa === selectedWard);
+            select.appendChild(option);
         });
-    }
 
-    console.log('✅ Đã populate ward cho:', provinceName);
+        console.log(`✅ Đã populate ${result.data.length} ward cho:`, provinceName);
+    } catch (error) {
+        console.error('❌ Lỗi populate wards:', error);
+    }
 }
 
 // ==================== EVENT LISTENERS ====================
 function setupEventListeners() {
     ['search-cccd', 'search-plate'].forEach(id => {
-        document.getElementById(id).addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') searchProfile();
-        });
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') searchProfile();
+            });
+        }
     });
 
-    document.getElementById('owner-province').addEventListener('change', function () {
-        populateWardCombobox(this.value);
-    });
+    const provinceSelect = document.getElementById('owner-province');
+    if (provinceSelect) {
+        provinceSelect.addEventListener('change', function () {
+            populateWardCombobox(this.value);
+        });
+    }
 }
 
 // ==================== SEARCH ====================
@@ -234,9 +216,11 @@ function displayOwnerInfo(owner) {
     populateWardCombobox(owner.province, owner.ward);
 
     const imgContainer = document.getElementById('owner-image-container');
-    imgContainer.innerHTML = owner.imageUrl
-        ? `<img src="${owner.imageUrl}" alt="Owner" class="owner-image">`
-        : `<div class="image-placeholder"><i class="bi bi-person"></i><span>HÌNH 3X4</span></div>`;
+    if (imgContainer) {
+        imgContainer.innerHTML = owner.imageUrl
+            ? `<img src="${owner.imageUrl}" alt="Owner" class="owner-image">`
+            : `<div class="image-placeholder"><i class="bi bi-person"></i><span>HÌNH 3X4</span></div>`;
+    }
 }
 
 function displayVehicleInfo(vehicle) {
@@ -264,9 +248,14 @@ function displayVehicleInfo(vehicle) {
         if (el) el.value = value || '';
     });
 
-    document.getElementById('vehicle-clean').checked = vehicle.isCleanEnergy || false;
-    document.getElementById('vehicle-modification').checked = vehicle.hasModification || false;
-    document.getElementById('vehicle-commercial').checked = vehicle.hasCommercialModification || false;
+    const cleanCheckbox = document.getElementById('vehicle-clean');
+    if (cleanCheckbox) cleanCheckbox.checked = vehicle.isCleanEnergy || false;
+
+    const modCheckbox = document.getElementById('vehicle-modification');
+    if (modCheckbox) modCheckbox.checked = vehicle.hasModification || false;
+
+    const commercialCheckbox = document.getElementById('vehicle-commercial');
+    if (commercialCheckbox) commercialCheckbox.checked = vehicle.hasCommercialModification || false;
 }
 
 function displaySpecificationInfo(spec) {
@@ -279,7 +268,6 @@ function displaySpecificationInfo(spec) {
 
     if (card) card.style.display = 'block';
 
-    // Map all spec fields (simplified for brevity - include all fields as needed)
     const fields = {
         'spec-id': spec.specificationId,
         'spec-wheel-formula': spec.wheelFormula,
@@ -288,7 +276,36 @@ function displaySpecificationInfo(spec) {
         'spec-length': spec.overallLength,
         'spec-width': spec.overallWidth,
         'spec-height': spec.overallHeight,
-        // ... (add remaining fields)
+        'spec-cargo-length': spec.cargoInsideLength,
+        'spec-cargo-width': spec.cargoInsideWidth,
+        'spec-cargo-height': spec.cargoInsideHeight,
+        'spec-kerb-weight': spec.kerbWeight,
+        'spec-cargo-weight': spec.authorizedCargoWeight,
+        'spec-towed-weight': spec.authorizedTowedWeight,
+        'spec-total-weight': spec.authorizedTotalWeight,
+        'spec-seating': spec.seatingCapacity,
+        'spec-standing': spec.standingCapacity,
+        'spec-lying': spec.lyingCapacity,
+        'spec-engine-type': spec.engineType,
+        'spec-engine-position': spec.enginePosition,
+        'spec-engine-model': spec.engineModel,
+        'spec-displacement': spec.engineDisplacement,
+        'spec-max-power': spec.maxPower,
+        'spec-max-rpm': spec.maxPowerRPM,
+        'spec-fuel-type': spec.fuelType,
+        'spec-motor-type': spec.motorType,
+        'spec-motor-count': spec.numberOfMotors,
+        'spec-motor-model': spec.motorModel,
+        'spec-motor-power': spec.totalMotorPower,
+        'spec-motor-voltage': spec.motorVoltage,
+        'spec-battery-type': spec.batteryType,
+        'spec-battery-voltage': spec.batteryVoltage,
+        'spec-battery-capacity': spec.batteryCapacity,
+        'spec-tire-count': spec.tireCount,
+        'spec-tire-size': spec.tireSize,
+        'spec-tire-axle': spec.tireAxleInfo,
+        'spec-image-position': spec.imagePosition,
+        'spec-notes': spec.notes
     };
 
     Object.entries(fields).forEach(([id, value]) => {
@@ -296,18 +313,24 @@ function displaySpecificationInfo(spec) {
         if (el) el.value = value || '';
     });
 
-    // Checkboxes
-    ['tachograph', 'camera', 'no-stamp'].forEach(name => {
-        const checkbox = document.getElementById(`spec-${name}`);
-        if (checkbox) checkbox.checked = spec[`has${name.charAt(0).toUpperCase() + name.slice(1)}`] || false;
-    });
+    const tachographCheckbox = document.getElementById('spec-tachograph');
+    if (tachographCheckbox) tachographCheckbox.checked = spec.hasTachograph || false;
+
+    const cameraCheckbox = document.getElementById('spec-camera');
+    if (cameraCheckbox) cameraCheckbox.checked = spec.hasDriverCamera || false;
+
+    const noStampCheckbox = document.getElementById('spec-no-stamp');
+    if (noStampCheckbox) noStampCheckbox.checked = spec.notIssuedStamp || false;
 }
 
 // ==================== TOGGLE OWNER TYPE ====================
 function toggleOwnerType() {
     const type = document.getElementById('owner-type').value;
-    document.getElementById('person-info').style.display = type === 'PERSON' ? 'flex' : 'none';
-    document.getElementById('company-info').style.display = type === 'COMPANY' ? 'flex' : 'none';
+    const personInfo = document.getElementById('person-info');
+    const companyInfo = document.getElementById('company-info');
+
+    if (personInfo) personInfo.style.display = type === 'PERSON' ? 'flex' : 'none';
+    if (companyInfo) companyInfo.style.display = type === 'COMPANY' ? 'flex' : 'none';
 }
 
 // ==================== SAVE & CANCEL ====================
@@ -315,6 +338,8 @@ async function saveChanges() {
     try {
         const updatedData = collectFormData();
         const saveBtn = document.querySelector('.btn-save');
+        if (!saveBtn) return;
+
         const originalText = saveBtn.innerHTML;
 
         saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang lưu...';
@@ -378,7 +403,21 @@ function collectFormData() {
         vehicle: {
             vehicleId: parseInt(document.getElementById('vehicle-id').value),
             plateNo: document.getElementById('vehicle-plate').value.trim().toUpperCase(),
-            // ... (include all vehicle fields)
+            inspectionNo: document.getElementById('vehicle-inspection').value.trim(),
+            vehicleGroup: document.getElementById('vehicle-group').value.trim(),
+            vehicleType: document.getElementById('vehicle-type').value.trim(),
+            energyType: document.getElementById('vehicle-energy').value.trim(),
+            isCleanEnergy: document.getElementById('vehicle-clean').checked,
+            usagePermission: document.getElementById('vehicle-usage').value.trim(),
+            brand: document.getElementById('vehicle-brand').value.trim(),
+            model: document.getElementById('vehicle-model').value.trim(),
+            engineNo: document.getElementById('vehicle-engine').value.trim(),
+            chassis: document.getElementById('vehicle-chassis').value.trim(),
+            manufactureYear: parseInt(document.getElementById('vehicle-year').value) || null,
+            manufactureCountry: document.getElementById('vehicle-country').value.trim(),
+            lifetimeLimitYear: parseInt(document.getElementById('vehicle-lifetime').value) || null,
+            hasCommercialModification: document.getElementById('vehicle-commercial').checked,
+            hasModification: document.getElementById('vehicle-modification').checked
         },
         specification: collectSpecificationData()
     };
@@ -386,7 +425,51 @@ function collectFormData() {
 
 function collectSpecificationData() {
     const specId = document.getElementById('spec-id').value;
-    return specId ? { /* all spec fields */ } : null;
+    if (!specId) return null;
+
+    return {
+        specificationId: parseInt(specId),
+        plateNo: document.getElementById('vehicle-plate').value.trim().toUpperCase(),
+        wheelFormula: document.getElementById('spec-wheel-formula').value.trim(),
+        wheelTread: parseInt(document.getElementById('spec-wheel-tread').value) || null,
+        overallLength: parseInt(document.getElementById('spec-length').value) || null,
+        overallWidth: parseInt(document.getElementById('spec-width').value) || null,
+        overallHeight: parseInt(document.getElementById('spec-height').value) || null,
+        cargoInsideLength: parseInt(document.getElementById('spec-cargo-length').value) || null,
+        cargoInsideWidth: parseInt(document.getElementById('spec-cargo-width').value) || null,
+        cargoInsideHeight: parseInt(document.getElementById('spec-cargo-height').value) || null,
+        wheelbase: parseInt(document.getElementById('spec-wheelbase').value) || null,
+        kerbWeight: parseFloat(document.getElementById('spec-kerb-weight').value) || null,
+        authorizedCargoWeight: parseFloat(document.getElementById('spec-cargo-weight').value) || null,
+        authorizedTowedWeight: parseFloat(document.getElementById('spec-towed-weight').value) || null,
+        authorizedTotalWeight: parseFloat(document.getElementById('spec-total-weight').value) || null,
+        seatingCapacity: parseInt(document.getElementById('spec-seating').value) || null,
+        standingCapacity: parseInt(document.getElementById('spec-standing').value) || null,
+        lyingCapacity: parseInt(document.getElementById('spec-lying').value) || null,
+        engineType: document.getElementById('spec-engine-type').value.trim(),
+        enginePosition: document.getElementById('spec-engine-position').value.trim(),
+        engineModel: document.getElementById('spec-engine-model').value.trim(),
+        engineDisplacement: parseInt(document.getElementById('spec-displacement').value) || null,
+        maxPower: parseFloat(document.getElementById('spec-max-power').value) || null,
+        maxPowerRPM: parseInt(document.getElementById('spec-max-rpm').value) || null,
+        fuelType: document.getElementById('spec-fuel-type').value.trim(),
+        motorType: document.getElementById('spec-motor-type').value.trim(),
+        numberOfMotors: parseInt(document.getElementById('spec-motor-count').value) || null,
+        motorModel: document.getElementById('spec-motor-model').value.trim(),
+        totalMotorPower: parseFloat(document.getElementById('spec-motor-power').value) || null,
+        motorVoltage: parseFloat(document.getElementById('spec-motor-voltage').value) || null,
+        batteryType: document.getElementById('spec-battery-type').value.trim(),
+        batteryVoltage: parseFloat(document.getElementById('spec-battery-voltage').value) || null,
+        batteryCapacity: parseFloat(document.getElementById('spec-battery-capacity').value) || null,
+        tireCount: parseInt(document.getElementById('spec-tire-count').value) || null,
+        tireSize: document.getElementById('spec-tire-size').value.trim(),
+        tireAxleInfo: document.getElementById('spec-tire-axle').value.trim(),
+        imagePosition: document.getElementById('spec-image-position').value.trim(),
+        hasTachograph: document.getElementById('spec-tachograph').checked,
+        hasDriverCamera: document.getElementById('spec-camera').checked,
+        notIssuedStamp: document.getElementById('spec-no-stamp').checked,
+        notes: document.getElementById('spec-notes').value.trim()
+    };
 }
 
 // ==================== RECENT SEARCHES ====================
@@ -402,6 +485,8 @@ function saveToRecentSearches(cccd, plateNo, searchType) {
 
 function loadRecentSearches() {
     const container = document.getElementById('recent-list');
+    if (!container) return;
+
     container.innerHTML = recentSearches.length === 0
         ? '<p style="color:#999;font-size:13px;text-align:center;padding:10px;">Chưa có lịch sử tìm kiếm</p>'
         : recentSearches.map(item => `
@@ -485,8 +570,10 @@ function previewOwnerImage(event) {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-        document.getElementById('owner-image-container').innerHTML =
-            `<img src="${e.target.result}" alt="Owner Image" class="owner-image">`;
+        const container = document.getElementById('owner-image-container');
+        if (container) {
+            container.innerHTML = `<img src="${e.target.result}" alt="Owner Image" class="owner-image">`;
+        }
     };
     reader.readAsDataURL(file);
 }

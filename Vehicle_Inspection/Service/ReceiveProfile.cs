@@ -10,6 +10,7 @@ namespace Vehicle_Inspection.Service
     public class ReceiveProfile : IReceiveProfile
     {
         private readonly VehInsContext _context;
+        private JsonDocument? _cachedProvinceData;
 
         public ReceiveProfile(VehInsContext context)
         {
@@ -17,13 +18,142 @@ namespace Vehicle_Inspection.Service
         }
 
         /// <summary>
-        /// Tìm kiếm thống nhất - ưu tiên CCCD trước, sau đó PlateNo
+        /// Lấy danh sách tỉnh/thành phố (chỉ tên)
         /// </summary>
+        public async Task<List<string>> GetProvincesAsync()
+        {
+            try
+            {
+                // Load dữ liệu JSON nếu chưa có
+                if (_cachedProvinceData == null)
+                {
+                    await LoadProvinceJsonAsync();
+                }
+
+                if (_cachedProvinceData == null)
+                {
+                    return new List<string>();
+                }
+
+                var provinces = new List<string>();
+
+                // ✅ Parse JSON theo cấu trúc mới
+                foreach (var element in _cachedProvinceData.RootElement.EnumerateArray())
+                {
+                    // Lấy "tentinhmoi" 
+                    if (element.TryGetProperty("tentinhmoi", out var nameProperty))
+                    {
+                        var provinceName = nameProperty.GetString();
+                        if (!string.IsNullOrWhiteSpace(provinceName))
+                        {
+                            provinces.Add(provinceName);
+                        }
+                    }
+                }
+
+                return provinces.OrderBy(p => p).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi lấy danh sách tỉnh/thành phố: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Lấy danh sách phường/xã theo tỉnh
+        /// </summary>
+        public async Task<List<object>> GetWardsByProvinceAsync(string provinceName)
+        {
+            try
+            {
+                // Load dữ liệu JSON nếu chưa có
+                if (_cachedProvinceData == null)
+                {
+                    await LoadProvinceJsonAsync();
+                }
+
+                if (_cachedProvinceData == null || string.IsNullOrWhiteSpace(provinceName))
+                {
+                    return new List<object>();
+                }
+
+                var wards = new List<object>();
+
+                // ✅ Tìm tỉnh/thành phố theo "tentinhmoi"
+                foreach (var element in _cachedProvinceData.RootElement.EnumerateArray())
+                {
+                    if (element.TryGetProperty("tentinhmoi", out var nameProperty))
+                    {
+                        var currentProvinceName = nameProperty.GetString();
+
+                        if (currentProvinceName?.Equals(provinceName, StringComparison.OrdinalIgnoreCase) == true)
+                        {
+                            // ✅ Lấy danh sách phường/xã (trực tiếp trong tỉnh, không có quận/huyện)
+                            if (element.TryGetProperty("phuongxa", out var wardArray))
+                            {
+                                foreach (var wardElement in wardArray.EnumerateArray())
+                                {
+                                    if (wardElement.TryGetProperty("tenphuongxa", out var wardNameProp))
+                                    {
+                                        var wardName = wardNameProp.GetString();
+
+                                        wards.Add(new
+                                        {
+                                            tenphuongxa = wardName,
+                                            tenquanhuyen = "" // Không có quận/huyện trong cấu trúc này
+                                        });
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                return wards.OrderBy(w => ((dynamic)w).tenphuongxa).ToList();
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Lỗi lấy danh sách phường/xã: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Load file JSON và cache
+        /// </summary>
+        private async Task LoadProvinceJsonAsync()
+        {
+            try
+            {
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Database", "SauXacNhap.json");
+
+                Console.WriteLine($"🔍 Đang tìm file tại: {filePath}");
+
+                if (!File.Exists(filePath))
+                {
+                    Console.WriteLine($"❌ File không tồn tại: {filePath}");
+                    throw new FileNotFoundException("Không tìm thấy file dữ liệu địa phương");
+                }
+
+                var jsonString = await File.ReadAllTextAsync(filePath);
+                Console.WriteLine($"✅ Đã đọc file JSON, độ dài: {jsonString.Length} ký tự");
+
+                _cachedProvinceData = JsonDocument.Parse(jsonString);
+                Console.WriteLine($"✅ Parse JSON thành công");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Lỗi load JSON: {ex.Message}");
+                throw new Exception($"Lỗi load dữ liệu địa phương: {ex.Message}", ex);
+            }
+        }
+
+        // ==================== EXISTING METHODS (giữ nguyên) ====================
+
         public async Task<SearchResponse?> SearchAsync(string? cccd, string? plateNo)
         {
             try
             {
-                // Ưu tiên tìm theo CCCD
                 if (!string.IsNullOrWhiteSpace(cccd))
                 {
                     var owner = await _context.Owners
@@ -53,7 +183,6 @@ namespace Vehicle_Inspection.Service
                     }
                 }
 
-                // Nếu không tìm thấy theo CCCD, thử PlateNo
                 if (!string.IsNullOrWhiteSpace(plateNo))
                 {
                     var vehicle = await _context.Vehicles
@@ -91,14 +220,10 @@ namespace Vehicle_Inspection.Service
             }
         }
 
-        /// <summary>
-        /// Validate dữ liệu profile trên server
-        /// </summary>
         public List<string> ValidateProfile(UpdateProfileRequest request)
         {
             var errors = new List<string>();
 
-            // Owner validation
             if (string.IsNullOrWhiteSpace(request.Owner.FullName))
             {
                 errors.Add("Họ và tên không được để trống");
@@ -115,7 +240,6 @@ namespace Vehicle_Inspection.Service
                 }
             }
 
-            // Vehicle validation
             if (string.IsNullOrWhiteSpace(request.Vehicle.PlateNo))
             {
                 errors.Add("Biển số xe không được để trống");
@@ -124,16 +248,12 @@ namespace Vehicle_Inspection.Service
             return errors;
         }
 
-        /// <summary>
-        /// Cập nhật thông tin Owner, Vehicle và Specification
-        /// </summary>
         public async Task<bool> UpdateProfileAsync(UpdateProfileRequest request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // Update Owner
                 var owner = await _context.Owners
                     .FirstOrDefaultAsync(o => o.OwnerId == request.Owner.OwnerId);
 
@@ -153,7 +273,6 @@ namespace Vehicle_Inspection.Service
                     _context.Owners.Update(owner);
                 }
 
-                // Update Vehicle
                 var vehicle = await _context.Vehicles
                     .FirstOrDefaultAsync(v => v.VehicleId == request.Vehicle.VehicleId);
 
@@ -180,7 +299,6 @@ namespace Vehicle_Inspection.Service
                     _context.Vehicles.Update(vehicle);
                 }
 
-                // Update Specification
                 if (request.Specification != null)
                 {
                     var spec = await _context.Specifications
@@ -202,31 +320,6 @@ namespace Vehicle_Inspection.Service
             {
                 await transaction.RollbackAsync();
                 throw new Exception($"Lỗi cập nhật: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
-        /// Lấy dữ liệu tỉnh/thành phố từ file JSON
-        /// </summary>
-        public async Task<object?> GetProvincesAsync()
-        {
-            try
-            {
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "Database", "SauXacNhap.json");
-
-                if (!File.Exists(filePath))
-                {
-                    return null;
-                }
-
-                var jsonData = await File.ReadAllTextAsync(filePath);
-                var provinces = JsonSerializer.Deserialize<object>(jsonData);
-
-                return provinces;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Lỗi đọc file tỉnh/thành phố: {ex.Message}", ex);
             }
         }
 

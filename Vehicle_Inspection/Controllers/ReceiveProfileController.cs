@@ -90,7 +90,6 @@ namespace Vehicle_Inspection.Controllers
                     });
                 }
 
-                // Validate trên server
                 var validationErrors = _receiveProfileService.ValidateProfile(request);
                 if (validationErrors.Any())
                 {
@@ -138,9 +137,10 @@ namespace Vehicle_Inspection.Controllers
         {
             try
             {
+                // ✅ GỌI ĐÚNG TÊN METHOD TỪ SERVICE
                 var provinces = await _receiveProfileService.GetProvincesAsync();
 
-                if (provinces == null)
+                if (provinces == null || provinces.Count == 0)
                 {
                     return NotFound(new
                     {
@@ -161,6 +161,44 @@ namespace Vehicle_Inspection.Controllers
                 {
                     success = false,
                     message = "Có lỗi xảy ra khi tải dữ liệu tỉnh/thành phố",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// API: Lấy danh sách phường/xã theo tỉnh
+        /// </summary>
+        [HttpGet]
+        [Route("api/receive-profile/wards")]
+        public async Task<IActionResult> GetWards([FromQuery] string province)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(province))
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Vui lòng chọn tỉnh/thành phố"
+                    });
+                }
+
+                // ✅ GỌI ĐÚNG TÊN METHOD TỪ SERVICE
+                var wards = await _receiveProfileService.GetWardsByProvinceAsync(province);
+
+                return Ok(new
+                {
+                    success = true,
+                    data = wards
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi tải dữ liệu phường/xã",
                     error = ex.Message
                 });
             }

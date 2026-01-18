@@ -1,338 +1,151 @@
-﻿// Dữ liệu mẫu hồ sơ kiểm định theo cấu trúc Database
-const inspectionRecords = [
-    {
-        inspectionId: 1,
-        inspectionCode: "KD-2025-001",
-        vehicleId: 1,
-        plateNo: "29A-12345",
-        ownerId: "owner-001",
-        ownerName: "Nguyễn Văn An",
-        ownerType: "PERSON",
-        ownerPhone: "0901234567",
-        ownerCCCD: "079080001234",
-        ownerAddress: "123 Nguyễn Huệ, Q1, TP.HCM",
-        inspectionType: "FIRST",
-        laneId: 1,
-        laneName: "Dây chuyền 1",
-        status: 5, // PASSED
-        finalResult: 1, // ĐẠT
-        createdAt: "2025-11-15T08:30:00",
-        receivedAt: "2025-11-15T09:00:00",
-        paidAt: "2025-11-15T09:15:00",
-        startedAt: "2025-11-15T10:00:00",
-        completedAt: "2025-11-15T14:30:00",
-        concludedAt: "2025-11-15T15:00:00",
-        receivedBy: "Phạm Ngọc Lan",
-        concludedBy: "Hoàng Văn Đức",
-        // Thông tin xe
-        vehicleGroup: "Xe con",
-        vehicleType: "Xe ô tô con",
-        brand: "Hyundai i10",
-        model: "BA",
-        engineNo: "G4FA1234567",
-        chassis: "MALBA81AAGA123456",
-        manufactureYear: 2020,
-        manufactureCountry: "Hàn Quốc",
-        // Thông số kỹ thuật
-        wheelFormula: "4x2",
-        wheelTread: "1520/1520",
-        overallDimensions: "4500 x 1750 x 1850",
-        wheelbase: "2650",
-        kerbWeight: "1250",
-        authorizedCargoWeight: "650",
-        authorizedTotalWeight: "1900",
-        seatingCapacity: "5",
-        engineType: "Xăng 4 kỳ",
-        engineModel: "G4FA",
-        engineDisplacement: "1396",
-        maxPower: "73",
-        maxPowerRPM: "6300",
-        fuelType: "Xăng RON 92",
-        tires: "4 lốp 185/65R15 - Trục 1, 2",
-        // Các công đoạn kiểm định
-        stages: [
-            { stageId: 1, stageName: "Kiểm tra ngoại thất", status: 2, result: 1, assignedUser: "Nguyễn Động Cơ" },
-            { stageId: 2, stageName: "Kiểm tra động cơ", status: 2, result: 1, assignedUser: "Nguyễn Động Cơ" },
-            { stageId: 3, stageName: "Kiểm tra hệ thống phanh", status: 2, result: 1, assignedUser: "Phạm Văn Phanh" },
-            { stageId: 4, stageName: "Kiểm tra khí thải", status: 2, result: 1, assignedUser: "Lê Khí Thải" },
-            { stageId: 5, stageName: "Kiểm tra hệ thống đèn", status: 2, result: 1, assignedUser: "Huỳnh Văn Đèn" }
-        ],
-        // Chứng nhận
-        certificateNo: "001234567-01/2025",
-        stickerNo: "TEM-2025-001234",
-        issueDate: "2025-11-15",
-        expiryDate: "2026-11-15",
-        notes: "Xe đảm bảo an toàn kỹ thuật và bảo vệ môi trường"
-    },
-    {
-        inspectionId: 2,
-        inspectionCode: "KD-2025-002",
-        vehicleId: 2,
-        plateNo: "30F-67890",
-        ownerId: "owner-002",
-        ownerName: "Trần Thị Bình",
-        ownerType: "PERSON",
-        ownerPhone: "0907654321",
-        ownerCCCD: "079085002345",
-        ownerAddress: "456 Lê Lợi, Q1, TP.HCM",
-        inspectionType: "PERIODIC",
-        laneId: 1,
-        laneName: "Dây chuyền 1",
-        status: 3, // IN_PROGRESS
-        finalResult: null,
-        createdAt: "2025-11-20T08:00:00",
-        receivedAt: "2025-11-20T08:30:00",
-        paidAt: "2025-11-20T08:45:00",
-        startedAt: "2025-11-20T09:00:00",
-        completedAt: null,
-        concludedAt: null,
-        receivedBy: "Võ Thanh Tâm",
-        concludedBy: null,
-        vehicleGroup: "Xe con",
-        vehicleType: "Xe ô tô con",
-        brand: "Toyota Wigo",
-        model: "W1G",
-        engineNo: "1KRFE7654321",
-        chassis: "MHTW1G3J0JK654321",
-        manufactureYear: 2019,
-        manufactureCountry: "Indonesia",
-        wheelFormula: "4x2",
-        wheelTread: "1510/1510",
-        overallDimensions: "4400 x 1700 x 1500",
-        wheelbase: "2550",
-        kerbWeight: "1100",
-        authorizedCargoWeight: "500",
-        authorizedTotalWeight: "1600",
-        seatingCapacity: "5",
-        engineType: "Xăng 4 kỳ",
-        engineModel: "1KR-FE",
-        engineDisplacement: "998",
-        maxPower: "51",
-        maxPowerRPM: "6000",
-        fuelType: "Xăng RON 92",
-        tires: "4 lốp 155/80R13 - Trục 1, 2",
-        stages: [
-            { stageId: 1, stageName: "Kiểm tra ngoại thất", status: 2, result: 1, assignedUser: "Nguyễn Động Cơ" },
-            { stageId: 2, stageName: "Kiểm tra động cơ", status: 1, result: null, assignedUser: "Nguyễn Động Cơ" },
-            { stageId: 3, stageName: "Kiểm tra hệ thống phanh", status: 0, result: null, assignedUser: "Phạm Văn Phanh" },
-            { stageId: 4, stageName: "Kiểm tra khí thải", status: 0, result: null, assignedUser: "Lê Khí Thải" },
-            { stageId: 5, stageName: "Kiểm tra hệ thống đèn", status: 0, result: null, assignedUser: "Huỳnh Văn Đèn" }
-        ],
-        certificateNo: null,
-        stickerNo: null,
-        issueDate: null,
-        expiryDate: null,
-        notes: ""
-    },
-    {
-        inspectionId: 3,
-        inspectionCode: "KD-2025-003",
-        vehicleId: 3,
-        plateNo: "51G-11223",
-        ownerId: "company-001",
-        ownerName: "Lê Minh Cường",
-        ownerType: "PERSON",
-        ownerPhone: "0909876543",
-        ownerCCCD: "079075003456",
-        ownerAddress: "789 Võ Văn Tần, Q3, TP.HCM",
-        inspectionType: "FIRST",
-        laneId: 2,
-        laneName: "Dây chuyền 2",
-        status: 6, // FAILED
-        finalResult: 2, // KHÔNG ĐẠT
-        createdAt: "2025-10-25T07:30:00",
-        receivedAt: "2025-10-25T08:00:00",
-        paidAt: "2025-10-25T08:20:00",
-        startedAt: "2025-10-25T09:00:00",
-        completedAt: "2025-10-25T15:00:00",
-        concludedAt: "2025-10-25T15:30:00",
-        receivedBy: "Phạm Ngọc Lan",
-        concludedBy: "Hoàng Văn Đức",
-        vehicleGroup: "Xe tải",
-        vehicleType: "Xe ô tô tải",
-        brand: "Hyundai HD240",
-        model: "HD240",
-        engineNo: "D6CB9876543",
-        chassis: "KMFHD2408PA987654",
-        manufactureYear: 2018,
-        manufactureCountry: "Việt Nam",
-        wheelFormula: "6x4",
-        wheelTread: "1850/1850",
-        overallDimensions: "9500 x 2500 x 3200",
-        wheelbase: "4500+1350",
-        kerbWeight: "8500",
-        authorizedCargoWeight: "15000",
-        authorizedTotalWeight: "23500",
-        seatingCapacity: "3",
-        engineType: "Diesel 4 kỳ",
-        engineModel: "D6CB",
-        engineDisplacement: "7640",
-        maxPower: "191",
-        maxPowerRPM: "2200",
-        fuelType: "Dầu diesel",
-        tires: "10 lốp 10.00R20 - Trục 1,2,3",
-        stages: [
-            { stageId: 1, stageName: "Kiểm tra ngoại thất", status: 2, result: 1, assignedUser: "Nguyễn Khung Sườn" },
-            { stageId: 2, stageName: "Kiểm tra động cơ", status: 2, result: 1, assignedUser: "Nguyễn Động Cơ" },
-            { stageId: 3, stageName: "Kiểm tra hệ thống phanh", status: 2, result: 2, assignedUser: "Phạm Văn Phanh" },
-            { stageId: 4, stageName: "Kiểm tra khí thải", status: 2, result: 2, assignedUser: "Lê Khí Thải" },
-            { stageId: 5, stageName: "Kiểm tra hệ thống đèn", status: 2, result: 1, assignedUser: "Huỳnh Văn Đèn" }
-        ],
-        defects: [
-            { defectId: 1, category: "Hệ thống phanh", description: "Lực phanh trục sau không đạt tiêu chuẩn", severity: 2 },
-            { defectId: 2, category: "Khí thải", description: "Nồng độ CO vượt ngưỡng cho phép", severity: 2 }
-        ],
-        certificateNo: null,
-        stickerNo: null,
-        issueDate: null,
-        expiryDate: null,
-        notes: "Xe không đạt, cần sửa chữa hệ thống phanh và khí thải"
-    },
-    {
-        inspectionId: 4,
-        inspectionCode: "KD-2025-004",
-        vehicleId: 4,
-        plateNo: "29B-55667",
-        ownerId: "owner-004",
-        ownerName: "Phạm Thị Dung",
-        ownerType: "PERSON",
-        ownerPhone: "0905551234",
-        ownerCCCD: "079090004567",
-        ownerAddress: "321 Trần Hưng Đạo, Q5, TP.HCM",
-        inspectionType: "PERIODIC",
-        laneId: 1,
-        laneName: "Dây chuyền 1",
-        status: 7, // CERTIFIED
-        finalResult: 1, // ĐẠT
-        createdAt: "2025-09-10T08:00:00",
-        receivedAt: "2025-09-10T08:30:00",
-        paidAt: "2025-09-10T08:50:00",
-        startedAt: "2025-09-10T09:30:00",
-        completedAt: "2025-09-10T13:00:00",
-        concludedAt: "2025-09-10T13:30:00",
-        receivedBy: "Võ Thanh Tâm",
-        concludedBy: "Ngô Hải Long",
-        vehicleGroup: "Xe con",
-        vehicleType: "Xe ô tô con",
-        brand: "Honda Civic",
-        model: "FC1",
-        engineNo: "L15B7123456",
-        chassis: "LVHFC16G8ME654987",
-        manufactureYear: 2021,
-        manufactureCountry: "Thái Lan",
-        wheelFormula: "4x2",
-        wheelTread: "1540/1540",
-        overallDimensions: "4695 x 1810 x 1565",
-        wheelbase: "2700",
-        kerbWeight: "1520",
-        authorizedCargoWeight: "480",
-        authorizedTotalWeight: "2000",
-        seatingCapacity: "5",
-        engineType: "Xăng 4 kỳ",
-        engineModel: "L15B7",
-        engineDisplacement: "1498",
-        maxPower: "89",
-        maxPowerRPM: "6000",
-        fuelType: "Xăng RON 95",
-        tires: "4 lốp 215/55R17 - Trục 1, 2",
-        stages: [
-            { stageId: 1, stageName: "Kiểm tra ngoại thất", status: 2, result: 1, assignedUser: "Nguyễn Động Cơ" },
-            { stageId: 2, stageName: "Kiểm tra động cơ", status: 2, result: 1, assignedUser: "Nguyễn Động Cơ" },
-            { stageId: 3, stageName: "Kiểm tra hệ thống phanh", status: 2, result: 1, assignedUser: "Phạm Văn Phanh" },
-            { stageId: 4, stageName: "Kiểm tra khí thải", status: 2, result: 1, assignedUser: "Lê Khí Thải" },
-            { stageId: 5, stageName: "Kiểm tra hệ thống đèn", status: 2, result: 1, assignedUser: "Huỳnh Văn Đèn" }
-        ],
-        certificateNo: "001234570-01/2025",
-        stickerNo: "TEM-2025-004567",
-        issueDate: "2025-09-10",
-        expiryDate: "2026-09-10",
-        notes: "Xe đảm bảo an toàn kỹ thuật và bảo vệ môi trường"
-    },
-    {
-        inspectionId: 5,
-        inspectionCode: "KD-2025-005",
-        vehicleId: 5,
-        plateNo: "92A-33445",
-        ownerId: "owner-005",
-        ownerName: "Hoàng Văn Đức",
-        ownerType: "PERSON",
-        ownerPhone: "0903334455",
-        ownerCCCD: "079070005678",
-        ownerAddress: "654 Nguyễn Thị Minh Khai, Q3, TP.HCM",
-        inspectionType: "RE_INSPECTION",
-        laneId: 2,
-        laneName: "Dây chuyền 2",
-        status: 2, // PAID
-        finalResult: null,
-        createdAt: "2025-11-22T07:00:00",
-        receivedAt: "2025-11-22T07:30:00",
-        paidAt: "2025-11-22T07:45:00",
-        startedAt: null,
-        completedAt: null,
-        concludedAt: null,
-        receivedBy: "Phạm Ngọc Lan",
-        concludedBy: null,
-        vehicleGroup: "Xe con",
-        vehicleType: "Xe ô tô con",
-        brand: "Toyota Fortuner",
-        model: "TGN61L",
-        engineNo: "1GDFTV987654",
-        chassis: "MHFTGN61LLJ123789",
-        manufactureYear: 2017,
-        manufactureCountry: "Indonesia",
-        wheelFormula: "4x4",
-        wheelTread: "1580/1580",
-        overallDimensions: "4850 x 1855 x 1835",
-        wheelbase: "2850",
-        kerbWeight: "1985",
-        authorizedCargoWeight: "615",
-        authorizedTotalWeight: "2600",
-        seatingCapacity: "7",
-        engineType: "Dầu 4 kỳ tăng áp",
-        engineModel: "1GD-FTV",
-        engineDisplacement: "2755",
-        maxPower: "130",
-        maxPowerRPM: "3400",
-        fuelType: "Dầu diesel",
-        tires: "4 lốp 265/65R17 - Trục 1, 2",
-        stages: [
-            { stageId: 1, stageName: "Kiểm tra ngoại thất", status: 0, result: null, assignedUser: null },
-            { stageId: 2, stageName: "Kiểm tra động cơ", status: 0, result: null, assignedUser: null },
-            { stageId: 3, stageName: "Kiểm tra hệ thống phanh", status: 0, result: null, assignedUser: null },
-            { stageId: 4, stageName: "Kiểm tra khí thải", status: 0, result: null, assignedUser: null },
-            { stageId: 5, stageName: "Kiểm tra hệ thống đèn", status: 0, result: null, assignedUser: null }
-        ],
-        certificateNo: null,
-        stickerNo: null,
-        issueDate: null,
-        expiryDate: null,
-        notes: "Tái kiểm sau khi sửa chữa"
-    }
-];
+﻿// Biến lưu trữ dữ liệu
+let inspectionRecords = [];
+let filteredRecords = [];
 
-let filteredRecords = [...inspectionRecords];
+// Load dữ liệu từ server khi trang được tải
+document.addEventListener('DOMContentLoaded', function() {
+    loadInspectionRecords();
+});
+
+// Hàm load dữ liệu từ database
+async function loadInspectionRecords() {
+    try {
+        showLoading(true);
+        
+        const response = await fetch('/Inspection/GetInspectionRecords', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Không thể tải dữ liệu');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+            inspectionRecords = result.data || [];
+            filteredRecords = [...inspectionRecords];
+            displayRecords(filteredRecords);
+            
+            if (inspectionRecords.length === 0) {
+                showNoData();
+            }
+        } else {
+            showError(result.message || 'Có lỗi xảy ra khi tải dữ liệu');
+        }
+    } catch (error) {
+        console.error('Error loading inspection records:', error);
+        showError('Không thể kết nối đến server. Vui lòng thử lại sau.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Hiển thị loading
+function showLoading(show) {
+    const tbody = document.getElementById('recordsBody');
+    if (show) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="10" style="text-align: center; padding: 40px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #667eea;"></i>
+                    <p style="margin-top: 10px; color: #6c757d;">Đang tải dữ liệu...</p>
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Hiển thị thông báo không có dữ liệu
+function showNoData() {
+    const tbody = document.getElementById('recordsBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="10" style="text-align: center; padding: 40px;">
+                <i class="fa-solid fa-inbox" style="font-size: 48px; color: #ccc;"></i>
+                <p style="margin-top: 10px; color: #6c757d;">Chưa có hồ sơ kiểm định nào</p>
+            </td>
+        </tr>
+    `;
+}
+
+// Hiển thị lỗi
+function showError(message) {
+    const tbody = document.getElementById('recordsBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="10" style="text-align: center; padding: 40px;">
+                <i class="fa-solid fa-exclamation-triangle" style="font-size: 48px; color: #dc3545;"></i>
+                <p style="margin-top: 10px; color: #dc3545; font-weight: bold;">${message}</p>
+                <button onclick="loadInspectionRecords()" style="margin-top: 15px; padding: 10px 20px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    <i class="fa-solid fa-refresh"></i> Thử lại
+                </button>
+            </td>
+        </tr>
+    `;
+}
 
 // Hiển thị danh sách hồ sơ
 function displayRecords(recordsToDisplay = inspectionRecords) {
     const tbody = document.getElementById('recordsBody');
+    
+    if (!recordsToDisplay || recordsToDisplay.length === 0) {
+        showNoData();
+        return;
+    }
+    
     tbody.innerHTML = '';
 
     recordsToDisplay.forEach((record, index) => {
         const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${index + 1}</td>
-            <td><strong>${record.inspectionCode}</strong></td>
-            <td><strong>${record.plateNo}</strong></td>
-            <td>${record.ownerName}</td>
-            <td><span class="inspection-type ${getInspectionTypeClass(record.inspectionType)}">${getInspectionTypeText(record.inspectionType)}</span></td>
-            <td>${record.laneName || 'Chưa gán'}</td>
-            <td>${formatDateTime(record.createdAt)}</td>
-            <td><span class="status ${getStatusClass(record.status)}">${getStatusText(record.status)}</span></td>
-            <td>${getFinalResultBadge(record.finalResult)}</td>
+
+        // Tạo các nút hành động dựa vào trạng thái
+        let actionButtons = '';
+
+        // Nút phân công dây chuyền (cho hồ sơ đã thu phí)
+        if (record.status >= 2 && record.status < 7) {
+            actionButtons += `
+                <button class="btn-action assign" onclick='openAssignLaneById(${record.inspectionId})' title="Phân công dây chuyền">
+                    <i class="fa-solid fa-road"></i>
+                </button>
+            `;
+        }
+
+        // Nút bắt đầu kiểm định (cho hồ sơ đã có dây chuyền)
+        if (record.laneId && record.status >= 2 && record.status < 7) {
+            actionButtons += `
+                <button class="btn-action inspect" onclick='openInspectionProcessById(${record.inspectionId})' title="Kiểm định">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </button>
+            `;
+        }
+
+        // Nút xem chi tiết (luôn có)
+        actionButtons += `
+            <button class="btn-action view" onclick='showDetailById(${record.inspectionId})' title="Xem chi tiết">
+                <i class="fa-solid fa-eye"></i>
+            </button>
         `;
 
-        // Thêm sự kiện double-click
-        row.addEventListener('dblclick', () => showDetail(record));
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td><strong>${record.inspectionCode || 'N/A'}</strong></td>
+            <td><strong>${record.plateNo || 'N/A'}</strong></td>
+            <td>${record.ownerFullName || 'N/A'}</td>
+            <td><span class="inspection-type ${getInspectionTypeClass(record.inspectionType)}">${record.inspectionTypeText || 'N/A'}</span></td>
+            <td>${record.laneName ? `<i class="fa-solid fa-check-circle" style="color: #28a745;"></i> ${record.laneName}` : '<span style="color: #dc3545;"><i class="fa-solid fa-clock"></i> Chưa gán</span>'}</td>
+            <td>${formatDateTime(record.createdAt)}</td>
+            <td><span class="status ${getStatusClass(record.status)}">${record.statusText || 'N/A'}</span></td>
+            <td>${getFinalResultBadge(record.finalResult)}</td>
+            <td>
+                <div class="action-buttons">
+                    ${actionButtons}
+                </div>
+            </td>
+        `;
 
         tbody.appendChild(row);
     });
@@ -342,6 +155,7 @@ function displayRecords(recordsToDisplay = inspectionRecords) {
 function formatDateTime(dateString) {
     if (!dateString) return '--';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '--';
     return date.toLocaleString('vi-VN', {
         year: 'numeric',
         month: '2-digit',
@@ -354,6 +168,7 @@ function formatDateTime(dateString) {
 function formatDate(dateString) {
     if (!dateString) return '--';
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '--';
     return date.toLocaleDateString('vi-VN');
 }
 
@@ -406,7 +221,7 @@ function getStatusText(status) {
 }
 
 function getFinalResultBadge(result) {
-    if (result === null) return '<span class="result pending">Chưa có</span>';
+    if (result === null || result === undefined) return '<span class="result pending">Chưa có</span>';
     const badges = {
         1: '<span class="result pass">ĐẠT</span>',
         2: '<span class="result fail">KHÔNG ĐẠT</span>',
@@ -415,67 +230,133 @@ function getFinalResultBadge(result) {
     return badges[result] || '<span class="result pending">--</span>';
 }
 
+// Hàm tìm record theo ID
+function findRecordById(inspectionId) {
+    return inspectionRecords.find(r => r.inspectionId === inspectionId);
+}
+
+// Load chi tiết hồ sơ từ server
+async function loadInspectionDetail(inspectionId) {
+    try {
+        console.log('Loading detail for inspection:', inspectionId); // LOG 1
+
+        const response = await fetch(`/Inspection/GetInspectionRecord?id=${inspectionId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log('Response status:', response.status); // LOG 2
+
+        if (!response.ok) {
+            throw new Error('Không thể tải chi tiết hồ sơ');
+        }
+
+        const result = await response.json();
+
+        console.log('API Response:', result); // LOG 3
+
+        if (result.success && result.data) {
+            console.log('Detail data:', result.data); // LOG 4
+            return result.data;
+        } else {
+            throw new Error(result.message || 'Không tìm thấy hồ sơ');
+        }
+    } catch (error) {
+        console.error('Error loading inspection detail:', error);
+        alert('Không thể tải chi tiết hồ sơ. Vui lòng thử lại.');
+        return null;
+    }
+}
+
+// Hiển thị chi tiết hồ sơ (wrapper function với ID)
+async function showDetailById(inspectionId) {
+    const record = findRecordById(inspectionId);
+    if (!record) {
+        alert('Không tìm thấy hồ sơ');
+        return;
+    }
+    
+    // Load thông tin chi tiết từ server nếu cần
+    const detailRecord = await loadInspectionDetail(inspectionId);
+    if (detailRecord) {
+        showDetail(detailRecord);
+    }
+}
+
 // Hiển thị chi tiết hồ sơ
 function showDetail(record) {
     // Điền thông tin cơ bản
-    document.getElementById('detailSerialNo').textContent = record.certificateNo || record.inspectionCode;
+    document.getElementById('detailSerialNo').textContent = record.certificateNo || record.inspectionCode || 'N/A';
 
     // Thông số kỹ thuật
     document.getElementById('detailWheelFormula').textContent = record.wheelFormula || '--';
     document.getElementById('detailWheelTread').textContent = record.wheelTread || '--';
     document.getElementById('detailDimensions').textContent = record.overallDimensions || '--';
-    document.getElementById('detailTankDimensions').textContent = 'N/A';
+    document.getElementById('detailTankDimensions').textContent = record.cargoInsideDimensions || 'N/A';
     document.getElementById('detailWheelbase').textContent = record.wheelbase || '--';
     document.getElementById('detailKerbMass').textContent = record.kerbWeight || '--';
     document.getElementById('detailCargoMass').textContent = record.authorizedCargoWeight || '--';
-    document.getElementById('detailTowedMass').textContent = '0';
+    document.getElementById('detailTowedMass').textContent = record.authorizedTowedWeight || '0';
     document.getElementById('detailTotalMass').textContent = record.authorizedTotalWeight || '--';
     document.getElementById('detailSeating').textContent = record.seatingCapacity || '--';
-    document.getElementById('detailStanding').textContent = '0';
-    document.getElementById('detailLying').textContent = '0';
+    document.getElementById('detailStanding').textContent = record.standingCapacity || '0';
+    document.getElementById('detailLying').textContent = record.lyingCapacity || '0';
     document.getElementById('detailEngineType').textContent = record.engineType || '--';
     document.getElementById('detailEngineModel').textContent = record.engineModel || '--';
     document.getElementById('detailEngineDisplacement').textContent = record.engineDisplacement || '--';
-    document.getElementById('detailMaxOutput').textContent = record.maxPower && record.maxPowerRPM
-        ? `${record.maxPower}/${record.maxPowerRPM}` : '--';
+    document.getElementById('detailMaxOutput').textContent = record.maxOutputRPM || '--';
     document.getElementById('detailFuel').textContent = record.fuelType || '--';
-    document.getElementById('detailMotorNumber').textContent = 'N/A';
-    document.getElementById('detailMotorPower').textContent = 'N/A';
-    document.getElementById('detailBattery').textContent = 'N/A';
-    document.getElementById('detailTires').textContent = record.tires || '--';
+    document.getElementById('detailMotorNumber').textContent = record.numberOfMotors || 'N/A';
+    document.getElementById('detailMotorPower').textContent = record.motorPowerInfo || 'N/A';
+    document.getElementById('detailBattery').textContent = record.batteryInfo || 'N/A';
+
+    // Thông tin lốp
+    const tireInfo = record.tireCount && record.tireSize && record.tireAxleInfo
+        ? `${record.tireCount} lốp ${record.tireSize} - ${record.tireAxleInfo}`
+        : '--';
+    document.getElementById('detailTires').textContent = tireInfo;
 
     // Ngày kiểm định
-    const issueDate = record.issueDate ? new Date(record.issueDate) : (record.completedAt ? new Date(record.completedAt) : new Date());
-    document.getElementById('detailDay').textContent = issueDate.getDate();
-    document.getElementById('detailMonth').textContent = issueDate.getMonth() + 1;
-    document.getElementById('detailYear').textContent = issueDate.getFullYear();
+    const issueDate = record.issueDate
+        ? new Date(record.issueDate)
+        : (record.completedAt ? new Date(record.completedAt) : new Date());
+    if (!isNaN(issueDate.getTime())) {
+        document.getElementById('detailDay').textContent = issueDate.getDate();
+        document.getElementById('detailMonth').textContent = issueDate.getMonth() + 1;
+        document.getElementById('detailYear').textContent = issueDate.getFullYear();
+    }
 
     // Số phiếu kiểm định
-    document.getElementById('detailInspectionNo').textContent = record.inspectionCode;
+    document.getElementById('detailInspectionNo').textContent = record.inspectionCode || 'N/A';
 
     // Thông tin đăng ký
-    document.getElementById('detailPlate').textContent = record.plateNo;
-    document.getElementById('detailVehicleNo').textContent = `VN-${String(record.vehicleId).padStart(9, '0')}`;
+    document.getElementById('detailPlate').textContent = record.plateNo || 'N/A';
+    document.getElementById('detailVehicleNo').textContent = record.inspectionNo || 'N/A';
     document.getElementById('detailVehicleGroup').textContent = record.vehicleGroup || '--';
     document.getElementById('detailVehicleType').textContent = record.vehicleType || '--';
     document.getElementById('detailTrademark').textContent = record.brand || '--';
     document.getElementById('detailModelCode').textContent = record.model || '--';
     document.getElementById('detailEngineNo').textContent = record.engineNo || '--';
     document.getElementById('detailChassisNo').textContent = record.chassis || '--';
-    document.getElementById('detailProductionYear').textContent = record.manufactureYear && record.manufactureCountry
-        ? `${record.manufactureYear}/${record.manufactureCountry}` : '--';
-    document.getElementById('detailLifetime').textContent = record.manufactureYear ? record.manufactureYear + 20 : '--';
+    document.getElementById('detailProductionYear').textContent = record.productionInfo || '--';
+    document.getElementById('detailLifetime').textContent = record.lifetimeLimitYear || (record.manufactureYear ? record.manufactureYear + 20 : '--');
     document.getElementById('detailNotes').textContent = record.notes || 'Không có ghi chú';
 
     // Checkbox
-    document.getElementById('detailTachograph').checked = false;
-    document.getElementById('detailCamera').checked = false;
-    document.getElementById('detailNotIssued').checked = record.status !== 7;
-    document.getElementById('detailGreenEnergy').checked = false;
-    document.getElementById('detailAutomationPartial').checked = false;
-    document.getElementById('detailAutomationFull').checked = false;
-    document.getElementById('detailCommercialUse').checked = false;
-    document.getElementById('detailModification').checked = false;
+    document.getElementById('detailTachograph').checked = record.hasTachograph || false;
+    document.getElementById('detailCamera').checked = record.hasDriverCamera || false;
+    document.getElementById('detailNotIssued').checked = record.notIssuedStamp || record.status !== 7;
+    document.getElementById('detailGreenEnergy').checked = record.isCleanEnergy || false;
+
+    // Usage permission
+    const usagePermission = record.usagePermission || '';
+    document.getElementById('detailAutomationPartial').checked = usagePermission.includes('Một phần') || usagePermission.includes('Partially');
+    document.getElementById('detailAutomationFull').checked = usagePermission.includes('Toàn phần') || usagePermission.includes('Fully');
+
+    document.getElementById('detailCommercialUse').checked = record.hasCommercialModification || false;
+    document.getElementById('detailModification').checked = record.hasModification || false;
 
     // Hiển thị modal
     document.getElementById('detailModal').style.display = 'block';
@@ -483,19 +364,20 @@ function showDetail(record) {
 
 // Tìm kiếm hồ sơ
 function searchRecords() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+    
     if (searchTerm === '') {
         filteredRecords = [...inspectionRecords];
     } else {
         filteredRecords = inspectionRecords.filter(record =>
-            record.inspectionCode.toLowerCase().includes(searchTerm) ||
-            record.ownerName.toLowerCase().includes(searchTerm) ||
-            record.plateNo.toLowerCase().includes(searchTerm)
+            (record.inspectionCode && record.inspectionCode.toLowerCase().includes(searchTerm)) ||
+            (record.ownerFullName && record.ownerFullName.toLowerCase().includes(searchTerm)) ||
+            (record.plateNo && record.plateNo.toLowerCase().includes(searchTerm)) ||
+            (record.ownerPhone && record.ownerPhone.includes(searchTerm))
         );
     }
 
-    applyFilters();
+    displayRecords(filteredRecords);
 }
 
 // Lọc theo filter
@@ -516,38 +398,37 @@ function filterRecords() {
 
     if (dateFilter) {
         filteredRecords = filteredRecords.filter(r => {
+            if (!r.createdAt) return false;
             const recordDate = new Date(r.createdAt).toISOString().split('T')[0];
             return recordDate === dateFilter;
         });
     }
 
     // Áp dụng search term nếu có
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     if (searchTerm) {
         filteredRecords = filteredRecords.filter(record =>
-            record.inspectionCode.toLowerCase().includes(searchTerm) ||
-            record.ownerName.toLowerCase().includes(searchTerm) ||
-            record.plateNo.toLowerCase().includes(searchTerm)
+            (record.inspectionCode && record.inspectionCode.toLowerCase().includes(searchTerm)) ||
+            (record.ownerFullName && record.ownerFullName.toLowerCase().includes(searchTerm)) ||
+            (record.plateNo && record.plateNo.toLowerCase().includes(searchTerm))
         );
     }
 
     displayRecords(filteredRecords);
 }
 
-function applyFilters() {
-    filterRecords();
-}
-
 // Đóng modal khi click vào nút X
-document.querySelector('.close').addEventListener('click', function () {
-    document.getElementById('detailModal').style.display = 'none';
+const closeButtons = document.querySelectorAll('.modal .close');
+closeButtons.forEach(btn => {
+    btn.addEventListener('click', function () {
+        this.closest('.modal').style.display = 'none';
+    });
 });
 
 // Đóng modal khi click bên ngoài
 window.addEventListener('click', function (event) {
-    const modal = document.getElementById('detailModal');
-    if (event.target === modal) {
-        modal.style.display = 'none';
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = 'none';
     }
 });
 
@@ -565,9 +446,6 @@ document.querySelectorAll('.modal input[type="checkbox"]').forEach(checkbox => {
     });
 });
 
-// Khởi tạo hiển thị danh sách
-displayRecords();
-
 // ============================================
 // PHÂN CÔNG DÂY CHUYỀN
 // ============================================
@@ -576,6 +454,14 @@ let assigningInspection = null;
 let assignedLaneId = null;
 let assignedLaneName = '';
 
+// Wrapper function để mở modal phân công bằng ID
+function openAssignLaneById(inspectionId) {
+    const record = findRecordById(inspectionId);
+    if (record) {
+        openAssignLane(record);
+    }
+}
+
 // Mở modal phân công dây chuyền
 function openAssignLane(record) {
     assigningInspection = record;
@@ -583,13 +469,18 @@ function openAssignLane(record) {
     assignedLaneName = record.laneName;
 
     // Điền thông tin hồ sơ
-    document.getElementById('assignInspectionCode').textContent = record.inspectionCode;
-    document.getElementById('assignPlateNo').textContent = record.plateNo;
-    document.getElementById('assignOwnerName').textContent = record.ownerName;
-    document.getElementById('assignVehicleType').textContent = record.vehicleType;
+    document.getElementById('assignInspectionCode').textContent = record.inspectionCode || 'N/A';
+    document.getElementById('assignPlateNo').textContent = record.plateNo || 'N/A';
+    document.getElementById('assignOwnerName').textContent = record.ownerFullName || 'N/A';
+    document.getElementById('assignVehicleType').textContent = record.vehicleType || 'N/A';
 
     // Clear note
     document.getElementById('assignNote').value = '';
+
+    // Reset selected cards
+    document.querySelectorAll('.assign-lane-card').forEach(card => {
+        card.classList.remove('selected');
+    });
 
     // Nếu đã có dây chuyền, highlight card
     if (assignedLaneId) {
@@ -623,7 +514,7 @@ function selectAssignLane(laneId, laneName) {
 }
 
 // Xác nhận phân công dây chuyền
-function confirmAssignLane() {
+async function confirmAssignLane() {
     if (!assignedLaneId) {
         alert('Vui lòng chọn dây chuyền!');
         return;
@@ -631,23 +522,39 @@ function confirmAssignLane() {
 
     const note = document.getElementById('assignNote').value;
 
-    // Cập nhật hồ sơ
-    assigningInspection.laneId = assignedLaneId;
-    assigningInspection.laneName = assignedLaneName;
+    try {
+        // TODO: Gọi API để cập nhật dây chuyền
+        const response = await fetch('/Inspection/AssignLane', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                inspectionId: assigningInspection.inspectionId,
+                laneId: assignedLaneId,
+                note: note
+            })
+        });
 
-    if (note) {
-        assigningInspection.notes = note;
+        if (!response.ok) {
+            throw new Error('Không thể phân công dây chuyền');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+            alert(`Đã phân công hồ sơ ${assigningInspection.inspectionCode} vào ${assignedLaneName}!`);
+            closeAssignLane();
+            
+            // Reload lại danh sách
+            await loadInspectionRecords();
+        } else {
+            alert(result.message || 'Có lỗi xảy ra');
+        }
+    } catch (error) {
+        console.error('Error assigning lane:', error);
+        alert('Không thể phân công dây chuyền. Vui lòng thử lại.');
     }
-
-    // Nếu hồ sơ đang ở trạng thái "Đã thu phí", chuyển sang "Chờ kiểm định"
-    if (assigningInspection.status === 2) {
-        assigningInspection.status = 2; // Giữ nguyên trạng thái đã thu phí
-    }
-
-    alert(`Đã phân công hồ sơ ${assigningInspection.inspectionCode} vào ${assignedLaneName}!`);
-
-    closeAssignLane();
-    displayRecords();
 }
 
 // Đóng modal phân công
@@ -710,20 +617,37 @@ const stageItems = {
     ]
 };
 
+// Wrapper function để mở modal quy trình kiểm định bằng ID
+function openInspectionProcessById(inspectionId) {
+    const record = findRecordById(inspectionId);
+    if (record) {
+        openInspectionProcess(record);
+    }
+}
+
 // Mở modal quy trình kiểm định
 function openInspectionProcess(record) {
     currentInspection = record;
     selectedLaneId = record.laneId;
     selectedLaneName = record.laneName;
     currentStageIndex = 0;
-    stagesData = JSON.parse(JSON.stringify(record.stages)); // Deep copy
-    allDefects = record.defects ? [...record.defects] : [];
+    
+    // Load stages từ server hoặc khởi tạo mới
+    stagesData = [
+        { stageId: 1, stageName: "Kiểm tra ngoại thất", status: 0, result: null, assignedUser: null },
+        { stageId: 2, stageName: "Kiểm tra động cơ", status: 0, result: null, assignedUser: null },
+        { stageId: 3, stageName: "Kiểm tra hệ thống phanh", status: 0, result: null, assignedUser: null },
+        { stageId: 4, stageName: "Kiểm tra khí thải", status: 0, result: null, assignedUser: null },
+        { stageId: 5, stageName: "Kiểm tra hệ thống đèn", status: 0, result: null, assignedUser: null }
+    ];
+    
+    allDefects = [];
 
     // Điền thông tin hồ sơ
-    document.getElementById('processInspectionCode').textContent = record.inspectionCode;
-    document.getElementById('processPlateNo').textContent = record.plateNo;
-    document.getElementById('processOwnerName').textContent = record.ownerName;
-    document.getElementById('processVehicleType').textContent = record.vehicleType;
+    document.getElementById('processInspectionCode').textContent = record.inspectionCode || 'N/A';
+    document.getElementById('processPlateNo').textContent = record.plateNo || 'N/A';
+    document.getElementById('processOwnerName').textContent = record.ownerFullName || 'N/A';
+    document.getElementById('processVehicleType').textContent = record.vehicleType || 'N/A';
 
     // Kiểm tra trạng thái
     if (record.status < 2) {
@@ -750,13 +674,11 @@ function selectLane(laneId, laneName) {
     selectedLaneId = laneId;
     selectedLaneName = laneName;
 
-    // Highlight card được chọn
     document.querySelectorAll('.lane-card').forEach(card => {
         card.classList.remove('selected');
     });
     event.target.closest('.lane-card').classList.add('selected');
 
-    // Enable nút bắt đầu
     document.getElementById('btnStartInspection').disabled = false;
 }
 
@@ -767,14 +689,10 @@ function startInspection() {
         return;
     }
 
-    // Ẩn phần chọn dây chuyền, hiện các giai đoạn
     document.getElementById('laneSelection').style.display = 'none';
     document.getElementById('inspectionStages').style.display = 'block';
 
-    // Render danh sách giai đoạn
     renderStagesList();
-
-    // Hiển thị giai đoạn đầu tiên
     showStage(0);
 }
 
@@ -830,10 +748,8 @@ function showStage(index) {
     document.getElementById('stageName').textContent = stage.stageName;
     document.getElementById('stageDescription').textContent = `Công đoạn ${index + 1}/${stagesData.length}`;
 
-    // Render form nhập liệu
     renderStageForm(stage);
 
-    // Hiển thị lỗi nếu có
     if (stage.result === 2) {
         document.getElementById('defectsSection').style.display = 'block';
         renderDefects(stage.stageId);
@@ -841,7 +757,6 @@ function showStage(index) {
         document.getElementById('defectsSection').style.display = 'none';
     }
 
-    // Cập nhật nút
     document.querySelector('.stage-actions button:first-child').style.display = index === 0 ? 'none' : 'inline-flex';
     document.getElementById('btnNextStage').textContent = index === stagesData.length - 1 ? 'Kết Luận' : 'Tiếp Theo';
 
@@ -885,7 +800,6 @@ function renderStageForm(stage) {
 
         form.appendChild(formGroup);
 
-        // Load dữ liệu đã lưu (nếu có)
         if (stage.measurements && stage.measurements[item.id]) {
             document.getElementById(`item_${item.id}`).value = stage.measurements[item.id];
             checkItemStandard(item.id);
@@ -930,7 +844,6 @@ function saveStageResult() {
     const stage = stagesData[currentStageIndex];
     const items = stageItems[stage.stageId] || [];
 
-    // Validate tất cả các trường
     let allFilled = true;
     let allPassed = true;
     const measurements = {};
@@ -944,7 +857,6 @@ function saveStageResult() {
 
         measurements[item.id] = value;
 
-        // Kiểm tra đạt chuẩn
         let isPassed = false;
         if (item.type === 'select') {
             isPassed = value === item.standard;
@@ -961,10 +873,9 @@ function saveStageResult() {
         return;
     }
 
-    // Lưu measurements
     stage.measurements = measurements;
-    stage.status = 2; // COMPLETED
-    stage.result = allPassed ? 1 : 2; // 1: ĐẠT, 2: KHÔNG ĐẠT
+    stage.status = 2;
+    stage.result = allPassed ? 1 : 2;
 
     if (!allPassed) {
         if (confirm('Công đoạn không đạt. Bạn có muốn ghi nhận lỗi chi tiết?')) {
@@ -1015,7 +926,7 @@ function addDefect() {
     if (!description) return;
 
     const severity = prompt('Mức độ nghiêm trọng:\n1: Khuyết điểm\n2: Hư hỏng\n3: Nguy hiểm');
-    if (!severity || ![' 1', '2', '3'].includes(severity)) return;
+    if (!severity || !['1', '2', '3'].includes(severity)) return;
 
     const defect = {
         defectId: Date.now(),
@@ -1086,7 +997,6 @@ function showConclusion() {
     document.getElementById('failedCount').textContent = failedCount;
     document.getElementById('defectsCount').textContent = defectsCount;
 
-    // Hiển thị tất cả lỗi
     if (defectsCount > 0) {
         document.getElementById('allDefectsSection').style.display = 'block';
         const allDefectsList = document.getElementById('allDefectsList');
@@ -1122,7 +1032,7 @@ function backToStages() {
 }
 
 // Hoàn thành kiểm định
-function submitConclusion() {
+async function submitConclusion() {
     const finalResult = document.getElementById('finalResultSelect').value;
     const conclusionNote = document.getElementById('conclusionNote').value;
 
@@ -1131,20 +1041,43 @@ function submitConclusion() {
         return;
     }
 
-    if (confirm('Xác nhận hoàn thành kiểm định?')) {
-        // Cập nhật hồ sơ
-        currentInspection.stages = stagesData;
-        currentInspection.defects = allDefects;
-        currentInspection.finalResult = parseInt(finalResult);
-        currentInspection.notes = conclusionNote;
-        currentInspection.status = finalResult === '1' ? 5 : 6; // 5: PASSED, 6: FAILED
-        currentInspection.completedAt = new Date().toISOString();
-        currentInspection.laneId = selectedLaneId;
-        currentInspection.laneName = selectedLaneName;
+    if (!confirm('Xác nhận hoàn thành kiểm định?')) {
+        return;
+    }
 
-        alert('Đã hoàn thành kiểm định!');
-        closeInspectionProcess();
-        displayRecords();
+    try {
+        // TODO: Gọi API để lưu kết quả kiểm định
+        const response = await fetch('/Inspection/SubmitInspectionResult', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                inspectionId: currentInspection.inspectionId,
+                stages: stagesData,
+                defects: allDefects,
+                finalResult: parseInt(finalResult),
+                conclusionNote: conclusionNote,
+                laneId: selectedLaneId
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Không thể lưu kết quả kiểm định');
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Đã hoàn thành kiểm định!');
+            closeInspectionProcess();
+            await loadInspectionRecords();
+        } else {
+            alert(result.message || 'Có lỗi xảy ra');
+        }
+    } catch (error) {
+        console.error('Error submitting inspection:', error);
+        alert('Không thể hoàn thành kiểm định. Vui lòng thử lại.');
     }
 }
 
@@ -1155,61 +1088,6 @@ function closeInspectionProcess() {
     selectedLaneId = null;
     selectedLaneName = '';
     currentStageIndex = 0;
-}
-
-// Cập nhật hàm hiển thị danh sách để thêm nút "Kiểm định"
-function displayRecords(recordsToDisplay = inspectionRecords) {
-    const tbody = document.getElementById('recordsBody');
-    tbody.innerHTML = '';
-
-    recordsToDisplay.forEach((record, index) => {
-        const row = document.createElement('tr');
-
-        // Tạo các nút hành động dựa vào trạng thái
-        let actionButtons = '';
-
-        // Nút phân công dây chuyền (cho hồ sơ đã thu phí nhưng chưa có dây chuyền hoặc muốn đổi dây chuyền)
-        if (record.status >= 2 && record.status < 7) {
-            actionButtons += `
-                <button class="btn-action assign" onclick="openAssignLane(inspectionRecords[${index}])" title="Phân công dây chuyền">
-                    <i class="fa-solid fa-road"></i>
-                </button>
-            `;
-        }
-
-        // Nút bắt đầu kiểm định (cho hồ sơ đã có dây chuyền và chưa hoàn thành)
-        if (record.laneId && record.status >= 2 && record.status < 7) {
-            actionButtons += `
-                <button class="btn-action inspect" onclick="openInspectionProcess(inspectionRecords[${index}])" title="Kiểm định">
-                    <i class="fa-solid fa-clipboard-check"></i>
-                </button>
-            `;
-        }
-
-        // Nút xem chi tiết (luôn có)
-        actionButtons += `
-            <button class="btn-action view" onclick="showDetail(inspectionRecords[${index}])" title="Xem chi tiết">
-                <i class="fa-solid fa-eye"></i>
-            </button>
-        `;
-
-        row.innerHTML = `
-            <td>${index + 1}</td>
-            <td><strong>${record.inspectionCode}</strong></td>
-            <td><strong>${record.plateNo}</strong></td>
-            <td>${record.ownerName}</td>
-            <td><span class="inspection-type ${getInspectionTypeClass(record.inspectionType)}">${getInspectionTypeText(record.inspectionType)}</span></td>
-            <td>${record.laneName ? `<i class="fa-solid fa-check-circle" style="color: #28a745;"></i> ${record.laneName}` : '<span style="color: #dc3545;"><i class="fa-solid fa-clock"></i> Chưa gán</span>'}</td>
-            <td>${formatDateTime(record.createdAt)}</td>
-            <td><span class="status ${getStatusClass(record.status)}">${getStatusText(record.status)}</span></td>
-            <td>${getFinalResultBadge(record.finalResult)}</td>
-            <td>
-                <div class="action-buttons">
-                    ${actionButtons}
-                </div>
-            </td>
-        `;
-
-        tbody.appendChild(row);
-    });
+    stagesData = [];
+    allDefects = [];
 }

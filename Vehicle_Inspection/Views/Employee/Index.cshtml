@@ -121,8 +121,8 @@
             <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
                 @foreach (var user in Model)
                 {
-                    <div class="col">                       
-                        <div class="d-flex employee-card h-100 justify-content-between">
+                    <div class="col">
+                        <div class="d-flex @(user.IsActive ? "employee-card" : "employee-card-delete")  h-100 justify-content-between">
                             <a asp-controller="Employee" asp-action="Edit" asp-route-id="@user.UserId" class="d-flex align-items-center p-3 text-decoration-none text-dark">
                                 <div class="me-3">
                                     <img src="@(string.IsNullOrEmpty(user.ImageUrl) ? Url.Content("~/images/employee/anh34.jpg") : user.ImageUrl)" alt="Avatar" class="employee-avatar" />
@@ -135,7 +135,7 @@
                                     <p class="mb-0"><strong>Level:</strong> @(string.IsNullOrEmpty(user.Level) ? "-" : user.Level)</p>
                                     <p class="mb-0">
                                         <strong>Trạng thái:
-                                            <span class="@(user.IsActive ? "text-success" : "text-danger")">
+                                            <span style="font-size: 14px" class="@(user.IsActive ? "text-success" : "text-danger")">
                                                 @(user.IsActive ? "Đang hoạt động" : "Đã nghỉ")
                                             </span>
                                          </strong>

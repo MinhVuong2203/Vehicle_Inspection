@@ -37,7 +37,7 @@
                 </div>
 
                 <div class="error-message" id="errorMessage">
-                    Tên đăng nhập hoặc mật khẩu không chính xác!
+                    @TempData["ErrorMessage"]
                 </div>
 
                 <form id="loginForm" method="post" asp-action="Login" asp-controller="Account">

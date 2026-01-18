@@ -1,5 +1,5 @@
 ﻿@{
-   
+
     var query = ViewContext.HttpContext.Request.Query;
 }
 @{
@@ -9,12 +9,11 @@
     string positionVal = q["position"];
     string teamVal = q["team"];
     string genderVal = q["gender"];
-    string isActiveVal = q["isActive"];
 }
 
 
-@section Styles{
-    <link rel="stylesheet" href="~/css/decentralize/main.css"/>
+@section Styles {
+    <link rel="stylesheet" href="~/css/decentralize/main.css" />
 }
 
 <h4>QUYỀN HỆ THỐNG</h4>
@@ -26,8 +25,8 @@
                 <form method="get" asp-action="Index" asp-controller="Decentralize">
                     <div class="mb-3">
                         <label class="form-label">Search</label>
-                        <input type="text" name="search" class="form-control"
-                               placeholder="Name or email" value="@searchVal" />
+                        <input type="text" name="search" class="form-control" placeholder="Name or email"
+                            value="@searchVal" />
                     </div>
 
                     <div class="mb-3">
@@ -89,13 +88,7 @@
                         </select>
                     </div>
 
-                    <div class="form-check mb-3">
-                        <!-- value=true để binder map vào bool? -->
-                        <input type="checkbox" name="isActive" value="true"
-                               class="form-check-input" id="isActive"
-                               @(isActiveVal == "true" ? "checked" : null) />
-                        <label class="form-check-label" for="isActive">Active Only</label>
-                    </div>
+                    
 
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Filter</button>
@@ -109,155 +102,33 @@
             <!-- Bảng phân quyền -->
             <table class="table">
                 <thead>
-                    <tr style=" background: linear-gradient(135deg, #CCFF66 0, #CCFF99 100%);">
-                        <th>Tên</th>
-                        <th>Chức Vụ</th>
-                        <th>Tổ</th>
-                        <th>Admin</th>
-                        <th>Editor</th>
-                        <th>Viewer</th>
-                        <th>Admin</th>
-                        <th>Editor</th>
-                        <th>Viewer</th>
+                    <tr>
+                        <th>Nhân sự</th>
+                        <th>Chức vụ</th>
+                        @foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
+                        {
+                            <th>@role.RoleAcronym</th>
+                        }
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td data-header="Tên">Nguyễn Văn A</td>
-                        <td data-header="Chức Vụ">Giám đốc</td>
-                        <td data-header="Tổ">Ban Giám Đốc</td>
-
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox"
-                                   onclick="toggleRole(this, 'Nguyễn Văn A', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox"
-                                   onclick="toggleRole(this, 'Nguyễn Văn A', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox"
-                                   onclick="toggleRole(this, 'Nguyễn Văn A', 'Viewer')">
-                        </td>
-
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox"
-                                   onclick="toggleRole(this, 'Nguyễn Văn A', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox"
-                                   onclick="toggleRole(this, 'Nguyễn Văn A', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox"
-                                   onclick="toggleRole(this, 'Nguyễn Văn A', 'Viewer')">
-                        </td>
-
-                    </tr>
-                    <tr>
-                        <td data-header="Tên">Trần Thị B</td>
-                        <td data-header="Chức Vụ">Nhân viên</td>
-                        <td data-header="Tổ">Tổ Kế Toán</td>
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                    </tr>
-
-                    <tr>
-                        <td data-header="Tên">Trần Thị B</td>
-                        <td data-header="Chức Vụ">Nhân viên</td>
-                        <td data-header="Tổ">Tổ Kế Toán</td>
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                    </tr>
-
-                    <tr>
-                        <td data-header="Tên">Trần Thị B</td>
-                        <td data-header="Chức Vụ">Nhân viên</td>
-                        <td data-header="Tổ">Tổ Kế Toán</td>
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                    </tr>
-
-                    <tr>
-                        <td data-header="Tên">Trần Thị B</td>
-                        <td data-header="Chức Vụ">Nhân viên</td>
-                        <td data-header="Tổ">Tổ Kế Toán</td>
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                        <td data-header="Admin">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Admin')">
-                        </td>
-                        <td data-header="Editor">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Editor')">
-                        </td>
-                        <td data-header="Viewer">
-                            <input type="checkbox" class="role-checkbox" onclick="toggleRole(this, 'Trần Thị B', 'Viewer')">
-                        </td>
-
-                    </tr>
-
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.User.FullName</td>
+                            <td>@item.User.Position?.PositionName</td>
+                            @foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
+                            {
+                                <td>
+                                    <input type="checkbox" class="role-checkbox" data-user-id="@item.User.UserId"
+                                        data-role-id="@role.RoleId" @(item.RoleAssignments[role.RoleId] ? "checked" : "") />
+                                    <script>
+                                        console.log("UserId: @item.User.UserId, RoleId: @role.RoleId");
+                                    </script>
+                                </td>
+                            }
+                        </tr>
+                    }
                 </tbody>
             </table>
 
@@ -276,3 +147,31 @@
 
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.role-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const userId = this.dataset.userId;
+                const roleId = this.dataset.roleId;
+                const isChecked = this.checked;
+
+                fetch('/Decentralize/UpdateUserRole', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, roleId, isChecked })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            alert('Cập nhật thất bại!');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                    });
+            });
+        });
+    </script>
+}

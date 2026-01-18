@@ -24,11 +24,33 @@
 		transition: all 0.3s ease;	
 	}
 		.employee-card:hover .btnDelete {
+			display: inline-block;		
+		}
+
+.employee-card-delete {
+	border-radius: 8px;
+	box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+	transition: all 0.3s ease;
+	word-wrap: break-word;
+	background-color: #fff;
+	border: 1px solid rgba(0, 0, 0, .125);
+}
+
+	.employee-card-delete:hover {
+		background: rgba(220, 53, 69, 0.15);
+		border-right: 5px solid #dc3545;
+		transform: translateY(-2px);
+		box-shadow: 0 5px 10px rgba(0,0,0,0.4);
+		transition: all 0.3s ease;
+	}
+
+		.employee-card-delete:hover .btnDelete {
 			display: inline-block;
+			
 		}
 
 
-	.employee-card .employee-avatar {
+	.employee-avatar {
 		width: 90px;
 		height: 120px;
 		object-fit: cover;
@@ -38,6 +60,11 @@
 
 .employee-card p strong {
 /*	display: inline-block;*/
+	width: 64px;
+}
+
+.employee-card-delete p strong {
+	/*	display: inline-block;*/
 	width: 64px;
 }
 

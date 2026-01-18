@@ -46,6 +46,9 @@ public partial class Owner
     [StringLength(100)]
     public string? Province { get; set; }
 
+    [StringLength(255)]
+    public string? ImageUrl { get; set; }
+
     [InverseProperty("Owner")]
     public virtual ICollection<Inspection> Inspections { get; set; } = new List<Inspection>();
 

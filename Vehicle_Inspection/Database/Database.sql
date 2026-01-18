@@ -387,6 +387,21 @@ CREATE INDEX IX_Specification_PlateNo ON dbo.Specification(PlateNo);
 CREATE INDEX IX_Specification_InspectionReportNo ON dbo.Specification(InspectionReportNo);
 
 
+-- Insert Owner
+INSERT INTO dbo.Owner (OwnerId, OwnerType, FullName, CompanyName, TaxCode, CCCD, Phone, Email, Address, Ward, Province) VALUES 
+(NEWID(), N'PERSON', N'Nguyễn Văn An', NULL, NULL, N'079123456789', N'0901234567', N'nguyenvanan@email.com', N'123 Đường Lê Lợi, Quận 1', N'Phường Bến Nghé', N'TP.HCM');
+
+-- Insert Vehicle
+DECLARE @OwnerId UNIQUEIDENTIFIER; 
+SELECT TOP 1 @OwnerId = OwnerId FROM dbo.Owner; 
+INSERT INTO dbo.Vehicle (PlateNo, InspectionNo, VehicleGroup, VehicleType, EnergyType, IsCleanEnergy, UsagePermission, Brand, Model, EngineNo, Chassis, ManufactureYear, ManufactureCountry, LifetimeLimitYear, HasCommercialModification, HasModification, OwnerId) VALUES 
+(N'51A-12345', N'VN-2024-123456', N'Ô tô con', N'Sedan', N'Xăng', 0, N'Không', N'Toyota', N'Vios 1.5E CVT', N'2NR-FE-1234567', N'MH123456789012345', 2023, N'Việt Nam', NULL, 0, 0, @OwnerId);
+
+-- Insert Specification
+INSERT INTO dbo.Specification (PlateNo, WheelFormula, WheelTread, OverallLength, OverallWidth, OverallHeight, CargoInsideLength, CargoInsideWidth, CargoInsideHeight, Wheelbase, 
+KerbWeight, AuthorizedCargoWeight, AuthorizedTowedWeight, AuthorizedTotalWeight, SeatingCapacity, StandingCapacity, LyingCapacity, EngineType, EnginePosition, EngineModel, EngineDisplacement, MaxPower, MaxPowerRPM, FuelType, MotorType, NumberOfMotors, MotorModel, TotalMotorPower, MotorVoltage, BatteryType, BatteryVoltage, BatteryCapacity, TireCount, TireSize, TireAxleInfo, ImagePosition, HasTachograph, HasDriverCamera, NotIssuedStamp, Notes) 
+VALUES (N'51A-12345', N'4x2', 1510, 4425, 1730, 1475, NULL, NULL, NULL, 2550, 1075.00, 400.00, 0.00, 1695.00, 5, 0, 0, N'Xăng 4 kỳ', N'Trước ngang', N'2NR-FE', 1496, 79.00, 6000, N'Xăng RON 95', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 4, N'185/60R15', N'Trục 1: 185/60R15, Trục 2: 185/60R15', NULL, 0, 1, 0, N'Xe gia đình, bảo dưỡng định kỳ');
+
 DROP TABLE Specification
 DROP TABLE Vehicle
 DROP TABLE dbo.Owner

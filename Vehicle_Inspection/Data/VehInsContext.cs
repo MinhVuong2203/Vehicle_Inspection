@@ -243,21 +243,21 @@ public partial class VehInsContext : DbContext
 
         modelBuilder.Entity<Specification>(entity =>
         {
-            entity.HasKey(e => e.SpecificationId).HasName("PK__Specific__A384CDFDBCFE2FA0");
+            entity.HasKey(e => e.SpecificationId).HasName("PK__Specific__A384CDFDF4D409BA");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.HasDriverCamera).HasDefaultValue(false);
             entity.Property(e => e.HasTachograph).HasDefaultValue(false);
             entity.Property(e => e.NotIssuedStamp).HasDefaultValue(false);
 
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.SpecificationCreatedByNavigations).HasConstraintName("FK__Specifica__Creat__2EDAF651");
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.SpecificationCreatedByNavigations).HasConstraintName("FK__Specifica__Creat__477199F1");
 
             entity.HasOne(d => d.PlateNoNavigation).WithOne(p => p.Specification)
                 .HasPrincipalKey<Vehicle>(p => p.PlateNo)
                 .HasForeignKey<Specification>(d => d.PlateNo)
-                .HasConstraintName("FK__Specifica__Plate__2DE6D218");
+                .HasConstraintName("FK__Specifica__Plate__467D75B8");
 
-            entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.SpecificationUpdatedByNavigations).HasConstraintName("FK__Specifica__Updat__2FCF1A8A");
+            entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.SpecificationUpdatedByNavigations).HasConstraintName("FK__Specifica__Updat__4865BE2A");
         });
 
         modelBuilder.Entity<Stage>(entity =>

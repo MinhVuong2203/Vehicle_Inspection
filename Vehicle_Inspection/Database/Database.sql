@@ -247,7 +247,8 @@ ON dbo.Owner(TaxCode)
 WHERE OwnerType = N'COMPANY' AND TaxCode IS NOT NULL;
 GO
 
-
+ALTER TABLE dbo.Owner
+Add Ward NVARCHAR(100), Province NVARCHAR(100);
 
 CREATE TABLE dbo.Vehicle(
     VehicleId               INT IDENTITY(1,1) PRIMARY KEY,
@@ -359,12 +360,7 @@ CREATE TABLE dbo.Specification (
     TireCount               INT NULL,                      -- Số lượng lốp
     TireSize                NVARCHAR(50) NULL,             -- Cỡ lốp
     TireAxleInfo            NVARCHAR(100) NULL,            -- Thông tin trục
-    
-    -- THÔNG TIN KIỂM ĐỊNH
-   -- InspectionReportNo      NVARCHAR(50) NULL,             -- Số phiếu kiểm định
-    --IssuedDate              DATE NULL,                     -- Ngày cấp
-    --InspectionCenter        NVARCHAR(200) NULL,            -- Cơ sở đăng kiểm
-    
+       
     -- VỊ TRÍ THIẾT BỊ
     ImagePosition           NVARCHAR(100) NULL,            -- Vị trí hình ảnh
     
@@ -390,9 +386,10 @@ CREATE TABLE dbo.Specification (
 CREATE INDEX IX_Specification_PlateNo ON dbo.Specification(PlateNo);
 CREATE INDEX IX_Specification_InspectionReportNo ON dbo.Specification(InspectionReportNo);
 
+
 DROP TABLE Specification
 DROP TABLE Vehicle
-
+DROP TABLE dbo.Owner
 -- Thêm bảng cải tạo
 
 

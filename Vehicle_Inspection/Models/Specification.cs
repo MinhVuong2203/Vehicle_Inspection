@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Specification")]
-[Index("PlateNo", Name = "UQ__Specific__48227C0CF3DBA0DE", IsUnique = true)]
+[Index("PlateNo", Name = "UQ__Specific__48227C0CB9D8BDAA", IsUnique = true)]
 public partial class Specification
 {
     [Key]

@@ -126,9 +126,18 @@
         <span asp-validation-for="Account.PasswordHash" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
+    @* <div class="form-group">
         <label class="font-weight-bold">Ảnh đại diện</label>
         <input type="file" name="ProfilePicture" class="form-control-file" />
+    </div> *@
+
+    <div class="form-group">
+        <label class="font-weight-bold">Ảnh đại diện</label>
+        <input type="file" name="ProfilePicture" class="form-control-file" onchange="previewImage(event)" />
+        <div class="image-preview mt-3">
+            <img id="profileImagePreview" src="#" alt="Profile Preview" class="img-thumbnail"
+                 style="width: 120px; height: 160px; display: none;" />
+        </div>
     </div>
 
     <button type="submit" class="btn btn-primary btn-block">Tạo nhân viên</button>
@@ -163,5 +172,18 @@
         provinceSelect.addEventListener('change', function () {
             renderWards(this.value);
         });
+
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function () {
+                const output = document.getElementById('profileImagePreview');
+                output.src = reader.result;
+                output.style.display = 'block';
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+
     </script>
 }

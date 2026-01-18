@@ -1,4 +1,5 @@
-﻿using Vehicle_Inspection.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using Vehicle_Inspection.Data;
 using Vehicle_Inspection.Models;
 
 namespace Vehicle_Inspection.Service
@@ -28,5 +29,12 @@ namespace Vehicle_Inspection.Service
                 throw new Exception("Có gì đó sai sai!", ex);
             }
         }
+
+        public bool checkRoleLogin(Guid id)
+        {
+            return _context.Users.Include(u => u.Roles).Any(u => u.UserId == id && u.Roles.Any(r => r.RoleCode == "LOGIN"));
+        }
+
+
     }
 }

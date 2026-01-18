@@ -45,6 +45,15 @@ namespace Vehicle_Inspection.Controllers
             Account? account = _loginService.login(username, password);
             if (account != null)
             {
+               
+                if (!_loginService.checkRoleLogin(account.UserId))
+                {
+                    Console.Write("--------------------- " + account.UserId);
+                    TempData["ErrorMessage"] = "Tài khoản của bạn không có quyền truy cập hệ thống!\nHãy liên hệ quản trị viên";
+
+                    return RedirectToAction("Login", new { error = true });
+                }
+
                 // Tạo claims
                 var claims = new List<Claim>
                 {
@@ -65,7 +74,7 @@ namespace Vehicle_Inspection.Controllers
                     CookieAuthenticationDefaults.AuthenticationScheme,
                     new ClaimsPrincipal(claimsIdentity),
                     authProperties);
-
+                TempData["InfoMessage"] = "Chào mừng bạn trở lại!";
                 return RedirectToAction("Index", "Home");
             }
 

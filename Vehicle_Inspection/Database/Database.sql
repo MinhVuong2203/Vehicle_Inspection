@@ -808,8 +808,102 @@ CREATE TABLE dbo.FeeSchedule (
     CONSTRAINT CK_Fee_Amount CHECK (TotalFee >= 0)
 );
 
+SELECT *
+FROM FeeSchedule F
+JOIN VehicleType T ON T.VehicleTypeId = F.VehicleTypeId
+
 CREATE INDEX IX_FeeSchedule_ServiceType ON dbo.FeeSchedule(ServiceType);
 CREATE INDEX IX_FeeSchedule_Effective ON dbo.FeeSchedule(EffectiveFrom, EffectiveTo) WHERE IsActive = 1;
+
+INSERT INTO dbo.VehicleType(TypeCode, TypeName, Description, IsActive)
+VALUES
+-- 250k
+('PAX_LT_10',   N'Ô tô chở người dưới 10 chỗ',      N'Theo biểu phí kiểm định', 1),
+('AMBULANCE',   N'Xe cứu thương',                   N'Theo biểu phí kiểm định', 1),
+
+-- 290k
+('PAX_10_24',   N'Ô tô chở người 10 đến 24 ghế',    N'Kể cả taxi', 1),
+('TRUCK_LE_2T', N'Ô tô tải đến 2 tấn',              N'KL hàng chuyên chở cho phép tham gia GT đến 2 tấn', 1),
+
+-- 330k
+('PAX_25_40',   N'Ô tô chở người 25 đến 40 ghế',    N'Kể cả taxi', 1),
+('TRUCK_2_7T',  N'Ô tô tải trên 2 đến 7 tấn',       N'KL hàng chuyên chở cho phép tham gia GT trên 2 đến 7 tấn', 1),
+
+-- 360k
+('PAX_GT_40',     N'Ô tô chở người trên 40 ghế',    N'Kể cả taxi', 1),
+('BUS',           N'Xe buýt',                        N'Theo biểu phí kiểm định', 1),
+('TRUCK_7_20T',   N'Ô tô tải trên 7 đến 20 tấn',     N'Theo biểu phí kiểm định', 1),
+('TRACTOR_LE_20T',N'Ô tô đầu kéo kéo theo đến 20 tấn',N'Khối lượng kéo theo cho phép tham gia GT đến 20 tấn', 1),
+
+-- 570k
+('TRUCK_GT_20T',   N'Ô tô tải trên 20 tấn',          N'Theo biểu phí kiểm định', 1),
+('TRACTOR_GT_20T', N'Ô tô đầu kéo kéo theo trên 20 tấn', N'Khối lượng kéo theo cho phép tham gia GT trên 20 tấn', 1),
+
+-- 190k (bảng dưới)
+('TRACTOR',      N'Máy kéo',                         N'Theo biểu phí kiểm định', 1),
+('MOTOR_4W_CARGO',N'Xe chở hàng 4 bánh gắn động cơ', N'Theo biểu phí kiểm định', 1),
+('MOTOR_4W_PAX',  N'Xe chở người 4 bánh gắn động cơ',N'Theo biểu phí kiểm định', 1),
+('TRAILER',       N'Rơ-moóc',                        N'Theo biểu phí kiểm định', 1),
+('SEMI_TRAILER',  N'Sơ mi rơ-moóc',                  N'Theo biểu phí kiểm định', 1),
+
+-- 110k
+('THREE_WHEEL',   N'Xe ba bánh',                     N'Theo biểu phí kiểm định', 1);
+
+--------------
+DECLARE @From DATE = '2022-10-08'; -- bạn có thể đổi
+DECLARE @CreatedBy UNIQUEIDENTIFIER = NULL;
+
+-- helper: lấy id theo TypeCode
+DECLARE @Id TABLE (TypeCode NVARCHAR(20), VehicleTypeId INT);
+INSERT INTO @Id(TypeCode, VehicleTypeId)
+SELECT TypeCode, VehicleTypeId FROM dbo.VehicleType
+WHERE TypeCode IN (
+ 'PAX_LT_10','AMBULANCE',
+ 'PAX_10_24','TRUCK_LE_2T',
+ 'PAX_25_40','TRUCK_2_7T',
+ 'PAX_GT_40','BUS','TRUCK_7_20T','TRACTOR_LE_20T',
+ 'TRUCK_GT_20T','TRACTOR_GT_20T',
+ 'TRACTOR','MOTOR_4W_CARGO','MOTOR_4W_PAX','TRAILER','SEMI_TRAILER',
+ 'THREE_WHEEL'
+);
+
+-- Insert phí theo nhóm tiền trong ảnh
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'PERIODIC', VehicleTypeId, 250000, 0, 0, 250000, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_LT_10','AMBULANCE');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'PERIODIC', VehicleTypeId, 290000, 0, 0, 290000, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_10_24','TRUCK_LE_2T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'PERIODIC', VehicleTypeId, 330000, 0, 0, 330000, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_25_40','TRUCK_2_7T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'PERIODIC', VehicleTypeId, 360000, 0, 0, 360000, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_GT_40','BUS','TRUCK_7_20T','TRACTOR_LE_20T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'PERIODIC', VehicleTypeId, 570000, 0, 0, 570000, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('TRUCK_GT_20T','TRACTOR_GT_20T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'PERIODIC', VehicleTypeId, 190000, 0, 0, 190000, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('TRACTOR','MOTOR_4W_CARGO','MOTOR_4W_PAX','TRAILER','SEMI_TRAILER');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'PERIODIC', VehicleTypeId, 110000, 0, 0, 110000, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('THREE_WHEEL');
+
+
 
 -- 5.2) Bảng Payment (Thanh toán)
 CREATE TABLE dbo.Payment (

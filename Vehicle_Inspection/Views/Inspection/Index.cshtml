@@ -1,11 +1,13 @@
-﻿@{
-	ViewData["Title"] = "Danh Sách Hồ Sơ Kiểm Định Xe Cơ Giới";
+﻿@using Vehicle_Inspection.Service
+@{
     Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Danh Sách Hồ Sơ Kiểm Định Xe Cơ Giới";
+    var inspectionRecords = ViewData["InspectionRecords"] as List<InspectionRecordDto>;
 }
 
-<link rel="stylesheet" href="~/css/Inspection/Inspection.css" asp-append-version="true"/>
 
 @section Styles {
+    <link rel="stylesheet" href="~/css/Inspection/Inspection.css" asp-append-version="true"/>
     @* <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> *@
 }
 
@@ -40,25 +42,107 @@
             </div>
         </div>
 
-        <table id="recordsTable">
-            <thead>
-                <tr>
-                    <th>STT</th>
-                    <th>Mã Hồ Sơ</th>
-                    <th>Biển Số Xe</th>
-                    <th>Chủ Xe</th>
-                    <th>Loại KĐ</th>
-                    <th>Dây Chuyền</th>
-                    <th>Ngày Tạo</th>
-                    <th>Trạng Thái</th>
-                    <th>Kết Quả</th>
-                    <th>Hành Động</th>
-                </tr>
-            </thead>
-            <tbody id="recordsBody">
-                <!-- Dữ liệu sẽ được thêm bằng JavaScript -->
-            </tbody>
-        </table>
+        @if (inspectionRecords.Any())
+        {
+            <table id="recordsTable">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Mã Hồ Sơ</th>
+                        <th>Biển Số Xe</th>
+                        <th>Chủ Xe</th>
+                        <th>Loại KĐ</th>
+                        <th>Dây Chuyền</th>
+                        <th>Ngày Tạo</th>
+                        <th>Trạng Thái</th>
+                        <th>Kết Quả</th>
+                        <th>Hành Động</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsBody">
+                    @{
+                        int stt = 1;
+                    }
+                    @foreach (var record in inspectionRecords)
+                    {
+                        <tr data-inspection-id="@record.InspectionId"
+                            data-status="@record.Status"
+                            data-type="@record.InspectionType"
+                            data-date="@record.CreatedAt.ToString("yyyy-MM-dd")">
+                            <td>@stt</td>
+                            <td><strong>@record.InspectionCode</strong></td>
+                            <td>
+                                <span class="plate-number">@record.PlateNo</span>
+                            </td>
+                            <td>@record.OwnerFullName</td>
+                            <td>
+                                <span class="inspection-type @GetInspectionTypeClass(record.InspectionType)">
+                                    @record.InspectionTypeText
+                                </span>
+                            </td>
+                            <td>@(record.LaneName ?? "Chưa phân công")</td>
+                            <td>@record.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <span class="status @GetStatusClass(record.Status)">
+                                    @record.StatusText
+                                </span>
+                            </td>
+                            <td>
+                                @if (record.FinalResult.HasValue)
+                                {
+                                    <span class="result @GetResultClass(record.FinalResult.Value)">
+                                        @record.FinalResultText
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="result pending">Chưa có</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action view"
+                                            onclick="showDetailById(@record.InspectionId)"
+                                            title="Xem chi tiết">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </button>
+
+                                    @if (record.Status == 2)
+                                    {
+                                        <button class="btn-action assign"
+                                                onclick="openAssignLane(@record.InspectionId, '@record.InspectionCode', '@record.PlateNo', '@record.OwnerFullName', '@record.VehicleType')"
+                                                title="Phân công dây chuyền">
+                                            <i class="fa-solid fa-road"></i>
+                                        </button>
+                                    }
+
+                                    @if (record.Status == 3)
+                                    {
+                                        <button class="btn-action inspect"
+                                                onclick="openInspectionProcess(@record.InspectionId, '@record.InspectionCode', '@record.PlateNo', '@record.OwnerFullName', '@record.VehicleType')"
+                                                title="Quy trình kiểm định">
+                                            <i class="fa-solid fa-clipboard-check"></i>
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        stt++;
+                    }
+                </tbody>
+            </table>
+
+            <div class="table-info">
+                <p>Hiển thị <strong>@inspectionRecords.Count</strong> hồ sơ</p>
+            </div>
+        }
+        else
+        {
+            <div class="no-data">
+                <i class="fa-solid fa-inbox"></i>
+                <p>Chưa có hồ sơ kiểm định nào</p>
+            </div>
+        }
     </div>
 
     <!-- Modal Chi Tiết Hồ Sơ -->
@@ -534,4 +618,128 @@
         </div>
     </div>
 </div>
-<script src="~/js/Inspection/Inspection.js"></script>
+
+@functions {
+    private string GetStatusClass(short status)
+    {
+        return status switch
+        {
+            0 => "draft",
+            1 => "received",
+            2 => "paid",
+            3 => "in-progress",
+            4 => "completed",
+            5 => "passed",
+            6 => "failed",
+            7 => "certified",
+            _ => ""
+        };
+    }
+
+    private string GetInspectionTypeClass(string type)
+    {
+        return type switch
+        {
+            "FIRST" => "first",
+            "PERIODIC" => "periodic",
+            "RE_INSPECTION" => "re-inspection",
+            _ => ""
+        };
+    }
+
+    private string GetResultClass(int result)
+    {
+        return result switch
+        {
+            1 => "pass",
+            2 => "fail",
+            3 => "suspend",
+            _ => "pending"
+        };
+    }
+}
+
+<script src="~/js/Inspection/Inspection.js" asp-append-version="true"></script>
+
+@section Scripts {
+    <script>
+        // Biến global để lưu dữ liệu gốc
+        var allRecords = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(inspectionRecords));
+
+        console.log('Loaded records:', allRecords.length);
+
+        // Hàm tìm kiếm
+        function searchRecords() {
+            const searchText = document.getElementById('searchInput').value.toLowerCase();
+            const rows = document.querySelectorAll('#recordsBody tr');
+
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchText) ? '' : 'none';
+            });
+        }
+
+        // Hàm lọc theo điều kiện
+        function filterRecords() {
+            const statusFilter = document.getElementById('filterStatus').value;
+            const typeFilter = document.getElementById('filterType').value;
+            const dateFilter = document.getElementById('filterDate').value;
+
+            const rows = document.querySelectorAll('#recordsBody tr');
+
+            rows.forEach(row => {
+                const status = row.getAttribute('data-status');
+                const type = row.getAttribute('data-type');
+                const date = row.getAttribute('data-date');
+
+                let show = true;
+
+                if (statusFilter && status !== statusFilter) show = false;
+                if (typeFilter && type !== typeFilter) show = false;
+                if (dateFilter && date !== dateFilter) show = false;
+
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        // Hàm xem chi tiết
+        function viewDetail(inspectionId) {
+            console.log('View detail:', inspectionId);
+            // TODO: Load chi tiết và hiển thị modal
+            document.getElementById('detailModal').style.display = 'block';
+        }
+
+        // Hàm mở modal phân công dây chuyền
+        function openAssignLane(id, code, plateNo, ownerName, vehicleType) {
+            document.getElementById('assignInspectionCode').textContent = code;
+            document.getElementById('assignPlateNo').textContent = plateNo;
+            document.getElementById('assignOwnerName').textContent = ownerName;
+            document.getElementById('assignVehicleType').textContent = vehicleType || 'N/A';
+
+            document.getElementById('assignLaneModal').style.display = 'block';
+        }
+
+        // Hàm mở modal quy trình kiểm định
+        function openInspectionProcess(id, code, plateNo, ownerName, vehicleType) {
+            document.getElementById('processInspectionCode').textContent = code;
+            document.getElementById('processPlateNo').textContent = plateNo;
+            document.getElementById('processOwnerName').textContent = ownerName;
+            document.getElementById('processVehicleType').textContent = vehicleType || 'N/A';
+
+            document.getElementById('inspectionProcessModal').style.display = 'block';
+        }
+
+        // Đóng modal khi click vào nút close hoặc ngoài modal
+        document.querySelectorAll('.modal .close').forEach(closeBtn => {
+            closeBtn.onclick = function() {
+                this.closest('.modal').style.display = 'none';
+            }
+        });
+
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+}

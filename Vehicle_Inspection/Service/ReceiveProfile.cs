@@ -456,6 +456,145 @@ namespace Vehicle_Inspection.Service
                 throw new Exception($"Lỗi cập nhật: {ex.Message}", ex);
             }
         }
+        /// <summary>
+        /// Tạo mới hồ sơ Owner, Vehicle và Specification
+        /// </summary>
+        public async Task<bool> CreateProfileAsync(UpdateProfileRequest request, string? imageUrl)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                Console.WriteLine($"💾 ========== BẮT ĐẦU TẠO MỚI ==========");
+
+                // Tạo Owner mới
+                var owner = new Owner
+                {
+                    OwnerType = request.Owner.OwnerType,
+                    FullName = request.Owner.FullName,
+                    CompanyName = request.Owner.CompanyName,
+                    TaxCode = request.Owner.TaxCode,
+                    CCCD = request.Owner.CCCD,
+                    Phone = request.Owner.Phone,
+                    Email = request.Owner.Email,
+                    Address = request.Owner.Address,
+                    Ward = request.Owner.Ward,
+                    Province = request.Owner.Province,
+                    ImageUrl = imageUrl,
+                    CreatedAt = DateTime.Now
+                };
+
+                _context.Owners.Add(owner);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Owner created with ID: {owner.OwnerId}");
+
+                // Tạo Vehicle mới
+                var vehicle = new Vehicle
+                {
+                    OwnerId = owner.OwnerId,
+                    PlateNo = request.Vehicle.PlateNo,
+                    InspectionNo = request.Vehicle.InspectionNo,
+                    VehicleGroup = request.Vehicle.VehicleGroup,
+                    EnergyType = request.Vehicle.EnergyType,
+                    IsCleanEnergy = request.Vehicle.IsCleanEnergy,
+                    UsagePermission = request.Vehicle.UsagePermission,
+                    Brand = request.Vehicle.Brand,
+                    Model = request.Vehicle.Model,
+                    EngineNo = request.Vehicle.EngineNo,
+                    Chassis = request.Vehicle.Chassis,
+                    ManufactureYear = request.Vehicle.ManufactureYear,
+                    ManufactureCountry = request.Vehicle.ManufactureCountry,
+                    LifetimeLimitYear = request.Vehicle.LifetimeLimitYear,
+                    HasCommercialModification = request.Vehicle.HasCommercialModification,
+                    HasModification = request.Vehicle.HasModification,
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now
+                };
+
+                // Tìm VehicleTypeId
+                if (!string.IsNullOrWhiteSpace(request.Vehicle.VehicleType))
+                {
+                    var vehicleType = await _context.VehicleTypes
+                        .FirstOrDefaultAsync(vt => vt.TypeName == request.Vehicle.VehicleType);
+                    if (vehicleType != null)
+                    {
+                        vehicle.VehicleTypeId = vehicleType.VehicleTypeId;
+                    }
+                }
+
+                _context.Vehicles.Add(vehicle);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Vehicle created with ID: {vehicle.VehicleId}");
+
+                // Tạo Specification nếu có
+                if (request.Specification != null)
+                {
+                    var spec = new Specification
+                    {
+                        PlateNo = request.Vehicle.PlateNo,
+                        WheelFormula = request.Specification.WheelFormula,
+                        WheelTread = request.Specification.WheelTread,
+                        OverallLength = request.Specification.OverallLength,
+                        OverallWidth = request.Specification.OverallWidth,
+                        OverallHeight = request.Specification.OverallHeight,
+                        CargoInsideLength = request.Specification.CargoInsideLength,
+                        CargoInsideWidth = request.Specification.CargoInsideWidth,
+                        CargoInsideHeight = request.Specification.CargoInsideHeight,
+                        Wheelbase = request.Specification.Wheelbase,
+                        KerbWeight = request.Specification.KerbWeight,
+                        AuthorizedCargoWeight = request.Specification.AuthorizedCargoWeight,
+                        AuthorizedTowedWeight = request.Specification.AuthorizedTowedWeight,
+                        AuthorizedTotalWeight = request.Specification.AuthorizedTotalWeight,
+                        SeatingCapacity = request.Specification.SeatingCapacity,
+                        StandingCapacity = request.Specification.StandingCapacity,
+                        LyingCapacity = request.Specification.LyingCapacity,
+                        EngineType = request.Specification.EngineType,
+                        EnginePosition = request.Specification.EnginePosition,
+                        EngineModel = request.Specification.EngineModel,
+                        EngineDisplacement = request.Specification.EngineDisplacement,
+                        MaxPower = request.Specification.MaxPower,
+                        MaxPowerRPM = request.Specification.MaxPowerRPM,
+                        FuelType = request.Specification.FuelType,
+                        MotorType = request.Specification.MotorType,
+                        NumberOfMotors = request.Specification.NumberOfMotors,
+                        MotorModel = request.Specification.MotorModel,
+                        TotalMotorPower = request.Specification.TotalMotorPower,
+                        MotorVoltage = request.Specification.MotorVoltage,
+                        BatteryType = request.Specification.BatteryType,
+                        BatteryVoltage = request.Specification.BatteryVoltage,
+                        BatteryCapacity = request.Specification.BatteryCapacity,
+                        TireCount = request.Specification.TireCount,
+                        TireSize = request.Specification.TireSize,
+                        TireAxleInfo = request.Specification.TireAxleInfo,
+                        ImagePosition = request.Specification.ImagePosition,
+                        HasTachograph = request.Specification.HasTachograph,
+                        HasDriverCamera = request.Specification.HasDriverCamera,
+                        NotIssuedStamp = request.Specification.NotIssuedStamp,
+                        Notes = request.Specification.Notes,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    };
+
+                    _context.Specifications.Add(spec);
+                    await _context.SaveChangesAsync();
+
+                    Console.WriteLine($"✅ Specification created");
+                }
+
+                await transaction.CommitAsync();
+                Console.WriteLine($"✅ Transaction committed - Tạo mới thành công");
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Create error: {ex.Message}");
+                await transaction.RollbackAsync();
+                throw new Exception($"Lỗi tạo mới: {ex.Message}", ex);
+            }
+        }
         // ==================== PRIVATE HELPER METHODS ====================
 
         private void UpdateSpecificationFields(Specification spec, SpecificationDto dto)

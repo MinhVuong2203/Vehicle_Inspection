@@ -1,0 +1,478 @@
+﻿@{
+    ViewData["Title"] = "Sửa hồ sơ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Link CSS -->
+<link rel="stylesheet" href="~/css/ReceiveProfile/ReceiveProfile.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<!-- Main Wrapper -->
+<div class="receive-profile-wrapper">
+
+    <!-- RIGHT MAIN CONTENT (No sidebar for edit page) -->
+    <main class="main-content" style="margin: 0 auto; max-width: 1400px;">
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><i class="bi bi-pencil-square"></i> Sửa hồ sơ đăng kiểm</h1>
+            <p>Chỉnh sửa thông tin chủ xe và phương tiện</p>
+        </div>
+
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb-custom">
+            <a href="/"><i class="bi bi-house-door"></i> Trang chủ</a> /
+            <a href="/receive-profile">Tiếp nhận hồ sơ</a> /
+            <span>Sửa</span>
+        </nav>
+
+        <!-- LOADING STATE -->
+        <div class="loading-state" id="loading-state">
+            <div class="spinner"></div>
+            <p class="loading-text">Đang tải dữ liệu...</p>
+        </div>
+
+        <!-- DATA DISPLAY -->
+        <div id="data-display" style="display: none;">
+
+            <!-- SECTION 1: OWNER INFO -->
+            <div class="owner-info-card">
+                <div class="owner-card-header">
+                    <i class="bi bi-person-circle"></i>
+                    <h2>Thông tin chủ xe</h2>
+                </div>
+                <div class="owner-card-body">
+                    <div class="owner-profile-section">
+                        <!-- Owner Image -->
+                        <div class="owner-image-wrapper">
+                            <div id="owner-image-container">
+                                <div class="image-placeholder">
+                                    <i class="bi bi-person"></i>
+                                    <span>HÌNH 3X4</span>
+                                </div>
+                            </div>
+                            <button class="btn-upload-image" onclick="document.getElementById('owner-image-upload').click()">
+                                <i class="bi bi-upload"></i> Tải ảnh
+                            </button>
+                            <input type="file" id="owner-image-upload" accept="image/*" style="display: none;" onchange="previewOwnerImage(event)">
+                        </div>
+
+                        <!-- Owner Details - EDITABLE -->
+                        <div class="owner-details">
+                            <input type="hidden" id="owner-id" />
+
+                            <div class="detail-row">
+                                <div class="detail-item">
+                                    <span class="detail-label">Loại chủ xe <span class="required">*</span></span>
+                                    <select id="owner-type" class="detail-input form-select" onchange="toggleOwnerType()">
+                                        <option value="PERSON">Cá nhân</option>
+                                        <option value="COMPANY">Công ty</option>
+                                    </select>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Họ và tên <span class="required">*</span></span>
+                                    <input type="text" id="owner-fullname" class="detail-input" placeholder="Nhập họ và tên">
+                                </div>
+                            </div>
+
+                            <!-- Person Info -->
+                            <div class="detail-row" id="person-info">
+                                <div class="detail-item">
+                                    <span class="detail-label">CCCD/CMND</span>
+                                    <input type="text" id="owner-cccd" class="detail-input" placeholder="Nhập số CCCD/CMND" maxlength="12">
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Số điện thoại</span>
+                                    <input type="text" id="owner-phone" class="detail-input" placeholder="Nhập số điện thoại" maxlength="20">
+                                </div>
+                            </div>
+
+                            <!-- Company Info -->
+                            <div class="detail-row" id="company-info" style="display: none;">
+                                <div class="detail-item">
+                                    <span class="detail-label">Tên công ty</span>
+                                    <input type="text" id="owner-company" class="detail-input" placeholder="Nhập tên công ty">
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Mã số thuế</span>
+                                    <input type="text" id="owner-taxcode" class="detail-input" placeholder="Nhập mã số thuế">
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-item">
+                                    <span class="detail-label">Email</span>
+                                    <input type="email" id="owner-email" class="detail-input" placeholder="Nhập email">
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Số điện thoại</span>
+                                    <input type="text" id="owner-phone2" class="detail-input" placeholder="Nhập số điện thoại" maxlength="20">
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-item">
+                                    <span class="detail-label">Địa chỉ</span>
+                                    <input type="text" id="owner-address" class="detail-input" placeholder="Nhập địa chỉ">
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Tỉnh/Thành phố</span>
+                                    <select id="owner-province" class="detail-input form-select">
+                                        <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="detail-row">
+                                <div class="detail-item">
+                                    <span class="detail-label">Phường/Xã</span>
+                                    <select id="owner-ward" class="detail-input form-select" disabled>
+                                        <option value="">-- Chọn Phường/Xã --</option>
+                                    </select>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Ngày tạo</span>
+                                    <input type="text" id="owner-created" class="detail-input" readonly style="background: #f5f5f5;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 2: VEHICLE INFO - EDITABLE -->
+            <div class="vehicle-info-card">
+                <div class="vehicle-card-header">
+                    <i class="bi bi-car-front"></i>
+                    <h2>Thông tin phương tiện</h2>
+                </div>
+                <div class="vehicle-card-body">
+                    <input type="hidden" id="vehicle-id" />
+
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-card-heading"></i> Biển số xe <span class="required">*</span></div>
+                            <input type="text" id="vehicle-plate" class="vehicle-input" placeholder="VD: 51A-12345">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-file-text"></i> Số quản lý</div>
+                            <input type="text" id="vehicle-inspection" class="vehicle-input" placeholder="Số quản lý">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-collection"></i> Nhóm phương tiện</div>
+                            <input type="text" id="vehicle-group" class="vehicle-input" placeholder="Nhóm phương tiện">
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-tag"></i> Loại phương tiện</div>
+                            <input type="text" id="vehicle-type" class="vehicle-input" placeholder="Loại phương tiện">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-award"></i> Nhãn hiệu</div>
+                            <input type="text" id="vehicle-brand" class="vehicle-input" placeholder="Nhãn hiệu">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-box"></i> Mã kiểu loại</div>
+                            <input type="text" id="vehicle-model" class="vehicle-input" placeholder="Mã kiểu loại">
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-gear"></i> Số động cơ</div>
+                            <input type="text" id="vehicle-engine" class="vehicle-input" placeholder="Số động cơ">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-hash"></i> Số khung</div>
+                            <input type="text" id="vehicle-chassis" class="vehicle-input" placeholder="Số khung">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-calendar"></i> Năm sản xuất</div>
+                            <input type="number" id="vehicle-year" class="vehicle-input" placeholder="Năm" min="1900" max="2100">
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-globe"></i> Nước sản xuất</div>
+                            <input type="text" id="vehicle-country" class="vehicle-input" placeholder="Nước sản xuất">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-lightning-charge"></i> Loại năng lượng</div>
+                            <input type="text" id="vehicle-energy" class="vehicle-input" placeholder="Loại năng lượng">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-leaf"></i> Năng lượng sạch</div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="vehicle-clean">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-robot"></i> Quyền sử dụng</div>
+                            <input type="text" id="vehicle-usage" class="vehicle-input" placeholder="Quyền sử dụng">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-hourglass"></i> Niên hạn sử dụng (năm)</div>
+                            <input type="number" id="vehicle-lifetime" class="vehicle-input" placeholder="Số năm" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-tools"></i> Có cải tạo</div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="vehicle-modification">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-truck"></i> Kinh doanh vận tải</div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="vehicle-commercial">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-clock"></i> Ngày tạo</div>
+                            <input type="text" id="vehicle-created" class="vehicle-input" readonly style="background: #f5f5f5;">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label"><i class="bi bi-clock-history"></i> Cập nhật</div>
+                            <input type="text" id="vehicle-updated" class="vehicle-input" readonly style="background: #f5f5f5;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION 3: SPECIFICATION INFO - EDITABLE -->
+            <div class="vehicle-info-card">
+                <div class="vehicle-card-header">
+                    <i class="bi bi-clipboard-data"></i>
+                    <h2>Thông số kỹ thuật</h2>
+                </div>
+                <div class="vehicle-card-body">
+                    <input type="hidden" id="spec-id" />
+
+                    <h4 class="spec-section-title"><i class="bi bi-rulers"></i> Kích thước</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Công thức bánh xe</div>
+                            <input type="text" id="spec-wheel-formula" class="vehicle-input" placeholder="VD: 4x2">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Vết bánh xe (mm)</div>
+                            <input type="number" id="spec-wheel-tread" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Khoảng cách trục (mm)</div>
+                            <input type="number" id="spec-wheelbase" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Chiều dài (mm)</div>
+                            <input type="number" id="spec-length" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Chiều rộng (mm)</div>
+                            <input type="number" id="spec-width" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Chiều cao (mm)</div>
+                            <input type="number" id="spec-height" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-box-seam"></i> Kích thước thùng hàng</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Dài thùng (mm)</div>
+                            <input type="number" id="spec-cargo-length" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Rộng thùng (mm)</div>
+                            <input type="number" id="spec-cargo-width" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Cao thùng (mm)</div>
+                            <input type="number" id="spec-cargo-height" class="vehicle-input" placeholder="mm" min="0">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-speedometer"></i> Khối lượng</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Khối lượng bản thân (kg)</div>
+                            <input type="number" id="spec-kerb-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Khối lượng hàng CC (kg)</div>
+                            <input type="number" id="spec-cargo-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Khối lượng kéo theo (kg)</div>
+                            <input type="number" id="spec-towed-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Khối lượng toàn bộ (kg)</div>
+                            <input type="number" id="spec-total-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-people"></i> Số người cho phép chở</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Chở ngồi</div>
+                            <input type="number" id="spec-seating" class="vehicle-input" placeholder="Số người" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Chở đứng</div>
+                            <input type="number" id="spec-standing" class="vehicle-input" placeholder="Số người" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Chở nằm</div>
+                            <input type="number" id="spec-lying" class="vehicle-input" placeholder="Số người" min="0">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-gear-fill"></i> Động cơ</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Loại động cơ</div>
+                            <input type="text" id="spec-engine-type" class="vehicle-input" placeholder="Loại động cơ">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Vị trí động cơ</div>
+                            <input type="text" id="spec-engine-position" class="vehicle-input" placeholder="Vị trí">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Ký hiệu động cơ</div>
+                            <input type="text" id="spec-engine-model" class="vehicle-input" placeholder="Ký hiệu">
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Thể tích (cm³)</div>
+                            <input type="number" id="spec-displacement" class="vehicle-input" placeholder="cm³" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Công suất max (kW)</div>
+                            <input type="number" id="spec-max-power" class="vehicle-input" placeholder="kW" min="0" step="0.01">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Tốc độ tại max (rpm)</div>
+                            <input type="number" id="spec-max-rpm" class="vehicle-input" placeholder="rpm" min="0">
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Loại nhiên liệu</div>
+                            <input type="text" id="spec-fuel-type" class="vehicle-input" placeholder="Loại nhiên liệu">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-lightning-charge-fill"></i> Động cơ điện</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Loại động cơ điện</div>
+                            <input type="text" id="spec-motor-type" class="vehicle-input" placeholder="Loại động cơ điện">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Số lượng động cơ</div>
+                            <input type="number" id="spec-motor-count" class="vehicle-input" placeholder="Số lượng" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Ký hiệu động cơ điện</div>
+                            <input type="text" id="spec-motor-model" class="vehicle-input" placeholder="Ký hiệu">
+                        </div>
+
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Tổng công suất (kW)</div>
+                            <input type="number" id="spec-motor-power" class="vehicle-input" placeholder="kW" min="0" step="0.01">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Điện áp (V)</div>
+                            <input type="number" id="spec-motor-voltage" class="vehicle-input" placeholder="V" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-battery-charging"></i> Ắc quy</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Loại ắc quy</div>
+                            <input type="text" id="spec-battery-type" class="vehicle-input" placeholder="Loại ắc quy">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Điện áp (V)</div>
+                            <input type="number" id="spec-battery-voltage" class="vehicle-input" placeholder="V" min="0" step="0.01">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Dung lượng (kWh)</div>
+                            <input type="number" id="spec-battery-capacity" class="vehicle-input" placeholder="kWh" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-circle"></i> Lốp xe</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Số lượng lốp</div>
+                            <input type="number" id="spec-tire-count" class="vehicle-input" placeholder="Số lượng" min="0">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Cỡ lốp</div>
+                            <input type="text" id="spec-tire-size" class="vehicle-input" placeholder="VD: 195/65R15">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Thông tin trục</div>
+                            <input type="text" id="spec-tire-axle" class="vehicle-input" placeholder="Thông tin trục">
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-cpu"></i> Trang thiết bị</h4>
+                    <div class="vehicle-grid">
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Vị trí hình ảnh</div>
+                            <input type="text" id="spec-image-position" class="vehicle-input" placeholder="Vị trí hình ảnh">
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Giám sát hành trình</div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="spec-tachograph">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Camera lái xe</div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="spec-camera">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                        <div class="vehicle-item">
+                            <div class="vehicle-item-label">Không cấp tem</div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="spec-no-stamp">
+                                <span class="checkmark"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <h4 class="spec-section-title"><i class="bi bi-chat-left-text"></i> Ghi chú</h4>
+                    <textarea id="spec-notes" class="spec-notes-textarea" rows="4" placeholder="Nhập ghi chú..."></textarea>
+
+                </div>
+            </div>
+
+            <!-- Action Buttons - LƯU VÀ HỦY -->
+            <div class="action-buttons">
+                <button type="button" class="btn-save" onclick="saveChanges()">
+                    <i class="bi bi-check-circle"></i> Lưu thay đổi
+                </button>
+                <button type="button" class="btn-cancel" onclick="cancelChanges()">
+                    <i class="bi bi-x-circle"></i> Hủy bỏ
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+</div>
+
+<!-- Notification Container -->
+<div id="notification-container"></div>
+
+<!-- Link JavaScript -->
+<script src="~/js/ReceiveProfile/ReceiveProfile.js"></script>

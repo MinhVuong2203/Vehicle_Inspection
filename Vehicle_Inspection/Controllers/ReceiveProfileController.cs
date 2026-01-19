@@ -14,10 +14,43 @@ namespace Vehicle_Inspection.Controllers
         }
 
         /// <summary>
-        /// Hiển thị trang Tiếp nhận hồ sơ
+        /// Hiển thị trang Tiếp nhận hồ sơ (View Only)
         /// </summary>
         [Route("receive-profile")]
         public IActionResult Index()
+        {
+            return View();
+        }
+
+        /// <summary>
+        /// Hiển thị trang Sửa hồ sơ
+        /// </summary>
+        [Route("receive-profile/edit")]
+        public async Task<IActionResult> Edit([FromQuery] string? cccd, [FromQuery] string? plateNo)
+        {
+            if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo))
+            {
+                TempData["ErrorMessage"] = "Vui lòng tìm kiếm hồ sơ trước khi chỉnh sửa";
+                return RedirectToAction("Index");
+            }
+
+            var result = await _receiveProfileService.SearchAsync(cccd, plateNo);
+
+            if (result == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hồ sơ";
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.SearchData = result.Data;
+            return View();
+        }
+
+        /// <summary>
+        /// Hiển thị trang Tạo mới hồ sơ
+        /// </summary>
+        [Route("receive-profile/create")]
+        public IActionResult Create()
         {
             return View();
         }

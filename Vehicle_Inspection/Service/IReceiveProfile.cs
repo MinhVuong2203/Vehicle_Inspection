@@ -9,6 +9,8 @@ namespace Vehicle_Inspection.Service
         Task<bool> UpdateProfileAsync(UpdateProfileRequest request, string? imageUrl);
         Task<List<string>> GetProvincesAsync();
         Task<List<object>> GetWardsByProvinceAsync(string provinceName);
+        Task<bool> CreateProfileAsync(UpdateProfileRequest request, string? imageUrl);
+
 
         // DTOs
         public class SearchResponse

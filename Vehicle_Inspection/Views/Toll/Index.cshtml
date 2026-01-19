@@ -30,23 +30,6 @@
     <link href="~/css/toll/main.css" rel="stylesheet" />
 }
 
-@* Hiển thị thông báo *@
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
 <div class="row">
     <div class="col-md-3">
         <!-- Header Section -->
@@ -184,7 +167,7 @@
                         var statusClass = GetStatusClass(inspection.Status, inspection.PaidAt);
                         var statusText = GetStatusText(inspection.Status, inspection.PaidAt);
                         var statusIcon = inspection.PaidAt != null ? "fa-check-circle" : "fa-clock";
-                        @* var amount = inspection.Payment.TotalAmount; *@
+                        var amount = inspection.Payment?.TotalAmount ?? 0m;
 
                         <div class="inspection-card @statusClass">
                             <div class="card-header-section">
@@ -223,10 +206,16 @@
                             {
                                 <div class="card-footer-section">
                                     <button class="btn-toll"
-                                            onclick="openTollModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', @inspection.Payment.TotalAmount)">
+                                            onclick="openTollModal(@inspection.InspectionId,
+                                           '@inspection.InspectionCode',
+                                           '@inspection.InspectionType',
+                                           '@inspection.Vehicle?.PlateNo',
+                                           '@inspection.Owner?.FullName',
+                                           @((double)amount))">
                                         <i class="fas fa-cash-register"></i>
                                         Thu phí
                                     </button>
+
                                 </div>
                             }
                             else
@@ -283,8 +272,7 @@
                                 var statusClass = GetStatusClass(inspection.Status, inspection.PaidAt);
                                 var statusText = GetStatusText(inspection.Status, inspection.PaidAt);
                                 var statusIcon = inspection.PaidAt != null ? "fa-check-circle" : "fa-clock";
-                                var amount = inspection.Payment?.TotalAmount ?? 500000;
-
+                                var amount2 = inspection.Payment?.TotalAmount ?? 500000;
                                 <tr>
                                     <td>
                                         <div class="table-code">
@@ -295,7 +283,7 @@
                                     <td><strong>@inspection.Vehicle?.PlateNo</strong></td>
                                     <td>@inspection.InspectionType</td>
                                     <td>@inspection.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td><strong class="amount">@amount.ToString("N0") VNĐ</strong></td>
+                                    <td><strong class="amount">@amount2.ToString("N0") VNĐ</strong></td>
                                     <td>
                                         <span class="badge badge-@statusClass">
                                             <i class="fas @statusIcon"></i>
@@ -306,7 +294,12 @@
                                         @if (inspection.PaidAt == null)
                                         {
                                             <button class="btn-action btn-collect"
-                                                    onclick="openTollModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', @amount)">
+                                                    onclick="openTollModal(@inspection.InspectionId,
+                                                   '@inspection.InspectionCode',
+                                                   '@inspection.InspectionType',
+                                                   '@inspection.Vehicle?.PlateNo',
+                                                   '@inspection.Owner?.FullName',
+                                                   @((double)amount2))">
                                                 <i class="fas fa-cash-register"></i>
                                                 Thu phí
                                             </button>
@@ -333,7 +326,7 @@
 <!-- Toll Collection Modal -->
 <div class="modal-overlay" id="tollModal">
     <div class="modal-container">
-        <form asp-action="CollectPayment" method="post" id="paymentForm">
+        <form asp-action="CollectPayment" method="post" id="paymentForm" class="no-loading">
             @Html.AntiForgeryToken()
 
             <div class="modal-header">
@@ -347,6 +340,7 @@
             </div>
 
             <div class="modal-body">
+                <input type="hidden" id="modalInspectionIdInput" />
                 <input type="hidden" name="inspectionCode" id="modalInspectionCodeInput" />
 
                 <div class="modal-info">
@@ -440,11 +434,13 @@
         });
 
         // Modal functions
-        function openTollModal(code, type, licensePlate, owner, amount) {
+        function openTollModal(inspectionId, code, type, licensePlate, owner, amount) {
+            document.getElementById('modalInspectionIdInput').value = inspectionId;
             document.getElementById('modalInspectionCode').textContent = code;
             document.getElementById('modalInspectionType').textContent = type;
             document.getElementById('modalLicensePlate').textContent = licensePlate || 'N/A';
             document.getElementById('modalOwner').textContent = owner || 'N/A';
+            console.log(document.getElementById('modalAmount').textContent);
             document.getElementById('modalAmount').textContent = amount.toLocaleString('vi-VN') + ' VNĐ';
             document.getElementById('modalInspectionCodeInput').value = code;
             document.getElementById('tollModal').classList.add('active');
@@ -464,5 +460,44 @@
                 }
             });
         }, 5000);
+   
+        async function payWithPayOS(inspectionId) {
+            const res = await fetch(`/api/payos/create-link/${inspectionId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                alert("Không tạo được link PayOS: " + text);
+                return;
+            }
+
+            const data = await res.json();
+            if (!data.checkoutUrl) {
+                alert("Server không trả checkoutUrl.");
+                return;
+            }
+
+            window.location.href = data.checkoutUrl;
+        }
+
+        document.getElementById('paymentForm').addEventListener('submit', async function (e) {
+            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+            if (method === "Chuyển khoản") {
+                e.preventDefault(); // chặn submit CollectPayment
+
+                const inspectionId = document.getElementById('modalInspectionIdInput').value;
+                if (!inspectionId) {
+                    alert("Thiếu inspectionId.");
+                    return;
+                }
+
+                await payWithPayOS(inspectionId);
+            }
+            // Nếu không phải "Chuyển khoản" thì để form submit bình thường (CollectPayment)
+        });
     </script>
+
+
 }

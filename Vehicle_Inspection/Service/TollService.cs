@@ -13,7 +13,7 @@ namespace Vehicle_Inspection.Service
             _context = context;
         }
 
-            public List<Inspection> GetInspections(string? search, short? status)
+        public List<Inspection> GetInspections(string? search, short? status)
             {
                 var query = _context.Inspections
                 .Include(i => i.Vehicle)                   
@@ -47,7 +47,7 @@ namespace Vehicle_Inspection.Service
                 .FirstOrDefault(i => i.InspectionCode == inspectionCode && !i.IsDeleted);
         }
 
-        public bool CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId)
+        public string CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId)
         {
             using var transaction = _context.Database.BeginTransaction();
 
@@ -59,45 +59,51 @@ namespace Vehicle_Inspection.Service
 
                 if (inspection == null)
                 {
-                    return false;
+                    return "Not found";
                 }
 
-                // Kiểm tra trạng thái: chỉ thu phí cho đơn đang chờ (Status = 1)
+                //Kiểm tra trạng thái: chỉ thu phí cho đơn đang chờ(Status = 1)
                 // Hoặc đơn đã hoàn thành kiểm định nhưng chưa thanh toán
-                //if (inspection.Payment != null && inspection.Payment.Status == 1)
-                //{
-                //    // Đã thu phí rồi
-                //    return false;
-                //}
+                if (inspection.Payment != null && inspection.Payment.PaymentStatus == 1)
+                {                   
+                    // Đã thu phí rồi
+                    return "Successed";
+                }
 
-                //// Cập nhật hoặc tạo mới Payment
-                //if (inspection.Payment == null)
-                //{
-                //    var payment = new Payment
-                //    {
-                //        InspectionId = inspection.InspectionId,
-                //        Amount = 500000, // Có thể tính toán dựa vào loại kiểm định
-                //        PaymentMethod = paymentMethod,
-                //        Status = 1, // 1 = Đã thanh toán
-                //        PaymentDate = DateTime.Now,
-                //        Note = note,
-                //        CreatedBy = userId,
-                //        CreatedAt = DateTime.Now
-                //    };
-                //    _context.Payments.Add(payment);
-                //}
-                //else
-                //{
-                //    inspection.Payment.PaymentMethod = paymentMethod;
-                //    inspection.Payment.Status = 1;
-                //    inspection.Payment.PaymentDate = DateTime.Now;
-                //    inspection.Payment.Note = note;
-                //}
+                if (inspection.Payment != null && inspection.Payment.PaymentStatus == 2)
+                {
+                    // Đơn này đã bị hủy
+                    return "Failed";
+                }
+
+                // Cập nhật hoặc tạo mới Payment
+                if (inspection.Payment == null)
+                {
+                    var payment = new Payment
+                    {
+                        InspectionId = inspection.InspectionId,
+                        TotalAmount = 500000, // Có thể tính toán dựa vào loại kiểm định
+                        PaymentMethod = paymentMethod,
+                        PaymentStatus = 1, // 1 = Đã thanh toán
+                        PaidAt = DateTime.Now,
+                        Notes = note,
+                        PaidBy = userId,
+
+                    };
+                    _context.Payments.Add(payment);
+                }
+                else
+                {
+                    inspection.Payment.PaymentMethod = paymentMethod;
+                    inspection.Payment.PaymentStatus = 1;
+                    inspection.Payment.ReceiptPrintCount++;
+                    inspection.Payment.PaidAt = DateTime.Now;
+                    inspection.Payment.PaidBy = userId;
+                    inspection.Payment.Notes = note;
+                }
 
                 // Cập nhật thông tin Inspection
                 inspection.PaidAt = DateTime.Now;
-                inspection.ReceivedBy = userId;
-                inspection.ReceivedAt = DateTime.Now;
 
                 // Cập nhật Status nếu cần (tùy theo flow nghiệp vụ của bạn)
                 // Status = 2 có thể là "Đã thu phí" hoặc "Đã tiếp nhận"
@@ -109,14 +115,14 @@ namespace Vehicle_Inspection.Service
                 _context.SaveChanges();
                 transaction.Commit();
 
-                return true;
+                return "Success";
             }
             catch (Exception ex)
             {
                 transaction.Rollback();
                 // Log error
                 Console.WriteLine($"Error collecting payment: {ex.Message}");
-                return false;
+                return "Errol";
             }
         }
     }

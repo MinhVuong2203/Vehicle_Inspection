@@ -91,7 +91,7 @@ namespace Vehicle_Inspection.Service
                     .FirstOrDefault(s => s.PlateNo == inspection.Vehicle.PlateNo);
 
                 var detail = new InspectionDetailDto
-                {
+                { 
                     // Thông tin hồ sơ
                     InspectionId = inspection.InspectionId,
                     InspectionCode = inspection.InspectionCode,

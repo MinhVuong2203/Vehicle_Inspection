@@ -1,6 +1,7 @@
-﻿using Vehicle_Inspection.Data;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using PayOS;
+using Vehicle_Inspection.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,24 @@ builder.Services.Scan(scan => scan
         .WithScopedLifetime());
 
 
+builder.Services.AddSingleton(sp =>
+{
+    var cfg = sp.GetRequiredService<IConfiguration>();
+
+    var clientId = cfg["PayOS:ClientId"];
+    var apiKey = cfg["PayOS:ApiKey"];
+    var checksumKey = cfg["PayOS:ChecksumKey"];
+
+    if (string.IsNullOrWhiteSpace(clientId) ||
+        string.IsNullOrWhiteSpace(apiKey) ||
+        string.IsNullOrWhiteSpace(checksumKey))
+    {
+        throw new InvalidOperationException("Thiếu cấu hình PayOS:ClientId/ApiKey/ChecksumKey trong appsettings.json (hoặc User Secrets).");
+    }
+
+    return new PayOSClient(clientId, apiKey, checksumKey);
+});
+
 
 
 
@@ -56,6 +75,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");

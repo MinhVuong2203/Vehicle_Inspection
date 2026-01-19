@@ -6,6 +6,6 @@ namespace Vehicle_Inspection.Service
     {
         List<Inspection> GetInspections(string? search, short? status);
         Inspection? GetInspectionDetails(string inspectionCode);
-        bool CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId);
+        string CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId);
     }
 }

@@ -55,6 +55,14 @@ namespace Vehicle_Inspection.Controllers
             {
                 // Lấy userId từ session/claims (tùy vào cách bạn quản lý authentication)
                 var userId = GetCurrentUserId();
+ 
+
+                if (paymentMethod == "Chuyển khoản")
+                {
+                    TempData["InfoMessage"] = "Thanh toán bằng PayOS có gọi form rồi";
+                    return RedirectToAction(nameof(Index));
+                }
+
 
                 if (userId == Guid.Empty)
                 {
@@ -62,16 +70,30 @@ namespace Vehicle_Inspection.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                var result = _tollService.CollectPayment(inspectionCode, paymentMethod, note, userId);
+                string result = _tollService.CollectPayment(inspectionCode, paymentMethod, note, userId); // Thành công, Đơn
 
-                if (result)
+                if (result == "Success")
                 {
                     TempData["SuccessMessage"] = $"Thu phí thành công cho đơn kiểm định {inspectionCode}!";
                 }
-                else
+                else if (result == "Not found")
                 {
-                    TempData["ErrorMessage"] = "Thu phí thất bại. Đơn kiểm định có thể đã được thu phí hoặc không tồn tại.";
+                    TempData["ErrorMessage"] = "Thu phí thất bại. Đơn kiểm định này không tồn tại!";
                 }
+                else if (result == "Successed")
+                {
+                    TempData["ErrorMessage"] = "Đơn kiểm định này đã được thu phí.";
+                }
+                else if (result == "Failed")
+                {
+                    TempData["ErrorMessage"] = "Đơn kiểm định này đã bị hủy";
+                }
+                else {
+                    TempData["ErrorMessage"] = "Có gì đó sai sai!";
+                }
+
+
+
             }
             catch (Exception ex)
             {
@@ -117,5 +139,17 @@ namespace Vehicle_Inspection.Controllers
 
             return Guid.Empty;
         }
+
+        public IActionResult Return()
+        {
+            return View();
+        }
+
+        public IActionResult Cancel()
+        {
+            return View();
+        }
+
+
     }
 }

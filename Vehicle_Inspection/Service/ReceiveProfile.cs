@@ -353,7 +353,7 @@ namespace Vehicle_Inspection.Service
                 vehicle.PlateNo = request.Vehicle.PlateNo;
                 vehicle.InspectionNo = request.Vehicle.InspectionNo;
                 vehicle.VehicleGroup = request.Vehicle.VehicleGroup;
-                vehicle.VehicleType = request.Vehicle.VehicleType;
+                vehicle.VehicleType.TypeName = request.Vehicle.VehicleType;
                 vehicle.EnergyType = request.Vehicle.EnergyType;
                 vehicle.IsCleanEnergy = request.Vehicle.IsCleanEnergy;
                 vehicle.UsagePermission = request.Vehicle.UsagePermission;
@@ -513,7 +513,7 @@ namespace Vehicle_Inspection.Service
                 PlateNo = vehicle.PlateNo,
                 InspectionNo = vehicle.InspectionNo,
                 VehicleGroup = vehicle.VehicleGroup,
-                VehicleType = vehicle.VehicleType,
+                VehicleType = vehicle.VehicleType.TypeName,
                 EnergyType = vehicle.EnergyType,
                 IsCleanEnergy = vehicle.IsCleanEnergy,
                 UsagePermission = vehicle.UsagePermission,

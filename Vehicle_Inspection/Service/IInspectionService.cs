@@ -1,6 +1,6 @@
 ﻿namespace Vehicle_Inspection.Service
 {
-    public interface IInspection
+    public interface IInspectionService
     {
         List<InspectionRecordDto> GetInspectionRecords();
         InspectionDetailDto? GetInspectionDetail(int inspectionId);

@@ -22,9 +22,6 @@ public partial class Vehicle
     [StringLength(100)]
     public string? VehicleGroup { get; set; }
 
-    [StringLength(100)]
-    public string? VehicleType { get; set; }
-
     [StringLength(50)]
     public string? EnergyType { get; set; }
 
@@ -66,6 +63,8 @@ public partial class Vehicle
 
     public Guid? UpdatedBy { get; set; }
 
+    public int? VehicleTypeId { get; set; }
+
     [ForeignKey("CreatedBy")]
     [InverseProperty("VehicleCreatedByNavigations")]
     public virtual User? CreatedByNavigation { get; set; }
@@ -83,4 +82,8 @@ public partial class Vehicle
     [ForeignKey("UpdatedBy")]
     [InverseProperty("VehicleUpdatedByNavigations")]
     public virtual User? UpdatedByNavigation { get; set; }
+
+    [ForeignKey("VehicleTypeId")]
+    [InverseProperty("Vehicles")]
+    public virtual VehicleType? VehicleType { get; set; }
 }

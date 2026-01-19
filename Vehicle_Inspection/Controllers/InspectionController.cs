@@ -8,10 +8,10 @@ namespace Vehicle_Inspection.Controllers
 {
     public class InspectionController : Controller
     {
-        private readonly IInspection _inspectionService;
+        private readonly IInspectionService _inspectionService;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public InspectionController(IInspection inspectionService)
+        public InspectionController(IInspectionService inspectionService)
         {
             _inspectionService = inspectionService;
 

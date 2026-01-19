@@ -29,4 +29,7 @@ public partial class VehicleType
 
     [InverseProperty("VehicleType")]
     public virtual ICollection<StageItemThreshold> StageItemThresholds { get; set; } = new List<StageItemThreshold>();
+
+    [InverseProperty("VehicleType")]
+    public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
 }

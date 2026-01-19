@@ -262,7 +262,7 @@ CREATE TABLE dbo.Vehicle(
     
     -- PHÂN LOẠI
     VehicleGroup            NVARCHAR(100) NULL,                        -- Nhóm phương tiện (Vehicle's group)
-    VehicleType             NVARCHAR(100) NULL,                        -- Loại phương tiện (Vehicle's type)
+    VehicleTypeId            INT,                        -- Loại phương tiện (Vehicle's type)
     
     -- NĂNG LƯỢNG & MỤC ĐÍCH SỬ DỤNG
     EnergyType              NVARCHAR(50) NULL,                         -- Sử dụng năng lượng sạch, xanh, thân thiện môi trường
@@ -299,8 +299,10 @@ CREATE TABLE dbo.Vehicle(
     FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
     FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
     FOREIGN KEY (UpdatedBy) REFERENCES dbo.[User](UserId),
+	FOREIGN KEY (VehicleTypeId) REFERENCES dbo.VehicleType(VehicleTypeId),
 	CONSTRAINT UQ_Vehicle_PlateNo UNIQUE (PlateNo)
 );
+
 
 CREATE INDEX IX_Vehicle_PlateNo ON dbo.Vehicle(PlateNo);
 CREATE INDEX IX_Vehicle_OwnerId ON dbo.Vehicle(OwnerId);

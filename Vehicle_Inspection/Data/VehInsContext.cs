@@ -360,6 +360,8 @@ public partial class VehInsContext : DbContext
                 .HasConstraintName("FK__Vehicle__OwnerId__245D67DE");
 
             entity.HasOne(d => d.UpdatedByNavigation).WithMany(p => p.VehicleUpdatedByNavigations).HasConstraintName("FK__Vehicle__Updated__2645B050");
+
+            entity.HasOne(d => d.VehicleType).WithMany(p => p.Vehicles).HasConstraintName("FK_Vehicle_VehicleType");
         });
 
         modelBuilder.Entity<VehicleType>(entity =>

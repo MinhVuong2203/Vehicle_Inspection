@@ -3,11 +3,11 @@ using Vehicle_Inspection.Data;
 
 namespace Vehicle_Inspection.Service
 {
-    public class Inspection : IInspection
+    public class InspectionService : IInspectionService
     {
         private readonly VehInsContext _context;
 
-        public Inspection(VehInsContext context)
+        public InspectionService(VehInsContext context)
         {
             _context = context;
         }

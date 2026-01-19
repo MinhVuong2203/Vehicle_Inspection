@@ -1,13 +1,54 @@
-﻿@{
+﻿@model List<Vehicle_Inspection.Models.Inspection>
+
+@{
     ViewData["Title"] = "Thu phí kiểm định";
+
+    // Helper function để lấy tên trạng thái
+    string GetStatusText(short status, DateTime? paidAt)
+    {
+        if (paidAt != null) return "Đã thu phí";
+
+        return status switch
+        {
+            1 => "Chờ thu phí",
+            2 => "Đã tiếp nhận",
+            3 => "Đang kiểm định",
+            4 => "Hoàn thành",
+            5 => "Đã cấp giấy",
+            _ => "Không xác định"
+        };
+    }
+
+    string GetStatusClass(short status, DateTime? paidAt)
+    {
+        if (paidAt != null) return "completed";
+        return status == 1 ? "pending" : "completed";
+    }
 }
 
-@section Styles{
-    <link href="/css/toll/main.css" rel="stylesheet" />
+@section Styles {
+    <link href="~/css/toll/main.css" rel="stylesheet" />
+}
+
+@* Hiển thị thông báo *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
 }
 
 <div class="row">
-    <div class="col-md-2">
+    <div class="col-md-3">
         <!-- Header Section -->
         <div class="page-header">
             <div class="header-content">
@@ -25,7 +66,7 @@
                         <i class="fas fa-clock"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value" id="pendingCount">0</div>
+                        <div class="stat-value">@ViewBag.PendingCount</div>
                         <div class="stat-label">Chờ thu phí</div>
                     </div>
                 </div>
@@ -34,7 +75,7 @@
                         <i class="fas fa-check-circle"></i>
                     </div>
                     <div class="stat-content">
-                        <div class="stat-value" id="completedCount">0</div>
+                        <div class="stat-value">@ViewBag.CompletedCount</div>
                         <div class="stat-label">Đã thu phí</div>
                     </div>
                 </div>
@@ -49,64 +90,69 @@
                     <span>Bộ lọc & Tìm kiếm</span>
                 </div>
                 <div class="filter-body">
-                    <div class="filter-row">
-                        <div class="filter-group">
-                            <label class="filter-label">
-                                <i class="fas fa-search"></i>
-                                Tìm kiếm
-                            </label>
-                            <input type="text" class="filter-input" id="search"
-                                   placeholder="Nhập mã kiểm định hoặc loại kiểm định...">
-                        </div>
+                    <form asp-action="Index" method="get">
+                        <div class="filter-row">
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="fas fa-search"></i>
+                                    Tìm kiếm
+                                </label>
+                                <input type="text" class="filter-input" name="search"
+                                       value="@ViewBag.SearchValue"
+                                       placeholder="Nhập mã kiểm định">
+                            </div>
 
-                        <div class="filter-group">
-                            <label class="filter-label">
-                                <i class="fas fa-flag"></i>
-                                Trạng thái
-                            </label>
-                            <select class="filter-select" id="filterStatus">
-                                <option value="">Tất cả trạng thái</option>
-                                <option value="1" selected>Chờ thu phí</option>
-                                <option value="2">Đã thu phí</option>
-                            </select>
-                        </div>
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="fas fa-flag"></i>
+                                    Trạng thái
+                                </label>
+                                <select class="filter-select" name="status">
+                                    <option value="">Tất cả trạng thái</option>
+                                    <option value="1" selected="@(ViewBag.StatusValue == 1)">Chờ thu phí</option>
+                                    <option value="2" selected="@(ViewBag.StatusValue == 2)">Đã tiếp nhận</option>
+                                    <option value="3" selected="@(ViewBag.StatusValue == 3)">Đang kiểm định</option>
+                                    <option value="4" selected="@(ViewBag.StatusValue == 4)">Hoàn thành</option>
+                                </select>
+                            </div>
 
-                        <div class="filter-group">
-                            <label class="filter-label">
-                                <i class="fas fa-layer-group"></i>
-                                Loại kiểm định
-                            </label>
-                            <select class="filter-select" id="filterType">
-                                <option value="">Tất cả loại</option>
-                                <option value="Định kỳ">Định kỳ</option>
-                                <option value="Bổ sung">Bổ sung</option>
-                                <option value="Đặc biệt">Đặc biệt</option>
-                            </select>
-                        </div>
+                            <div class="filter-group">
+                                <label class="filter-label">
+                                    <i class="fas fa-layer-group"></i>
+                                    Loại kiểm định
+                                </label>
+                                <select class="filter-select" name="type">
+                                    <option value="">Tất cả loại</option>
+                                    <option value="Định kỳ" selected="@(ViewBag.TypeValue == "Định kỳ")">Định kỳ</option>
+                                    <option value="Bổ sung" selected="@(ViewBag.TypeValue == "Bổ sung")">Bổ sung</option>
+                                    <option value="Đặc biệt" selected="@(ViewBag.TypeValue == "Đặc biệt")">Đặc biệt</option>
+                                </select>
+                            </div>
 
-                        <div class="filter-actions">
-                            <button class="btn btn-search" id="btnSearch">
-                                <i class="fas fa-search"></i>
-                                Tìm kiếm
-                            </button>
-                            <button class="btn btn-reset" id="btnReset">
-                                <i class="fas fa-redo"></i>
-                                Đặt lại
-                            </button>
+                            <div class="filter-actions">
+                                <button type="submit" class="btn-t btn-search">
+                                    <i class="fas fa-search"></i>
+                                    Tìm kiếm
+                                </button>
+                                <a asp-action="Index" class="btn-t btn-reset">
+                                    <i class="fas fa-redo"></i>
+                                    Đặt lại
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-   
-    <div class="col-md-10">
+
+    <div class="col-md-9">
         <!-- Results Section -->
         <div class="results-section">
             <div class="results-header">
                 <div class="results-info">
                     <i class="fas fa-list"></i>
-                    <span>Kết quả: <strong id="resultCount">0</strong> đơn kiểm định</span>
+                    <span>Kết quả: <strong>@ViewBag.TotalCount</strong> đơn kiểm định</span>
                 </div>
                 <div class="view-options">
                     <button class="view-btn active" data-view="card">
@@ -118,366 +164,305 @@
                 </div>
             </div>
 
-            <!-- Card View -->
-            <div class="card-grid" id="cardView">
-                <!-- Cards will be inserted here -->
-            </div>
-
-            <!-- Table View -->
-            <div class="table-container" id="tableView" style="display: none;">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>
-                                <i class="fas fa-barcode"></i>
-                                Mã kiểm định
-                            </th>
-                            <th>
-                                <i class="fas fa-car"></i>
-                                Loại kiểm định
-                            </th>
-                            <th>
-                                <i class="fas fa-calendar"></i>
-                                Ngày tạo
-                            </th>
-                            <th>
-                                <i class="fas fa-info-circle"></i>
-                                Trạng thái
-                            </th>
-                            <th>
-                                <i class="fas fa-cog"></i>
-                                Hành động
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody id="inspectionTable">
-                        <!-- Table rows will be inserted here -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Empty State -->
-            <div class="empty-state" id="emptyState" style="display: none;">
-                <div class="empty-icon">
-                    <i class="fas fa-inbox"></i>
+            @if (Model == null || !Model.Any())
+            {
+                <!-- Empty State -->
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3>Không tìm thấy kết quả</h3>
+                    <p>Không có đơn kiểm định nào phù hợp với tiêu chí tìm kiếm của bạn</p>
                 </div>
-                <h3>Không tìm thấy kết quả</h3>
-                <p>Không có đơn kiểm định nào phù hợp với tiêu chí tìm kiếm của bạn</p>
-            </div>
+            }
+            else
+            {
+                <!-- Card View -->
+                <div class="card-grid" id="cardView">
+                    @foreach (var inspection in Model)
+                    {
+                        var statusClass = GetStatusClass(inspection.Status, inspection.PaidAt);
+                        var statusText = GetStatusText(inspection.Status, inspection.PaidAt);
+                        var statusIcon = inspection.PaidAt != null ? "fa-check-circle" : "fa-clock";
+                        var amount = inspection.Payment?.TotalAmount ?? 500000;
 
-            <!-- Loading State -->
-            <div class="loading-state" id="loadingState">
-                <div class="spinner"></div>
-                <p>Đang tải dữ liệu...</p>
-            </div>
+                        <div class="inspection-card @statusClass">
+                            <div class="card-header-section">
+                                <div class="card-code">
+                                    <i class="fas fa-barcode"></i>
+                                    @inspection.InspectionCode
+                                </div>
+                                <span class="card-status status-@statusClass">
+                                    <i class="fas @statusIcon"></i>
+                                    @statusText
+                                </span>
+                            </div>
+                            <div class="card-body-section">
+                                <div class="card-detail">
+                                    <i class="fas fa-car"></i>
+                                    <span>Loại: <strong>@inspection.InspectionType</strong></span>
+                                </div>
+                                <div class="card-detail">
+                                    <i class="fas fa-id-card"></i>
+                                    <span>Xe: <strong>@inspection.Vehicle?.PlateNo</strong></span>
+                                </div>
+                                <div class="card-detail">
+                                    <i class="fas fa-user"></i>
+                                    <span>Chủ xe: <strong>@inspection.Owner?.FullName</strong></span>
+                                </div>
+                                <div class="card-detail">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>Ngày tạo: <strong>@inspection.CreatedAt.ToString("dd/MM/yyyy HH:mm")</strong></span>
+                                </div>
+                                <div class="card-detail">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <span>Phí: <strong class="amount">@amount.ToString("N0") VNĐ</strong></span>
+                                </div>
+                            </div>
+                            @if (inspection.PaidAt == null)
+                            {
+                                <div class="card-footer-section">
+                                    <button class="btn-toll"
+                                            onclick="openTollModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', @amount)">
+                                        <i class="fas fa-cash-register"></i>
+                                        Thu phí
+                                    </button>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="card-footer-section">
+                                    <div class="paid-info">
+                                        <i class="fas fa-check-circle"></i>
+                                        Đã thu phí lúc @inspection.PaidAt?.ToString("dd/MM/yyyy HH:mm")
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Table View -->
+                <div class="table-container" id="tableView" style="display: none;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <i class="fas fa-barcode"></i>
+                                    Mã kiểm định
+                                </th>
+                                <th>
+                                    <i class="fas fa-car"></i>
+                                    Biển số
+                                </th>
+                                <th>
+                                    <i class="fas fa-layer-group"></i>
+                                    Loại KĐ
+                                </th>
+                                <th>
+                                    <i class="fas fa-calendar"></i>
+                                    Ngày tạo
+                                </th>
+                                <th>
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    Phí
+                                </th>
+                                <th>
+                                    <i class="fas fa-info-circle"></i>
+                                    Trạng thái
+                                </th>
+                                <th>
+                                    <i class="fas fa-cog"></i>
+                                    Hành động
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var inspection in Model)
+                            {
+                                var statusClass = GetStatusClass(inspection.Status, inspection.PaidAt);
+                                var statusText = GetStatusText(inspection.Status, inspection.PaidAt);
+                                var statusIcon = inspection.PaidAt != null ? "fa-check-circle" : "fa-clock";
+                                var amount = inspection.Payment?.TotalAmount ?? 500000;
+
+                                <tr>
+                                    <td>
+                                        <div class="table-code">
+                                            <i class="fas fa-barcode"></i>
+                                            @inspection.InspectionCode
+                                        </div>
+                                    </td>
+                                    <td><strong>@inspection.Vehicle?.PlateNo</strong></td>
+                                    <td>@inspection.InspectionType</td>
+                                    <td>@inspection.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td><strong class="amount">@amount.ToString("N0") VNĐ</strong></td>
+                                    <td>
+                                        <span class="badge badge-@statusClass">
+                                            <i class="fas @statusIcon"></i>
+                                            @statusText
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (inspection.PaidAt == null)
+                                        {
+                                            <button class="btn-action btn-collect"
+                                                    onclick="openTollModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', @amount)">
+                                                <i class="fas fa-cash-register"></i>
+                                                Thu phí
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <a asp-action="Details" asp-route-inspectionCode="@inspection.InspectionCode"
+                                               class="btn-action btn-view">
+                                                <i class="fas fa-eye"></i>
+                                                Xem
+                                            </a>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
         </div>
-
     </div>
-    
-
-    
 </div>
 
 <!-- Toll Collection Modal -->
 <div class="modal-overlay" id="tollModal">
     <div class="modal-container">
-        <div class="modal-header">
-            <h3>
-                <i class="fas fa-cash-register"></i>
-                Thu phí kiểm định
-            </h3>
-            <button class="modal-close" onclick="closeTollModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-        <div class="modal-body">
-            <div class="modal-info">
-                <div class="info-row">
-                    <span class="info-label">Mã kiểm định:</span>
-                    <span class="info-value" id="modalInspectionCode"></span>
+        <form asp-action="CollectPayment" method="post" id="paymentForm">
+            @Html.AntiForgeryToken()
+
+            <div class="modal-header">
+                <h3>
+                    <i class="fas fa-cash-register"></i>
+                    Thu phí kiểm định
+                </h3>
+                <button type="button" class="modal-close" onclick="closeTollModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" name="inspectionCode" id="modalInspectionCodeInput" />
+
+                <div class="modal-info">
+                    <div class="info-row">
+                        <span class="info-label">Mã kiểm định:</span>
+                        <span class="info-value" id="modalInspectionCode"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Loại kiểm định:</span>
+                        <span class="info-value" id="modalInspectionType"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Biển số xe:</span>
+                        <span class="info-value" id="modalLicensePlate"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Chủ xe:</span>
+                        <span class="info-value" id="modalOwner"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số tiền:</span>
+                        <span class="info-value amount" id="modalAmount"></span>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Loại kiểm định:</span>
-                    <span class="info-value" id="modalInspectionType"></span>
+
+                <div class="payment-methods">
+                    <label class="payment-label">Phương thức thanh toán:</label>
+                    <div class="payment-options">
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="Tiền mặt" checked required>
+                            <span class="payment-box">
+                                <i class="fas fa-money-bill-wave"></i>
+                                <span>Tiền mặt</span>
+                            </span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="Thẻ" required>
+                            <span class="payment-box">
+                                <i class="fas fa-credit-card"></i>
+                                <span>Thẻ</span>
+                            </span>
+                        </label>
+                        <label class="payment-option">
+                            <input type="radio" name="paymentMethod" value="Chuyển khoản" required>
+                            <span class="payment-box">
+                                <i class="fas fa-exchange-alt"></i>
+                                <span>Chuyển khoản</span>
+                            </span>
+                        </label>
+                    </div>
                 </div>
-                <div class="info-row">
-                    <span class="info-label">Số tiền:</span>
-                    <span class="info-value amount" id="modalAmount">500,000 VNĐ</span>
+
+                <div class="form-group">
+                    <label class="form-label">Ghi chú:</label>
+                    <textarea class="form-textarea" name="note" rows="3"
+                              placeholder="Nhập ghi chú (nếu có)..."></textarea>
                 </div>
             </div>
 
-            <div class="payment-methods">
-                <label class="payment-label">Phương thức thanh toán:</label>
-                <div class="payment-options">
-                    <label class="payment-option">
-                        <input type="radio" name="paymentMethod" value="cash" checked>
-                        <span class="payment-box">
-                            <i class="fas fa-money-bill-wave"></i>
-                            <span>Tiền mặt</span>
-                        </span>
-                    </label>
-                    <label class="payment-option">
-                        <input type="radio" name="paymentMethod" value="card">
-                        <span class="payment-box">
-                            <i class="fas fa-credit-card"></i>
-                            <span>Thẻ</span>
-                        </span>
-                    </label>
-                    <label class="payment-option">
-                        <input type="radio" name="paymentMethod" value="transfer">
-                        <span class="payment-box">
-                            <i class="fas fa-exchange-alt"></i>
-                            <span>Chuyển khoản</span>
-                        </span>
-                    </label>
-                </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-cancel" onclick="closeTollModal()">
+                    <i class="fas fa-times"></i>
+                    Hủy
+                </button>
+                <button type="submit" class="btn btn-confirm">
+                    <i class="fas fa-check"></i>
+                    Xác nhận thu phí
+                </button>
             </div>
-
-            <div class="form-group">
-                <label class="form-label">Ghi chú:</label>
-                <textarea class="form-textarea" id="paymentNote" rows="3"
-                          placeholder="Nhập ghi chú (nếu có)..."></textarea>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-cancel" onclick="closeTollModal()">
-                <i class="fas fa-times"></i>
-                Hủy
-            </button>
-            <button class="btn btn-confirm" onclick="confirmPayment()">
-                <i class="fas fa-check"></i>
-                Xác nhận thu phí
-            </button>
-        </div>
+        </form>
     </div>
 </div>
 
 @section scripts {
     <script>
-        let currentView = 'card';
-        let allInspections = [];
+        // View toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', function() {
-            loadInspections();
-            initializeEventListeners();
-        });
-
-        function initializeEventListeners() {
-            // Search button
-            document.getElementById('btnSearch').addEventListener('click', loadInspections);
-
-            // Reset button
-            document.getElementById('btnReset').addEventListener('click', function() {
-                document.getElementById('search').value = '';
-                document.getElementById('filterStatus').value = '1';
-                document.getElementById('filterType').value = '';
-                loadInspections();
-            });
-
-            // Enter key in search
-            document.getElementById('search').addEventListener('keypress', function(e) {
-                if (e.key === 'Enter') {
-                    loadInspections();
+                const view = this.dataset.view;
+                if (view === 'card') {
+                    document.getElementById('cardView').style.display = 'grid';
+                    document.getElementById('tableView').style.display = 'none';
+                } else {
+                    document.getElementById('cardView').style.display = 'none';
+                    document.getElementById('tableView').style.display = 'block';
                 }
             });
+        });
 
-            // View toggle
-            document.querySelectorAll('.view-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    currentView = this.dataset.view;
-                    toggleView();
-                });
-            });
-        }
-
-        function loadInspections() {
-            const searchValue = document.getElementById('search').value;
-            const filterStatus = document.getElementById('filterStatus').value;
-            const filterType = document.getElementById('filterType').value;
-
-            showLoading(true);
-
-            fetch(`/Toll/GetInspections?search=${searchValue}&status=${filterStatus}`)
-                .then(response => response.json())
-                .then(data => {
-                    allInspections = data;
-
-                    // Apply type filter
-                    if (filterType) {
-                        allInspections = allInspections.filter(i => i.inspectionType === filterType);
-                    }
-
-                    updateStats();
-                    renderInspections();
-                    showLoading(false);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showLoading(false);
-                });
-        }
-
-        function updateStats() {
-            const pending = allInspections.filter(i => i.status === 1).length;
-            const completed = allInspections.filter(i => i.status === 2).length;
-
-            document.getElementById('pendingCount').textContent = pending;
-            document.getElementById('completedCount').textContent = completed;
-            document.getElementById('resultCount').textContent = allInspections.length;
-        }
-
-        function renderInspections() {
-            if (allInspections.length === 0) {
-                document.getElementById('emptyState').style.display = 'flex';
-                document.getElementById('cardView').style.display = 'none';
-                document.getElementById('tableView').style.display = 'none';
-                return;
-            }
-
-            document.getElementById('emptyState').style.display = 'none';
-            renderCardView();
-            renderTableView();
-            toggleView();
-        }
-
-        function renderCardView() {
-            const cardView = document.getElementById('cardView');
-            cardView.innerHTML = '';
-
-            allInspections.forEach(inspection => {
-                const statusClass = inspection.status === 1 ? 'pending' : 'completed';
-                const statusText = inspection.status === 1 ? 'Chờ thu phí' : 'Đã thu phí';
-                const statusIcon = inspection.status === 1 ? 'fa-clock' : 'fa-check-circle';
-
-                const card = `
-                    <div class="inspection-card ${statusClass}">
-                        <div class="card-header-section">
-                            <div class="card-code">
-                                <i class="fas fa-barcode"></i>
-                                ${inspection.inspectionCode}
-                            </div>
-                            <span class="card-status status-${statusClass}">
-                                <i class="fas ${statusIcon}"></i>
-                                ${statusText}
-                            </span>
-                        </div>
-                        <div class="card-body-section">
-                            <div class="card-detail">
-                                <i class="fas fa-car"></i>
-                                <span>Loại: <strong>${inspection.inspectionType}</strong></span>
-                            </div>
-                            <div class="card-detail">
-                                <i class="fas fa-calendar"></i>
-                                <span>Ngày tạo: <strong>${new Date().toLocaleDateString('vi-VN')}</strong></span>
-                            </div>
-                            <div class="card-detail">
-                                <i class="fas fa-money-bill-wave"></i>
-                                <span>Phí: <strong class="amount">500,000 VNĐ</strong></span>
-                            </div>
-                        </div>
-                        ${inspection.status === 1 ? `
-                            <div class="card-footer-section">
-                                <button class="btn-toll" onclick="openTollModal('${inspection.inspectionCode}', '${inspection.inspectionType}')">
-                                    <i class="fas fa-cash-register"></i>
-                                    Thu phí
-                                </button>
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-                cardView.innerHTML += card;
-            });
-        }
-
-        function renderTableView() {
-            const tableBody = document.getElementById('inspectionTable');
-            tableBody.innerHTML = '';
-
-            allInspections.forEach(inspection => {
-                const statusClass = inspection.status === 1 ? 'pending' : 'completed';
-                const statusText = inspection.status === 1 ? 'Chờ thu phí' : 'Đã thu phí';
-                const statusIcon = inspection.status === 1 ? 'fa-clock' : 'fa-check-circle';
-
-                const row = `
-                    <tr>
-                        <td>
-                            <div class="table-code">
-                                <i class="fas fa-barcode"></i>
-                                ${inspection.inspectionCode}
-                            </div>
-                        </td>
-                        <td>${inspection.inspectionType}</td>
-                        <td>${new Date().toLocaleDateString('vi-VN')}</td>
-                        <td>
-                            <span class="badge badge-${statusClass}">
-                                <i class="fas ${statusIcon}"></i>
-                                ${statusText}
-                            </span>
-                        </td>
-                        <td>
-                            ${inspection.status === 1 ? `
-                                <button class="btn-action btn-collect"
-                                        onclick="openTollModal('${inspection.inspectionCode}', '${inspection.inspectionType}')">
-                                    <i class="fas fa-cash-register"></i>
-                                    Thu phí
-                                </button>
-                            ` : `
-                                <button class="btn-action btn-view">
-                                    <i class="fas fa-eye"></i>
-                                    Xem
-                                </button>
-                            `}
-                        </td>
-                    </tr>
-                `;
-                tableBody.innerHTML += row;
-            });
-        }
-
-        function toggleView() {
-            if (currentView === 'card') {
-                document.getElementById('cardView').style.display = 'grid';
-                document.getElementById('tableView').style.display = 'none';
-            } else {
-                document.getElementById('cardView').style.display = 'none';
-                document.getElementById('tableView').style.display = 'block';
-            }
-        }
-
-        function showLoading(show) {
-            document.getElementById('loadingState').style.display = show ? 'flex' : 'none';
-            if (!show) {
-                document.getElementById('cardView').style.display = currentView === 'card' ? 'grid' : 'none';
-                document.getElementById('tableView').style.display = currentView === 'table' ? 'block' : 'none';
-            }
-        }
-
-        function openTollModal(code, type) {
+        // Modal functions
+        function openTollModal(code, type, licensePlate, owner, amount) {
             document.getElementById('modalInspectionCode').textContent = code;
             document.getElementById('modalInspectionType').textContent = type;
+            document.getElementById('modalLicensePlate').textContent = licensePlate || 'N/A';
+            document.getElementById('modalOwner').textContent = owner || 'N/A';
+            document.getElementById('modalAmount').textContent = amount.toLocaleString('vi-VN') + ' VNĐ';
+            document.getElementById('modalInspectionCodeInput').value = code;
             document.getElementById('tollModal').classList.add('active');
         }
 
         function closeTollModal() {
             document.getElementById('tollModal').classList.remove('active');
-            document.getElementById('paymentNote').value = '';
         }
 
-        function confirmPayment() {
-            const code = document.getElementById('modalInspectionCode').textContent;
-            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
-            const note = document.getElementById('paymentNote').value;
-
-            // Call API to process payment
-            console.log('Processing payment:', { code, paymentMethod, note });
-
-            // Show success message
-            alert('Thu phí thành công!');
-            closeTollModal();
-            loadInspections();
-        }
+        // Auto dismiss alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(alert => {
+                const closeBtn = alert.querySelector('.btn-close');
+                if (closeBtn) {
+                    closeBtn.click();
+                }
+            });
+        }, 5000);
     </script>
 }

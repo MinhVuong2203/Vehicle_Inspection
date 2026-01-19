@@ -6,7 +6,7 @@ namespace Vehicle_Inspection.Service
     {
         Task<SearchResponse?> SearchAsync(string? cccd, string? plateNo);
         List<string> ValidateProfile(UpdateProfileRequest request);
-        Task<bool> UpdateProfileAsync(UpdateProfileRequest request);
+        Task<bool> UpdateProfileAsync(UpdateProfileRequest request, string? imageUrl);
         Task<List<string>> GetProvincesAsync();
         Task<List<object>> GetWardsByProvinceAsync(string provinceName);
 

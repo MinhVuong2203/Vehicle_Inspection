@@ -73,26 +73,70 @@ namespace Vehicle_Inspection.Controllers
         }
 
         /// <summary>
-        /// API: Cập nhật thông tin Owner, Vehicle và Specification
+        /// API: Cập nhật thông tin Owner, Vehicle và Specification (có upload ảnh)
         /// </summary>
-        [HttpPut]
+        [HttpPost]
         [Route("api/receive-profile/update")]
-        public async Task<IActionResult> Update([FromBody] UpdateProfileRequest request)
+        public async Task<IActionResult> Update()
         {
             try
             {
-                if (request == null)
+                Console.WriteLine("=== START UPDATE API ===");
+
+                // Đọc JSON từ form
+                var jsonData = Request.Form["jsonData"].ToString();
+                Console.WriteLine($"📦 JSON Data length: {jsonData?.Length ?? 0} characters");
+
+                if (string.IsNullOrWhiteSpace(jsonData))
                 {
+                    Console.WriteLine("❌ JSON Data is empty!");
                     return BadRequest(new
                     {
                         success = false,
-                        message = "Dữ liệu không hợp lệ"
+                        message = "Dữ liệu không hợp lệ - JSON rỗng"
                     });
                 }
 
+                // Parse JSON thành object
+                UpdateProfileRequest? request = null;
+                try
+                {
+                    request = System.Text.Json.JsonSerializer.Deserialize<UpdateProfileRequest>(jsonData, new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    Console.WriteLine($"✅ Parsed JSON successfully");
+                }
+                catch (Exception parseEx)
+                {
+                    Console.WriteLine($"❌ JSON Parse Error: {parseEx.Message}");
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = $"Lỗi parse JSON: {parseEx.Message}"
+                    });
+                }
+
+                if (request == null)
+                {
+                    Console.WriteLine("❌ Request object is null after parsing");
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Dữ liệu không hợp lệ - Parse thất bại"
+                    });
+                }
+
+                Console.WriteLine($"📋 Owner ID: {request.Owner?.OwnerId}");
+                Console.WriteLine($"📋 Owner Name: {request.Owner?.FullName}");
+                Console.WriteLine($"📋 Vehicle ID: {request.Vehicle?.VehicleId}");
+                Console.WriteLine($"📋 Plate No: {request.Vehicle?.PlateNo}");
+
+                // Validate dữ liệu
                 var validationErrors = _receiveProfileService.ValidateProfile(request);
                 if (validationErrors.Any())
                 {
+                    Console.WriteLine($"❌ Validation errors: {string.Join(", ", validationErrors)}");
                     return BadRequest(new
                     {
                         success = false,
@@ -100,14 +144,57 @@ namespace Vehicle_Inspection.Controllers
                     });
                 }
 
-                var result = await _receiveProfileService.UpdateProfileAsync(request);
+                // Upload ảnh (nếu có)
+                string? imageUrl = null;
+                var profilePicture = Request.Form.Files.GetFile("ProfilePicture");
+
+                if (profilePicture != null && profilePicture.Length > 0)
+                {
+                    Console.WriteLine($"📷 Uploading image: {profilePicture.FileName} ({profilePicture.Length} bytes)");
+
+                    try
+                    {
+                        var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "receiveprofile");
+                        if (!Directory.Exists(uploads))
+                        {
+                            Directory.CreateDirectory(uploads);
+                            Console.WriteLine($"📁 Created directory: {uploads}");
+                        }
+
+                        var fileName = $"{request.Owner.OwnerId}{Path.GetExtension(profilePicture.FileName)}";
+                        var filePath = Path.Combine(uploads, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await profilePicture.CopyToAsync(stream);
+                        }
+
+                        imageUrl = $"/images/receiveprofile/{fileName}";
+                        Console.WriteLine($"✅ Image saved: {imageUrl}");
+                    }
+                    catch (Exception imgEx)
+                    {
+                        Console.WriteLine($"⚠️ Image upload error: {imgEx.Message}");
+                        // Tiếp tục xử lý dù upload ảnh lỗi
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("ℹ️ No image uploaded");
+                }
+
+                // Gọi service để cập nhật database
+                Console.WriteLine("💾 Calling UpdateProfileAsync...");
+                var result = await _receiveProfileService.UpdateProfileAsync(request, imageUrl);
+                Console.WriteLine($"✅ Update result: {result}");
 
                 if (result)
                 {
                     return Ok(new
                     {
                         success = true,
-                        message = "Cập nhật thông tin thành công"
+                        message = "Cập nhật thông tin thành công",
+                        imageUrl = imageUrl
                     });
                 }
 
@@ -119,11 +206,19 @@ namespace Vehicle_Inspection.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"💥 EXCEPTION: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+
                 return StatusCode(500, new
                 {
                     success = false,
                     message = "Có lỗi xảy ra khi cập nhật",
-                    error = ex.Message
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message
                 });
             }
         }
@@ -137,7 +232,6 @@ namespace Vehicle_Inspection.Controllers
         {
             try
             {
-                // ✅ GỌI ĐÚNG TÊN METHOD TỪ SERVICE
                 var provinces = await _receiveProfileService.GetProvincesAsync();
 
                 if (provinces == null || provinces.Count == 0)
@@ -184,7 +278,6 @@ namespace Vehicle_Inspection.Controllers
                     });
                 }
 
-                // ✅ GỌI ĐÚNG TÊN METHOD TỪ SERVICE
                 var wards = await _receiveProfileService.GetWardsByProvinceAsync(province);
 
                 return Ok(new

@@ -24,7 +24,6 @@ namespace Vehicle_Inspection.Service
         {
             try
             {
-                // Load dữ liệu JSON nếu chưa có
                 if (_cachedProvinceData == null)
                 {
                     await LoadProvinceJsonAsync();
@@ -37,10 +36,8 @@ namespace Vehicle_Inspection.Service
 
                 var provinces = new List<string>();
 
-                // ✅ Parse JSON theo cấu trúc mới
                 foreach (var element in _cachedProvinceData.RootElement.EnumerateArray())
                 {
-                    // Lấy "tentinhmoi" 
                     if (element.TryGetProperty("tentinhmoi", out var nameProperty))
                     {
                         var provinceName = nameProperty.GetString();
@@ -66,7 +63,6 @@ namespace Vehicle_Inspection.Service
         {
             try
             {
-                // Load dữ liệu JSON nếu chưa có
                 if (_cachedProvinceData == null)
                 {
                     await LoadProvinceJsonAsync();
@@ -79,7 +75,6 @@ namespace Vehicle_Inspection.Service
 
                 var wards = new List<object>();
 
-                // ✅ Tìm tỉnh/thành phố theo "tentinhmoi"
                 foreach (var element in _cachedProvinceData.RootElement.EnumerateArray())
                 {
                     if (element.TryGetProperty("tentinhmoi", out var nameProperty))
@@ -88,7 +83,6 @@ namespace Vehicle_Inspection.Service
 
                         if (currentProvinceName?.Equals(provinceName, StringComparison.OrdinalIgnoreCase) == true)
                         {
-                            // ✅ Lấy danh sách phường/xã (trực tiếp trong tỉnh, không có quận/huyện)
                             if (element.TryGetProperty("phuongxa", out var wardArray))
                             {
                                 foreach (var wardElement in wardArray.EnumerateArray())
@@ -100,7 +94,7 @@ namespace Vehicle_Inspection.Service
                                         wards.Add(new
                                         {
                                             tenphuongxa = wardName,
-                                            tenquanhuyen = "" // Không có quận/huyện trong cấu trúc này
+                                            tenquanhuyen = ""
                                         });
                                     }
                                 }
@@ -148,8 +142,9 @@ namespace Vehicle_Inspection.Service
             }
         }
 
-        // ==================== EXISTING METHODS (giữ nguyên) ====================
-
+        /// <summary>
+        /// Tìm kiếm thông tin theo CCCD hoặc Biển số
+        /// </summary>
         public async Task<SearchResponse?> SearchAsync(string? cccd, string? plateNo)
         {
             try
@@ -220,24 +215,39 @@ namespace Vehicle_Inspection.Service
             }
         }
 
+        /// <summary>
+        /// Validate dữ liệu trước khi cập nhật
+        /// </summary>
         public List<string> ValidateProfile(UpdateProfileRequest request)
         {
             var errors = new List<string>();
+
+            // Validate Owner
+            if (request.Owner == null)
+            {
+                errors.Add("Thông tin chủ xe không được để trống");
+                return errors;
+            }
 
             if (string.IsNullOrWhiteSpace(request.Owner.FullName))
             {
                 errors.Add("Họ và tên không được để trống");
             }
 
-            if (request.Owner.OwnerType == "PERSON")
+            // Validate CCCD nếu là cá nhân và có nhập CCCD
+            if (request.Owner.OwnerType == "PERSON" && !string.IsNullOrWhiteSpace(request.Owner.CCCD))
             {
-                if (!string.IsNullOrWhiteSpace(request.Owner.CCCD))
+                if (!Regex.IsMatch(request.Owner.CCCD, @"^\d{9,12}$"))
                 {
-                    if (!Regex.IsMatch(request.Owner.CCCD, @"^\d{9,12}$"))
-                    {
-                        errors.Add("CCCD/CMND không hợp lệ (9-12 số)");
-                    }
+                    errors.Add("CCCD/CMND không hợp lệ (phải là 9-12 chữ số)");
                 }
+            }
+
+            // Validate Vehicle
+            if (request.Vehicle == null)
+            {
+                errors.Add("Thông tin xe không được để trống");
+                return errors;
             }
 
             if (string.IsNullOrWhiteSpace(request.Vehicle.PlateNo))
@@ -248,58 +258,120 @@ namespace Vehicle_Inspection.Service
             return errors;
         }
 
-        public async Task<bool> UpdateProfileAsync(UpdateProfileRequest request)
+        /// <summary>
+        /// Cập nhật thông tin Owner, Vehicle và Specification
+        /// </summary>
+        public async Task<bool> UpdateProfileAsync(UpdateProfileRequest request, string? imageUrl)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
+                Console.WriteLine($"💾 ========== BẮT ĐẦU CẬP NHẬT ==========");
+                Console.WriteLine($"💾 Owner ID: {request.Owner.OwnerId}");
+                Console.WriteLine($"📍 Province từ request: '{request.Owner.Province}'");
+                Console.WriteLine($"📍 Ward từ request: '{request.Owner.Ward}'");
+
+                // ✅ Tìm Owner
                 var owner = await _context.Owners
                     .FirstOrDefaultAsync(o => o.OwnerId == request.Owner.OwnerId);
 
-                if (owner != null)
+                if (owner == null)
                 {
-                    owner.OwnerType = request.Owner.OwnerType;
-                    owner.FullName = request.Owner.FullName;
-                    owner.CompanyName = request.Owner.CompanyName;
-                    owner.TaxCode = request.Owner.TaxCode;
-                    owner.CCCD = request.Owner.CCCD;
-                    owner.Phone = request.Owner.Phone;
-                    owner.Email = request.Owner.Email;
-                    owner.Address = request.Owner.Address;
-                    owner.Ward = request.Owner.Ward;
-                    owner.Province = request.Owner.Province;
-
-                    _context.Owners.Update(owner);
+                    throw new Exception("Không tìm thấy thông tin chủ xe");
                 }
 
+                Console.WriteLine($"✅ Tìm thấy Owner: {owner.FullName}");
+                Console.WriteLine($"   📍 Province CŨ: '{owner.Province ?? "NULL"}'");
+                Console.WriteLine($"   📍 Ward CŨ: '{owner.Ward ?? "NULL"}'");
+
+                // ✅ Cập nhật TỪNG TRƯỜNG - RÕ RÀNG
+                owner.OwnerType = request.Owner.OwnerType;
+                owner.FullName = request.Owner.FullName;
+                owner.CompanyName = request.Owner.CompanyName;
+                owner.TaxCode = request.Owner.TaxCode;
+                owner.CCCD = request.Owner.CCCD;
+                owner.Phone = request.Owner.Phone;
+                owner.Email = request.Owner.Email;
+                owner.Address = request.Owner.Address;
+
+                // ✅ QUAN TRỌNG: Gán Province và Ward
+                if (!string.IsNullOrWhiteSpace(request.Owner.Province))
+                {
+                    owner.Province = request.Owner.Province;
+                    Console.WriteLine($"   ✅ Đã gán Province: '{owner.Province}'");
+                }
+                else
+                {
+                    Console.WriteLine($"   ⚠️ Province request is empty!");
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.Owner.Ward))
+                {
+                    owner.Ward = request.Owner.Ward;
+                    Console.WriteLine($"   ✅ Đã gán Ward: '{owner.Ward}'");
+                }
+                else
+                {
+                    Console.WriteLine($"   ⚠️ Ward request is empty!");
+                }
+
+                Console.WriteLine($"   📍 Province SAU GÁN: '{owner.Province ?? "NULL"}'");
+                Console.WriteLine($"   📍 Ward SAU GÁN: '{owner.Ward ?? "NULL"}'");
+
+                // Cập nhật ảnh
+                if (!string.IsNullOrWhiteSpace(imageUrl))
+                {
+                    owner.ImageUrl = imageUrl;
+                    Console.WriteLine($"📷 Cập nhật ảnh: {imageUrl}");
+                }
+
+                // ✅ KHÔNG dùng _context.Owners.Update(owner)
+                // ✅ Chỉ cần _context.Entry(owner).State = Modified
+                _context.Entry(owner).State = EntityState.Modified;
+                Console.WriteLine($"✅ Entity state set to Modified");
+
+                // Log tất cả properties đã thay đổi
+                var modifiedProperties = _context.Entry(owner)
+                    .Properties
+                    .Where(p => p.IsModified)
+                    .Select(p => p.Metadata.Name)
+                    .ToList();
+                Console.WriteLine($"📝 Modified properties: {string.Join(", ", modifiedProperties)}");
+
+                // Cập nhật Vehicle
                 var vehicle = await _context.Vehicles
                     .FirstOrDefaultAsync(v => v.VehicleId == request.Vehicle.VehicleId);
 
-                if (vehicle != null)
+                if (vehicle == null)
                 {
-                    vehicle.PlateNo = request.Vehicle.PlateNo;
-                    vehicle.InspectionNo = request.Vehicle.InspectionNo;
-                    vehicle.VehicleGroup = request.Vehicle.VehicleGroup;
-                    vehicle.VehicleType = request.Vehicle.VehicleType;
-                    vehicle.EnergyType = request.Vehicle.EnergyType;
-                    vehicle.IsCleanEnergy = request.Vehicle.IsCleanEnergy;
-                    vehicle.UsagePermission = request.Vehicle.UsagePermission;
-                    vehicle.Brand = request.Vehicle.Brand;
-                    vehicle.Model = request.Vehicle.Model;
-                    vehicle.EngineNo = request.Vehicle.EngineNo;
-                    vehicle.Chassis = request.Vehicle.Chassis;
-                    vehicle.ManufactureYear = request.Vehicle.ManufactureYear;
-                    vehicle.ManufactureCountry = request.Vehicle.ManufactureCountry;
-                    vehicle.LifetimeLimitYear = request.Vehicle.LifetimeLimitYear;
-                    vehicle.HasCommercialModification = request.Vehicle.HasCommercialModification;
-                    vehicle.HasModification = request.Vehicle.HasModification;
-                    vehicle.UpdatedAt = DateTime.Now;
-
-                    _context.Vehicles.Update(vehicle);
+                    throw new Exception("Không tìm thấy thông tin xe");
                 }
 
-                if (request.Specification != null)
+                Console.WriteLine($"✅ Tìm thấy Vehicle: {vehicle.PlateNo}");
+
+                vehicle.PlateNo = request.Vehicle.PlateNo;
+                vehicle.InspectionNo = request.Vehicle.InspectionNo;
+                vehicle.VehicleGroup = request.Vehicle.VehicleGroup;
+                vehicle.VehicleType = request.Vehicle.VehicleType;
+                vehicle.EnergyType = request.Vehicle.EnergyType;
+                vehicle.IsCleanEnergy = request.Vehicle.IsCleanEnergy;
+                vehicle.UsagePermission = request.Vehicle.UsagePermission;
+                vehicle.Brand = request.Vehicle.Brand;
+                vehicle.Model = request.Vehicle.Model;
+                vehicle.EngineNo = request.Vehicle.EngineNo;
+                vehicle.Chassis = request.Vehicle.Chassis;
+                vehicle.ManufactureYear = request.Vehicle.ManufactureYear;
+                vehicle.ManufactureCountry = request.Vehicle.ManufactureCountry;
+                vehicle.LifetimeLimitYear = request.Vehicle.LifetimeLimitYear;
+                vehicle.HasCommercialModification = request.Vehicle.HasCommercialModification;
+                vehicle.HasModification = request.Vehicle.HasModification;
+                vehicle.UpdatedAt = DateTime.Now;
+
+                _context.Entry(vehicle).State = EntityState.Modified;
+
+                // Cập nhật Specification
+                if (request.Specification != null && request.Specification.SpecificationId > 0)
                 {
                     var spec = await _context.Specifications
                         .FirstOrDefaultAsync(s => s.SpecificationId == request.Specification.SpecificationId);
@@ -307,22 +379,66 @@ namespace Vehicle_Inspection.Service
                     if (spec != null)
                     {
                         UpdateSpecificationFields(spec, request.Specification);
-                        _context.Specifications.Update(spec);
+                        _context.Entry(spec).State = EntityState.Modified;
+                        Console.WriteLine($"✅ Đã cập nhật Specification");
                     }
                 }
 
-                await _context.SaveChangesAsync();
+                // ✅ LƯU VÀO DATABASE
+                Console.WriteLine($"💾 Đang gọi SaveChangesAsync...");
+
+                try
+                {
+                    var savedCount = await _context.SaveChangesAsync();
+                    Console.WriteLine($"💾 ✅ Đã lưu {savedCount} bản ghi vào database");
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    Console.WriteLine($"❌ DbUpdateException: {dbEx.Message}");
+                    Console.WriteLine($"❌ Inner: {dbEx.InnerException?.Message}");
+                    throw;
+                }
+
+                // ✅ VERIFY sau khi save - QUAN TRỌNG
+                var verifyOwner = await _context.Owners
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(o => o.OwnerId == request.Owner.OwnerId);
+
+                if (verifyOwner != null)
+                {
+                    Console.WriteLine($"🔍 ========== VERIFY SAU KHI SAVE ==========");
+                    Console.WriteLine($"   📍 Province trong DB: '{verifyOwner.Province ?? "NULL"}'");
+                    Console.WriteLine($"   📍 Ward trong DB: '{verifyOwner.Ward ?? "NULL"}'");
+                    Console.WriteLine($"🔍 ==========================================");
+                }
+                else
+                {
+                    Console.WriteLine($"❌ Không tìm thấy owner để verify!");
+                }
+
                 await transaction.CommitAsync();
+                Console.WriteLine($"✅ Transaction committed successfully");
+                Console.WriteLine($"💾 ========== KẾT THÚC CẬP NHẬT ==========");
 
                 return true;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ ========== LỖI ==========");
+                Console.WriteLine($"❌ Message: {ex.Message}");
+                Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"❌ Inner Exception: {ex.InnerException.Message}");
+                }
+                Console.WriteLine($"❌ ===========================");
+
                 await transaction.RollbackAsync();
+                Console.WriteLine($"↩️ Transaction rolled back");
+
                 throw new Exception($"Lỗi cập nhật: {ex.Message}", ex);
             }
         }
-
         // ==================== PRIVATE HELPER METHODS ====================
 
         private void UpdateSpecificationFields(Specification spec, SpecificationDto dto)

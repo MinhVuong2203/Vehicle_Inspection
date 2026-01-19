@@ -16,8 +16,7 @@ namespace Vehicle_Inspection.Service
             public List<Inspection> GetInspections(string? search, short? status)
             {
                 var query = _context.Inspections
-                    .Include(i => i.Vehicle)
-                    
+                .Include(i => i.Vehicle)                   
                 .Include(i => i.Owner)
                 .Include(i => i.Payment)
                 .Where(i => !i.IsDeleted);

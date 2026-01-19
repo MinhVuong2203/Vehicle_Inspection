@@ -184,7 +184,7 @@
                         var statusClass = GetStatusClass(inspection.Status, inspection.PaidAt);
                         var statusText = GetStatusText(inspection.Status, inspection.PaidAt);
                         var statusIcon = inspection.PaidAt != null ? "fa-check-circle" : "fa-clock";
-                        var amount = inspection.Vehicle.VehicleType ;
+                        @* var amount = inspection.Payment.TotalAmount; *@
 
                         <div class="inspection-card @statusClass">
                             <div class="card-header-section">
@@ -223,7 +223,7 @@
                             {
                                 <div class="card-footer-section">
                                     <button class="btn-toll"
-                                            onclick="openTollModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', @amount)">
+                                            onclick="openTollModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', @inspection.Payment.TotalAmount)">
                                         <i class="fas fa-cash-register"></i>
                                         Thu phí
                                     </button>

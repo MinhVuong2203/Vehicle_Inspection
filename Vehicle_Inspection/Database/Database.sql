@@ -592,7 +592,7 @@ CREATE TABLE dbo.Inspection (
 );
 
 INSERT INTO Inspection(InspectionCode, VehicleId, OwnerId, InspectionType, Status, CreatedAt, IsDeleted)
-VALUES ('3', 3, '00BE74E5-56F1-4152-8D42-15D66856BB7A', 'RE_INSPECTION', 1, SYSDATETIME(), 0)
+VALUES ('4', 3, '00BE74E5-56F1-4152-8D42-15D66856BB7A', 'FIRST', 1, SYSDATETIME(), 0)
 
 
 
@@ -1218,8 +1218,6 @@ BEGIN
     WHERE pay.InspectionId IS NULL;
 END
 GO
-
-
 
 
 

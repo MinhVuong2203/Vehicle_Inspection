@@ -107,7 +107,13 @@ namespace Vehicle_Inspection.Service
                     PlateNo = inspection.Vehicle.PlateNo,
                     InspectionNo = inspection.Vehicle.InspectionNo,
                     VehicleGroup = inspection.Vehicle.VehicleGroup,
-                    VehicleType = inspection.Vehicle.VehicleType.TypeName,
+                    //VehicleType = inspection.Vehicle.VehicleType.TypeName,
+                    VehicleType = inspection.Vehicle.VehicleTypeId.HasValue
+                        ? _context.VehicleTypes
+                            .Where(vt => vt.VehicleTypeId == inspection.Vehicle.VehicleTypeId.Value)
+                            .Select(vt => vt.TypeName)
+                            .FirstOrDefault()
+                        : null,
                     Brand = inspection.Vehicle.Brand,
                     Model = inspection.Vehicle.Model,
                     EngineNo = inspection.Vehicle.EngineNo,

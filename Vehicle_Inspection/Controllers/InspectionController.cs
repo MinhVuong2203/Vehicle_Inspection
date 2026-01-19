@@ -28,6 +28,7 @@ namespace Vehicle_Inspection.Controllers
         {
             var inspectionRecords = _inspectionService.GetInspectionRecords();
             ViewData["InspectionRecords"] = inspectionRecords;
+            TempData["SuccessMessage"] = "Dữ liệu hồ sơ kiểm định đã được tải thành công.";
             return View();
         }
 

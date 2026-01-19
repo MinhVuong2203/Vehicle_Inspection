@@ -10,8 +10,8 @@
     public class InspectionRecordDto
     {
         public int InspectionId { get; set; }
-        public string InspectionCode { get; set; }
-        public string InspectionType { get; set; }
+        public string? InspectionCode { get; set; }
+        public string? InspectionType { get; set; }
         public short Status { get; set; }
         public int? FinalResult { get; set; }
         public DateTime CreatedAt { get; set; }
@@ -20,7 +20,7 @@
         public DateTime? CompletedAt { get; set; }
 
         // Thông tin xe
-        public string PlateNo { get; set; }
+        public string? PlateNo { get; set; }
         public string? InspectionNo { get; set; }
         public string? VehicleGroup { get; set; }
         public string? VehicleType { get; set; }
@@ -30,7 +30,7 @@
         public string? Chassis { get; set; }
 
         // Thông tin chủ xe
-        public string OwnerFullName { get; set; }
+        public string? OwnerFullName { get; set; }
         public string? OwnerType { get; set; }
         public string? CompanyName { get; set; }
         public string? OwnerPhone { get; set; }
@@ -147,32 +147,32 @@
         public DateOnly? ExpiryDate { get; set; }
 
         // Computed properties
-        public string OverallDimensions => 
+        public string? OverallDimensions => 
             OverallLength.HasValue && OverallWidth.HasValue && OverallHeight.HasValue
             ? $"{OverallLength} x {OverallWidth} x {OverallHeight}"
             : null;
 
-        public string CargoInsideDimensions =>
+        public string? CargoInsideDimensions =>
             CargoInsideLength.HasValue && CargoInsideWidth.HasValue && CargoInsideHeight.HasValue
             ? $"{CargoInsideLength} x {CargoInsideWidth} x {CargoInsideHeight}"
             : null;
 
-        public string MaxOutputRPM =>
+        public string? MaxOutputRPM =>
             MaxPower.HasValue && MaxPowerRPM.HasValue
             ? $"{MaxPower}/{MaxPowerRPM}"
             : null;
 
-        public string MotorPowerInfo =>
+        public string? MotorPowerInfo =>
             MotorVoltage.HasValue && TotalMotorPower.HasValue
             ? $"{MotorVoltage}/{TotalMotorPower}"
             : null;
 
-        public string BatteryInfo =>
+        public string? BatteryInfo =>
             BatteryVoltage.HasValue && BatteryCapacity.HasValue
             ? $"{BatteryVoltage}-{BatteryCapacity}"
             : null;
 
-        public string ProductionInfo =>
+        public string? ProductionInfo =>
             ManufactureYear.HasValue && !string.IsNullOrEmpty(ManufactureCountry)
             ? $"{ManufactureYear}/{ManufactureCountry}"
             : null;

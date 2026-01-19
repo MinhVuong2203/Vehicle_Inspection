@@ -156,7 +156,9 @@ namespace Vehicle_Inspection.Service
 
                     if (owner != null)
                     {
+                        // ✅ Include VehicleType để lấy TypeName
                         var vehicle = await _context.Vehicles
+                            .Include(v => v.VehicleType)  // ✅ QUAN TRỌNG
                             .FirstOrDefaultAsync(v => v.OwnerId == owner.OwnerId);
 
                         if (vehicle != null)
@@ -180,7 +182,9 @@ namespace Vehicle_Inspection.Service
 
                 if (!string.IsNullOrWhiteSpace(plateNo))
                 {
+                    // ✅ Include VehicleType để lấy TypeName
                     var vehicle = await _context.Vehicles
+                        .Include(v => v.VehicleType)  // ✅ QUAN TRỌNG
                         .FirstOrDefaultAsync(v => v.PlateNo == plateNo);
 
                     if (vehicle != null)
@@ -272,7 +276,7 @@ namespace Vehicle_Inspection.Service
                 Console.WriteLine($"📍 Province từ request: '{request.Owner.Province}'");
                 Console.WriteLine($"📍 Ward từ request: '{request.Owner.Ward}'");
 
-                // ✅ Tìm Owner
+                // Tìm Owner
                 var owner = await _context.Owners
                     .FirstOrDefaultAsync(o => o.OwnerId == request.Owner.OwnerId);
 
@@ -285,7 +289,7 @@ namespace Vehicle_Inspection.Service
                 Console.WriteLine($"   📍 Province CŨ: '{owner.Province ?? "NULL"}'");
                 Console.WriteLine($"   📍 Ward CŨ: '{owner.Ward ?? "NULL"}'");
 
-                // ✅ Cập nhật TỪNG TRƯỜNG - RÕ RÀNG
+                // Cập nhật Owner
                 owner.OwnerType = request.Owner.OwnerType;
                 owner.FullName = request.Owner.FullName;
                 owner.CompanyName = request.Owner.CompanyName;
@@ -295,7 +299,6 @@ namespace Vehicle_Inspection.Service
                 owner.Email = request.Owner.Email;
                 owner.Address = request.Owner.Address;
 
-                // ✅ QUAN TRỌNG: Gán Province và Ward
                 if (!string.IsNullOrWhiteSpace(request.Owner.Province))
                 {
                     owner.Province = request.Owner.Province;
@@ -319,19 +322,15 @@ namespace Vehicle_Inspection.Service
                 Console.WriteLine($"   📍 Province SAU GÁN: '{owner.Province ?? "NULL"}'");
                 Console.WriteLine($"   📍 Ward SAU GÁN: '{owner.Ward ?? "NULL"}'");
 
-                // Cập nhật ảnh
                 if (!string.IsNullOrWhiteSpace(imageUrl))
                 {
                     owner.ImageUrl = imageUrl;
                     Console.WriteLine($"📷 Cập nhật ảnh: {imageUrl}");
                 }
 
-                // ✅ KHÔNG dùng _context.Owners.Update(owner)
-                // ✅ Chỉ cần _context.Entry(owner).State = Modified
                 _context.Entry(owner).State = EntityState.Modified;
                 Console.WriteLine($"✅ Entity state set to Modified");
 
-                // Log tất cả properties đã thay đổi
                 var modifiedProperties = _context.Entry(owner)
                     .Properties
                     .Where(p => p.IsModified)
@@ -339,8 +338,9 @@ namespace Vehicle_Inspection.Service
                     .ToList();
                 Console.WriteLine($"📝 Modified properties: {string.Join(", ", modifiedProperties)}");
 
-                // Cập nhật Vehicle
+                // ✅ Cập nhật Vehicle
                 var vehicle = await _context.Vehicles
+                    .Include(v => v.VehicleType)  // ✅ Include để có thể log
                     .FirstOrDefaultAsync(v => v.VehicleId == request.Vehicle.VehicleId);
 
                 if (vehicle == null)
@@ -353,7 +353,24 @@ namespace Vehicle_Inspection.Service
                 vehicle.PlateNo = request.Vehicle.PlateNo;
                 vehicle.InspectionNo = request.Vehicle.InspectionNo;
                 vehicle.VehicleGroup = request.Vehicle.VehicleGroup;
-                vehicle.VehicleType.TypeName = request.Vehicle.VehicleType;
+
+                // ✅ TÌM VehicleTypeId từ TypeName
+                if (!string.IsNullOrWhiteSpace(request.Vehicle.VehicleType))
+                {
+                    var vehicleType = await _context.VehicleTypes
+                        .FirstOrDefaultAsync(vt => vt.TypeName == request.Vehicle.VehicleType);
+
+                    if (vehicleType != null)
+                    {
+                        vehicle.VehicleTypeId = vehicleType.VehicleTypeId;
+                        Console.WriteLine($"✅ VehicleTypeId set to: {vehicle.VehicleTypeId} ({vehicleType.TypeName})");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ VehicleType '{request.Vehicle.VehicleType}' not found in database");
+                    }
+                }
+
                 vehicle.EnergyType = request.Vehicle.EnergyType;
                 vehicle.IsCleanEnergy = request.Vehicle.IsCleanEnergy;
                 vehicle.UsagePermission = request.Vehicle.UsagePermission;
@@ -384,7 +401,7 @@ namespace Vehicle_Inspection.Service
                     }
                 }
 
-                // ✅ LƯU VÀO DATABASE
+                // Lưu vào database
                 Console.WriteLine($"💾 Đang gọi SaveChangesAsync...");
 
                 try
@@ -399,7 +416,7 @@ namespace Vehicle_Inspection.Service
                     throw;
                 }
 
-                // ✅ VERIFY sau khi save - QUAN TRỌNG
+                // Verify
                 var verifyOwner = await _context.Owners
                     .AsNoTracking()
                     .FirstOrDefaultAsync(o => o.OwnerId == request.Owner.OwnerId);
@@ -513,7 +530,8 @@ namespace Vehicle_Inspection.Service
                 PlateNo = vehicle.PlateNo,
                 InspectionNo = vehicle.InspectionNo,
                 VehicleGroup = vehicle.VehicleGroup,
-                VehicleType = vehicle.VehicleType.TypeName,
+         
+                VehicleType = vehicle.VehicleType?.TypeName ?? "",  
                 EnergyType = vehicle.EnergyType,
                 IsCleanEnergy = vehicle.IsCleanEnergy,
                 UsagePermission = vehicle.UsagePermission,

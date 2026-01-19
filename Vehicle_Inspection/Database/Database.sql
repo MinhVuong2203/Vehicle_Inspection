@@ -512,6 +512,271 @@ CREATE TABLE dbo.StageItemThreshold (
     UNIQUE (ItemId, VehicleTypeId, EffectiveDate)
 );
 
+-- 1. NHẬP DÂY CHUYỀN (Lane)
+INSERT INTO dbo.Lane (LaneCode, LaneName, IsActive)
+VALUES 
+    ('DC1', N'Dây chuyền 1 - Xe con & Bán tải',      1),
+    ('DC2', N'Dây chuyền 2 - Xe khách & Xe buýt',    1),
+    ('DC3', N'Dây chuyền 3 - Xe tải',                1),
+    ('DC4', N'Dây chuyền 4 - Xe đầu kéo & Rơ moóc',  1),
+    ('DC5', N'Dây chuyền 5 - Xe mô tô & 3 bánh',     1),
+    ('DC6', N'Dây chuyền 6 - Xe chuyên dùng',        1);
+
+-- 2. NHẬP CÔNG ĐOẠN (Stage)
+INSERT INTO dbo.Stage (StageCode, StageName, IsActive)
+VALUES 
+    ('EXTERIOR',    N'Kiểm tra ngoại thất', 1),
+    ('STRUCTURE',   N'Kiểm tra khung gầm', 1),
+    ('BRAKE',       N'Kiểm tra hệ thống phanh', 1),
+    ('STEERING',    N'Kiểm tra hệ thống lái', 1),
+    ('LIGHT',       N'Kiểm tra đèn chiếu sáng', 1),
+    ('EMISSION',    N'Kiểm tra khí thải', 1),
+    ('NOISE',       N'Kiểm tra tiếng ồn', 1),
+    ('SPEEDOMETER', N'Kiểm tra tốc độ kế', 1),
+    ('GLASS',       N'Kiểm tra kính an toàn', 1),
+    ('SEATBELT',    N'Kiểm tra dây đai an toàn', 1),
+    ('AXLE_LOAD',   N'Kiểm tra tải trọng trục', 1);
+
+-- 3. CẤU HÌNH DÂY CHUYỀN 1 (Xe con 10 chỗ)
+INSERT INTO dbo.LaneStage (LaneId, StageId, SortOrder, IsRequired, IsActive)
+SELECT 1, s.StageId,
+    CASE s.StageCode
+        WHEN 'EXTERIOR'    THEN 1
+        WHEN 'BRAKE'       THEN 2
+        WHEN 'STEERING'    THEN 3
+        WHEN 'LIGHT'       THEN 4
+        WHEN 'EMISSION'    THEN 5
+        WHEN 'SPEEDOMETER' THEN 6
+        WHEN 'SEATBELT'    THEN 7
+        WHEN 'GLASS'       THEN 8
+    END,
+    1, 1
+FROM dbo.Stage s
+WHERE s.StageCode IN (
+    'EXTERIOR','BRAKE','STEERING','LIGHT',
+    'EMISSION','SPEEDOMETER','SEATBELT','GLASS'
+);
+
+-- 4. CẤU HÌNH DÂY CHUYỀN 2 (Xe khách 10-40 chỗ, Xe buýt)
+INSERT INTO dbo.LaneStage (LaneId, StageId, SortOrder, IsRequired, IsActive)
+SELECT 2, s.StageId, 
+    CASE s.StageCode
+        WHEN 'BRAKE' THEN 1         -- Ưu tiên phanh
+        WHEN 'STRUCTURE' THEN 2     -- Khung gầm
+        WHEN 'EXTERIOR' THEN 3
+        WHEN 'STEERING' THEN 4
+        WHEN 'LIGHT' THEN 5
+        WHEN 'EMISSION' THEN 6
+        WHEN 'NOISE' THEN 7
+        WHEN 'SPEEDOMETER' THEN 8
+        WHEN 'GLASS' THEN 9
+        WHEN 'SEATBELT' THEN 10
+    END,
+    1, 1
+FROM dbo.Stage s
+WHERE s.StageCode IN ('BRAKE', 'STRUCTURE', 'EXTERIOR', 'STEERING', 'LIGHT', 
+                      'EMISSION', 'NOISE', 'SPEEDOMETER', 'GLASS', 'SEATBELT');
+
+-- 5. CẤU HÌNH DÂY CHUYỀN 3 (Xe tải)
+INSERT INTO dbo.LaneStage (LaneId, StageId, SortOrder, IsRequired, IsActive)
+SELECT 3, s.StageId,
+    CASE s.StageCode
+        WHEN 'BRAKE' THEN 1
+        WHEN 'AXLE_LOAD' THEN 2     -- Cân tải trọng
+        WHEN 'STRUCTURE' THEN 3
+        WHEN 'EXTERIOR' THEN 4
+        WHEN 'STEERING' THEN 5
+        WHEN 'LIGHT' THEN 6
+        WHEN 'EMISSION' THEN 7
+        WHEN 'NOISE' THEN 8
+        WHEN 'SPEEDOMETER' THEN 9
+    END,
+    1, 1
+FROM dbo.Stage s
+WHERE s.StageCode IN ('BRAKE', 'AXLE_LOAD', 'STRUCTURE', 'EXTERIOR', 'STEERING', 
+                      'LIGHT', 'EMISSION', 'NOISE', 'SPEEDOMETER');
+
+-- 6. CẤU HÌNH DÂY CHUYỀN 4 (Xe đầu kéo, Rơ moóc)
+INSERT INTO dbo.LaneStage (LaneId, StageId, SortOrder, IsRequired, IsActive)
+SELECT 4, s.StageId,
+    CASE s.StageCode
+        WHEN 'BRAKE' THEN 1
+        WHEN 'AXLE_LOAD' THEN 2
+        WHEN 'STRUCTURE' THEN 3
+        WHEN 'EXTERIOR' THEN 4
+        WHEN 'STEERING' THEN 5
+        WHEN 'LIGHT' THEN 6
+        WHEN 'EMISSION' THEN 7
+        WHEN 'NOISE' THEN 8
+    END,
+    1, 1
+FROM dbo.Stage s
+WHERE s.StageCode IN ('BRAKE', 'AXLE_LOAD', 'STRUCTURE', 'EXTERIOR', 
+                      'STEERING', 'LIGHT', 'EMISSION', 'NOISE');
+
+
+
+-- 7. CẤU HÌNH DÂY CHUYỀN 5 (Xe mô tô, 3 bánh)
+INSERT INTO dbo.LaneStage (LaneId, StageId, SortOrder, IsRequired, IsActive)
+SELECT 5, s.StageId,
+    CASE s.StageCode
+        WHEN 'EXTERIOR' THEN 1
+        WHEN 'BRAKE'    THEN 2
+        WHEN 'LIGHT'    THEN 3
+        WHEN 'EMISSION' THEN 4
+    END,
+    1, 1
+FROM dbo.Stage s
+WHERE s.StageCode IN ('EXTERIOR', 'BRAKE', 'LIGHT', 'EMISSION');
+
+-- 8. CẤU HÌNH DÂY CHUYỀN 6 (Xe chuyên dùng)
+INSERT INTO dbo.LaneStage (LaneId, StageId, SortOrder, IsRequired, IsActive)
+SELECT 6, s.StageId,
+    CASE s.StageCode
+        WHEN 'EXTERIOR'    THEN 1
+        WHEN 'STRUCTURE'   THEN 2
+        WHEN 'BRAKE'       THEN 3
+        WHEN 'STEERING'    THEN 4
+        WHEN 'LIGHT'       THEN 5
+        WHEN 'EMISSION'    THEN 6
+        WHEN 'SPEEDOMETER' THEN 7
+        WHEN 'SEATBELT'    THEN 8
+        WHEN 'GLASS'       THEN 9
+    END,
+    1, 1
+FROM dbo.Stage s
+WHERE s.StageCode IN (
+    'EXTERIOR','STRUCTURE','BRAKE','STEERING',
+    'LIGHT','EMISSION','SPEEDOMETER','SEATBELT','GLASS'
+);
+
+-- 9. NHẬP CHỈ TIÊU CHO CÔNG ĐOẠN NGOẠI THẤT
+DECLARE @ExteriorStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'EXTERIOR');
+
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@ExteriorStageId, 'EXT_BODY',        N'Tình trạng thân vỏ xe',           NULL,   'TEXT',   1, 1),
+    (@ExteriorStageId, 'EXT_DOOR',        N'Cửa xe và cơ cấu đóng mở',       NULL,   'TEXT',   1, 2),
+    (@ExteriorStageId, 'EXT_BUMPER',      N'Cản trước/sau',                   NULL,   'TEXT',   1, 3),
+    (@ExteriorStageId, 'EXT_MIRROR',      N'Gương chiếu hậu',                 N'cái', 'NUMBER', 1, 4),
+    (@ExteriorStageId, 'EXT_WIPER',       N'Cần gạt nước',                    NULL,   'TEXT',   1, 5),
+    (@ExteriorStageId, 'EXT_HORN',        N'Còi xe',                          N'dB',  'NUMBER', 1, 6),
+    (@ExteriorStageId, 'EXT_PLATE',       N'Biển số xe',                      NULL,   'TEXT',   1, 7),
+    (@ExteriorStageId, 'EXT_TIRE_FL',     N'Lốp trước trái',                  N'mm',  'NUMBER', 1, 8),
+    (@ExteriorStageId, 'EXT_TIRE_FR',     N'Lốp trước phải',                  N'mm',  'NUMBER', 1, 9),
+    (@ExteriorStageId, 'EXT_TIRE_RL',     N'Lốp sau trái',                    N'mm',  'NUMBER', 1, 10),
+    (@ExteriorStageId, 'EXT_TIRE_RR',     N'Lốp sau phải',                    N'mm',  'NUMBER', 1, 11);
+
+-- 10. NHẬP CHỈ TIÊU CHO CÔNG ĐOẠN KHUNG GẦM
+DECLARE @StructureStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'STRUCTURE');
+
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@StructureStageId, 'STR_CHASSIS',      N'Khung xe (chassis)',              NULL, 'TEXT', 1, 1),
+    (@StructureStageId, 'STR_SUSPENSION_F', N'Hệ thống treo trước',             NULL, 'TEXT', 1, 2),
+    (@StructureStageId, 'STR_SUSPENSION_R', N'Hệ thống treo sau',               NULL, 'TEXT', 1, 3),
+    (@StructureStageId, 'STR_EXHAUST',      N'Hệ thống ống xả',                 NULL, 'TEXT', 1, 4),
+    (@StructureStageId, 'STR_FUEL_TANK',    N'Bình nhiên liệu',                 NULL, 'TEXT', 1, 5),
+    (@StructureStageId, 'STR_DRIVESHAFT',   N'Trục truyền động',                NULL, 'TEXT', 1, 6);
+
+-- 11. NHẬP CHỈ TIÊU CHO CÔNG ĐOẠN PHANH
+DECLARE @BrakeStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'BRAKE');
+
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@BrakeStageId, 'BRK_FORCE_FL',    N'Lực phanh bánh trước trái',       N'N',   'NUMBER', 1, 1),
+    (@BrakeStageId, 'BRK_FORCE_FR',    N'Lực phanh bánh trước phải',       N'N',   'NUMBER', 1, 2),
+    (@BrakeStageId, 'BRK_FORCE_RL',    N'Lực phanh bánh sau trái',         N'N',   'NUMBER', 1, 3),
+    (@BrakeStageId, 'BRK_FORCE_RR',    N'Lực phanh bánh sau phải',         N'N',   'NUMBER', 1, 4),
+    (@BrakeStageId, 'BRK_BALANCE_F',   N'Độ đồng đều lực phanh trục trước', N'%',  'NUMBER', 1, 5),
+    (@BrakeStageId, 'BRK_BALANCE_R',   N'Độ đồng đều lực phanh trục sau',  N'%',  'NUMBER', 1, 6),
+    (@BrakeStageId, 'BRK_PARKING',     N'Hiệu quả phanh đỗ',               N'%',   'NUMBER', 1, 7),
+    (@BrakeStageId, 'BRK_FLUID',       N'Dầu phanh',                       NULL,   'TEXT',   1, 8),
+    (@BrakeStageId, 'BRK_PEDAL',       N'Bàn đạp phanh',                   NULL,   'TEXT',   1, 9);
+
+
+-- 12. NHẬP CHỈ TIÊU CHO CÔNG ĐOẠN HỆ THỐNG LÁI
+DECLARE @SteeringStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'STEERING');
+
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@SteeringStageId, 'STR_FREE_PLAY',  N'Độ rơ vô lăng',                N'độ',  'NUMBER', 1, 1),
+    (@SteeringStageId, 'STR_ALIGNMENT',  N'Độ chụm bánh xe',              N'mm',  'NUMBER', 1, 2),
+    (@SteeringStageId, 'STR_STABILITY',  N'Ổn định hướng',                NULL,   'TEXT',   1, 3),
+    (@SteeringStageId, 'STR_MECHANISM',  N'Cơ cấu lái',                   NULL,   'TEXT',   1, 4),
+    (@SteeringStageId, 'STR_POWER',      N'Trợ lực lái',                  NULL,   'TEXT',   0, 5);
+
+-- 13. NHẬP CHỈ TIÊU CHO CÔNG ĐOẠN ĐÈN
+DECLARE @LightStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'LIGHT');
+
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@LightStageId, 'LGT_HEADLIGHT_L', N'Đèn pha trái',              N'lux', 'NUMBER', 1, 1),
+    (@LightStageId, 'LGT_HEADLIGHT_R', N'Đèn pha phải',              N'lux', 'NUMBER', 1, 2),
+    (@LightStageId, 'LGT_LOWBEAM_L',   N'Đèn cốt trái',              N'lux', 'NUMBER', 1, 3),
+    (@LightStageId, 'LGT_LOWBEAM_R',   N'Đèn cốt phải',              N'lux', 'NUMBER', 1, 4),
+    (@LightStageId, 'LGT_TURN_FL',     N'Đèn xi nhan trước trái',    NULL,   'BOOL',   1, 5),
+    (@LightStageId, 'LGT_TURN_FR',     N'Đèn xi nhan trước phải',    NULL,   'BOOL',   1, 6),
+    (@LightStageId, 'LGT_TURN_RL',     N'Đèn xi nhan sau trái',      NULL,   'BOOL',   1, 7),
+    (@LightStageId, 'LGT_TURN_RR',     N'Đèn xi nhan sau phải',      NULL,   'BOOL',   1, 8),
+    (@LightStageId, 'LGT_BRAKE',       N'Đèn phanh',                 NULL,   'BOOL',   1, 9),
+    (@LightStageId, 'LGT_REVERSE',     N'Đèn lùi',                   NULL,   'BOOL',   1, 10),
+    (@LightStageId, 'LGT_PLATE',       N'Đèn biển số',               NULL,   'BOOL',   1, 11);
+
+
+-- 14. NHẬP CHỈ TIÊU CHO CÔNG ĐOẠN KHÍ THẢI
+DECLARE @EmissionStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'EMISSION');
+
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@EmissionStageId, 'EMI_CO',     N'Khí CO',                    N'%',   'NUMBER', 1, 1),
+    (@EmissionStageId, 'EMI_HC',     N'Khí HC (Hydrocacbon)',      N'ppm', 'NUMBER', 1, 2),
+    (@EmissionStageId, 'EMI_SMOKE',  N'Độ khói (diesel)',          N'%',   'NUMBER', 0, 3),
+    (@EmissionStageId, 'EMI_LAMBDA', N'Hệ số Lambda',              NULL,   'NUMBER', 0, 4),
+    (@EmissionStageId, 'EMI_RPM',    N'Số vòng quay động cơ',      N'rpm', 'NUMBER', 1, 5);
+
+
+-- 15. NHẬP CHỈ TIÊU CHO CÁC CÔNG ĐOẠN KHÁC
+-- TIẾNG ỒN
+DECLARE @NoiseStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'NOISE');
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@NoiseStageId, 'NOI_STATIC',  N'Tiếng ồn tĩnh',        N'dB(A)', 'NUMBER', 1, 1),
+    (@NoiseStageId, 'NOI_MOVING',  N'Tiếng ồn động',        N'dB(A)', 'NUMBER', 1, 2);
+
+-- TỐC ĐỘ KẾ
+DECLARE @SpeedStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'SPEEDOMETER');
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@SpeedStageId, 'SPD_ACCURACY', N'Độ chính xác tốc độ kế', N'%',  'NUMBER', 1, 1),
+    (@SpeedStageId, 'SPD_ODO',      N'Số km đã đi',            N'km', 'NUMBER', 1, 2);
+
+-- KÍNH AN TOÀN
+DECLARE @GlassStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'GLASS');
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@GlassStageId, 'GLS_WINDSHIELD', N'Kính chắn gió trước',  NULL, 'TEXT',   1, 1),
+    (@GlassStageId, 'GLS_REAR',       N'Kính sau',             NULL, 'TEXT',   1, 2),
+    (@GlassStageId, 'GLS_SIDE',       N'Kính cửa bên',         NULL, 'TEXT',   1, 3),
+    (@GlassStageId, 'GLS_TINT',       N'Độ tối kính',          N'%', 'NUMBER', 1, 4);
+
+-- DÂY ĐAI AN TOÀN
+DECLARE @SeatbeltStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'SEATBELT');
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@SeatbeltStageId, 'SB_DRIVER',     N'Dây đai người lái',         NULL, 'TEXT', 1, 1),
+    (@SeatbeltStageId, 'SB_FRONT_PASS', N'Dây đai hành khách trước',  NULL, 'TEXT', 1, 2),
+    (@SeatbeltStageId, 'SB_REAR',       N'Dây đai hàng ghế sau',      NULL, 'TEXT', 0, 3);
+
+-- TẢI TRỌNG TRỤC
+DECLARE @AxleLoadStageId INT = (SELECT StageId FROM Stage WHERE StageCode = 'AXLE_LOAD');
+INSERT INTO dbo.StageItem (StageId, ItemCode, ItemName, Unit, DataType, IsRequired, SortOrder)
+VALUES 
+    (@AxleLoadStageId, 'AXL_FRONT', N'Tải trọng trục trước',  N'kg', 'NUMBER', 1, 1),
+    (@AxleLoadStageId, 'AXL_REAR',  N'Tải trọng trục sau',    N'kg', 'NUMBER', 1, 2),
+    (@AxleLoadStageId, 'AXL_TOTAL', N'Tổng tải trọng',        N'kg', 'NUMBER', 1, 3);
+
+
 -- =========================
 -- 4) NHÓM HỒ SƠ KIỂM ĐỊNH (LÕI NGHIỆP VỤ)
 -- Status: 0 Draft, 1 Received, 2 Paid, 3 InProgress, 4 WaitingConclusion, 5 Passed, 6 Failed, 7 Cancelled

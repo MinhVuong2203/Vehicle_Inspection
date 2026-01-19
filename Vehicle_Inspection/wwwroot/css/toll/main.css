@@ -208,7 +208,7 @@
     }
 
 .filter-actions {
-/*    display: flex;*/
+    display: flex;
     gap: 12px;
 }
 
@@ -227,6 +227,7 @@
     transition: all 0.3s ease;
     white-space: nowrap;
     margin-bottom: 10px;
+    text-decoration: none;
 }
 
 .btn-search {

@@ -591,6 +591,11 @@ CREATE TABLE dbo.Inspection (
    -- CONSTRAINT CK_Inspection_Priority CHECK (Priority BETWEEN 1 AND 3)
 );
 
+INSERT INTO Inspection(InspectionCode, VehicleId, OwnerId, InspectionType, Status, CreatedAt, IsDeleted)
+VALUES ('4', 3, '00BE74E5-56F1-4152-8D42-15D66856BB7A', 'FIRST', 1, SYSDATETIME(), 0)
+
+
+
 CREATE INDEX IX_Inspection_VehicleId ON dbo.Inspection(VehicleId);
 CREATE INDEX IX_Inspection_Status ON dbo.Inspection(Status) WHERE IsDeleted = 0;
 CREATE INDEX IX_Inspection_ReceivedAt ON dbo.Inspection(ReceivedAt);
@@ -789,8 +794,8 @@ CREATE TABLE dbo.FeeSchedule (
     
     -- GIÁ PHÍ
     BaseFee DECIMAL(18,2) NOT NULL,-- Phí cơ bản
-    CertificateFee DECIMAL(18,2) DEFAULT 0,-- Phí giấy chứng nhận
-    StickerFee DECIMAL(18,2) DEFAULT 0,-- Phí tem kiểm định
+    CertificateFee DECIMAL(18,2) DEFAULT 0,-- Phí giấy chứng nhận, tem  90.000
+    StickerFee DECIMAL(18,2) DEFAULT 0,-- Phí lập hồ sơ 49.680 đồng đã bao gồm VAT 8%
     TotalFee DECIMAL(18,2) NOT NULL,-- Tổng phí
     
     -- THỜI GIAN ÁP DỤNG
@@ -809,6 +814,25 @@ CREATE TABLE dbo.FeeSchedule (
     CONSTRAINT CK_Fee_Dates CHECK (EffectiveTo IS NULL OR EffectiveTo >= EffectiveFrom),
     CONSTRAINT CK_Fee_Amount CHECK (TotalFee >= 0)
 );
+
+GO
+CREATE OR ALTER TRIGGER dbo.trg_FeeSchedule_CalcTotalFee
+ON dbo.FeeSchedule
+AFTER INSERT, UPDATE
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- Chỉ cập nhật những row vừa bị tác động
+    UPDATE fs
+    SET fs.TotalFee =
+        fs.BaseFee
+      + ISNULL(fs.CertificateFee, 0)
+      + ISNULL(fs.StickerFee, 0)
+    FROM dbo.FeeSchedule fs
+    JOIN inserted i ON i.FeeId = fs.FeeId;
+END
+GO
 
 SELECT *
 FROM FeeSchedule F
@@ -872,39 +896,145 @@ WHERE TypeCode IN (
 -- Insert phí theo nhóm tiền trong ảnh
 INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
-SELECT N'PERIODIC', VehicleTypeId, 250000, 0, 0, 250000, @From, NULL, 1, @CreatedBy
+SELECT N'PERIODIC', VehicleTypeId, 250000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('PAX_LT_10','AMBULANCE');
 
 INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
-SELECT N'PERIODIC', VehicleTypeId, 290000, 0, 0, 290000, @From, NULL, 1, @CreatedBy
+SELECT N'PERIODIC', VehicleTypeId, 290000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('PAX_10_24','TRUCK_LE_2T');
 
 INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
-SELECT N'PERIODIC', VehicleTypeId, 330000, 0, 0, 330000, @From, NULL, 1, @CreatedBy
+SELECT N'PERIODIC', VehicleTypeId, 330000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('PAX_25_40','TRUCK_2_7T');
 
 INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
-SELECT N'PERIODIC', VehicleTypeId, 360000, 0, 0, 360000, @From, NULL, 1, @CreatedBy
+SELECT N'PERIODIC', VehicleTypeId, 360000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('PAX_GT_40','BUS','TRUCK_7_20T','TRACTOR_LE_20T');
 
 INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
-SELECT N'PERIODIC', VehicleTypeId, 570000, 0, 0, 570000, @From, NULL, 1, @CreatedBy
+SELECT N'PERIODIC', VehicleTypeId, 570000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('TRUCK_GT_20T','TRACTOR_GT_20T');
 
 INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
-SELECT N'PERIODIC', VehicleTypeId, 190000, 0, 0, 190000, @From, NULL, 1, @CreatedBy
+SELECT N'PERIODIC', VehicleTypeId, 190000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('TRACTOR','MOTOR_4W_CARGO','MOTOR_4W_PAX','TRAILER','SEMI_TRAILER');
 
 INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
-SELECT N'PERIODIC', VehicleTypeId, 110000, 0, 0, 110000, @From, NULL, 1, @CreatedBy
+SELECT N'PERIODIC', VehicleTypeId, 110000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('THREE_WHEEL');
 
+--------------
+DECLARE @From DATE = '2022-10-08'; -- bạn có thể đổi
+DECLARE @CreatedBy UNIQUEIDENTIFIER = NULL;
+
+-- helper: lấy id theo TypeCode
+DECLARE @Id TABLE (TypeCode NVARCHAR(20), VehicleTypeId INT);
+INSERT INTO @Id(TypeCode, VehicleTypeId)
+SELECT TypeCode, VehicleTypeId FROM dbo.VehicleType
+WHERE TypeCode IN (
+ 'PAX_LT_10','AMBULANCE',
+ 'PAX_10_24','TRUCK_LE_2T',
+ 'PAX_25_40','TRUCK_2_7T',
+ 'PAX_GT_40','BUS','TRUCK_7_20T','TRACTOR_LE_20T',
+ 'TRUCK_GT_20T','TRACTOR_GT_20T',
+ 'TRACTOR','MOTOR_4W_CARGO','MOTOR_4W_PAX','TRAILER','SEMI_TRAILER',
+ 'THREE_WHEEL'
+);
+-- Insert phí theo nhóm tiền trong ảnh
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'FIRST', VehicleTypeId, 0, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_LT_10','AMBULANCE');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'FIRST', VehicleTypeId, 0, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_10_24','TRUCK_LE_2T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'FIRST', VehicleTypeId, 0, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_25_40','TRUCK_2_7T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'FIRST', VehicleTypeId, 0, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_GT_40','BUS','TRUCK_7_20T','TRACTOR_LE_20T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'FIRST', VehicleTypeId, 0, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('TRUCK_GT_20T','TRACTOR_GT_20T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'FIRST', VehicleTypeId, 0, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('TRACTOR','MOTOR_4W_CARGO','MOTOR_4W_PAX','TRAILER','SEMI_TRAILER');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'FIRST', VehicleTypeId, 0, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('THREE_WHEEL');
+
+
+--------------
+DECLARE @From DATE = '2022-10-08'; -- bạn có thể đổi
+DECLARE @CreatedBy UNIQUEIDENTIFIER = NULL;
+
+-- helper: lấy id theo TypeCode
+DECLARE @Id TABLE (TypeCode NVARCHAR(20), VehicleTypeId INT);
+INSERT INTO @Id(TypeCode, VehicleTypeId)
+SELECT TypeCode, VehicleTypeId FROM dbo.VehicleType
+WHERE TypeCode IN (
+ 'PAX_LT_10','AMBULANCE',
+ 'PAX_10_24','TRUCK_LE_2T',
+ 'PAX_25_40','TRUCK_2_7T',
+ 'PAX_GT_40','BUS','TRUCK_7_20T','TRACTOR_LE_20T',
+ 'TRUCK_GT_20T','TRACTOR_GT_20T',
+ 'TRACTOR','MOTOR_4W_CARGO','MOTOR_4W_PAX','TRAILER','SEMI_TRAILER',
+ 'THREE_WHEEL'
+);
+-- Insert phí theo nhóm tiền trong ảnh
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'RE_INSPECTION', VehicleTypeId, 125000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_LT_10','AMBULANCE');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'RE_INSPECTION', VehicleTypeId, 145000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_10_24','TRUCK_LE_2T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'RE_INSPECTION', VehicleTypeId, 165000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_25_40','TRUCK_2_7T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'RE_INSPECTION', VehicleTypeId, 180000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('PAX_GT_40','BUS','TRUCK_7_20T','TRACTOR_LE_20T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'RE_INSPECTION', VehicleTypeId, 285000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('TRUCK_GT_20T','TRACTOR_GT_20T');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'RE_INSPECTION', VehicleTypeId, 95000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('TRACTOR','MOTOR_4W_CARGO','MOTOR_4W_PAX','TRAILER','SEMI_TRAILER');
+
+INSERT INTO dbo.FeeSchedule
+(ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
+SELECT N'RE_INSPECTION', VehicleTypeId, 55000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
+FROM @Id WHERE TypeCode IN ('THREE_WHEEL');
 
 
 -- 5.2) Bảng Payment (Thanh toán)
@@ -950,7 +1080,7 @@ CREATE TABLE dbo.Payment (
     Notes NVARCHAR(500) NULL,
     
     
-    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId),
+    FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
     FOREIGN KEY (FeeScheduleId) REFERENCES dbo.FeeSchedule(FeeId),
     FOREIGN KEY (CreatedBy) REFERENCES dbo.[User](UserId),
     FOREIGN KEY (PaidBy) REFERENCES dbo.[User](UserId),
@@ -958,6 +1088,138 @@ CREATE TABLE dbo.Payment (
     CONSTRAINT CK_Payment_Amount CHECK (TotalAmount >= 0),
     CONSTRAINT UQ_Payment_Inspection UNIQUE (InspectionId)  -- Mỗi hồ sơ 1 phiếu thu
 );
+
+EXEC sp_helpindex 'dbo.Payment';
+
+
+GO
+CREATE OR ALTER TRIGGER dbo.trg_Inspection_AfterInsert_CreatePayment
+ON dbo.Inspection
+AFTER INSERT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    -- 1) Gom dữ liệu nguồn: Inspection + VehicleTypeId + ServiceType
+    DECLARE @src TABLE
+    (
+        InspectionId INT PRIMARY KEY,
+        CreatedAt    DATETIME2 NOT NULL,
+        CreatedBy    UNIQUEIDENTIFIER NULL,
+        VehicleTypeId INT NULL,
+        ServiceType  NVARCHAR(30) NULL
+    );
+
+    INSERT INTO @src (InspectionId, CreatedAt, CreatedBy, VehicleTypeId, ServiceType)
+    SELECT
+        i.InspectionId,
+        i.CreatedAt,
+        i.CreatedBy,
+        v.VehicleTypeId,
+        CASE i.InspectionType
+            WHEN N'FIRST'         THEN N'FIRST'
+            WHEN N'PERIODIC'      THEN N'PERIODIC'
+            WHEN N'RE_INSPECTION' THEN N'RE_INSPECTION'
+            ELSE NULL
+        END AS ServiceType
+    FROM inserted i
+    JOIN dbo.Vehicle v ON v.VehicleId = i.VehicleId;
+
+    -- 2) Chọn FeeSchedule phù hợp (mỗi Inspection lấy 1 dòng tốt nhất)
+    DECLARE @pick TABLE
+    (
+        InspectionId INT PRIMARY KEY,
+        FeeId INT NOT NULL,
+        BaseFee DECIMAL(18,2) NOT NULL,
+        CertificateFee DECIMAL(18,2) NOT NULL,
+        StickerFee DECIMAL(18,2) NOT NULL,
+        TotalFee DECIMAL(18,2) NOT NULL
+    );
+
+    INSERT INTO @pick (InspectionId, FeeId, BaseFee, CertificateFee, StickerFee, TotalFee)
+    SELECT
+        s.InspectionId,
+        fs.FeeId,
+        fs.BaseFee,
+        ISNULL(fs.CertificateFee, 0),
+        ISNULL(fs.StickerFee, 0),
+        fs.TotalFee
+    FROM @src s
+    CROSS APPLY
+    (
+        SELECT TOP (1) fs.*
+        FROM dbo.FeeSchedule fs
+        WHERE fs.IsActive = 1
+          AND fs.ServiceType = s.ServiceType
+          AND (fs.VehicleTypeId = s.VehicleTypeId OR fs.VehicleTypeId IS NULL)
+          AND CONVERT(date, s.CreatedAt) >= fs.EffectiveFrom
+          AND (fs.EffectiveTo IS NULL OR CONVERT(date, s.CreatedAt) <= fs.EffectiveTo)
+        ORDER BY
+          CASE WHEN fs.VehicleTypeId = s.VehicleTypeId THEN 0 ELSE 1 END,
+          fs.EffectiveFrom DESC,
+          fs.FeeId DESC
+    ) fs
+    WHERE s.ServiceType IS NOT NULL;
+
+    -- 3) Nếu có Inspection nào không pick được bảng giá -> rollback rõ ràng
+    IF EXISTS (
+        SELECT 1
+        FROM @src s
+        LEFT JOIN @pick p ON p.InspectionId = s.InspectionId
+        WHERE p.InspectionId IS NULL
+    )
+    BEGIN
+        THROW 50001, N'Không tìm thấy FeeSchedule hợp lệ cho Inspection vừa tạo (ServiceType/VehicleTypeId/EffectiveFrom/EffectiveTo/IsActive).', 1;
+    END;
+
+    -- 4) Insert Payment (copy phí từ FeeSchedule)
+    INSERT INTO dbo.Payment
+    (
+        InspectionId,
+        FeeScheduleId,
+        BaseFee,
+        CertificateFee,
+        StickerFee,
+        TotalAmount,
+        PaymentMethod,
+        PaymentStatus,
+        ReceiptNo,
+        ReceiptPrintCount,
+        CreatedAt,
+        PaidAt,
+        CreatedBy,
+        PaidBy,
+        Notes
+    )
+    SELECT
+        s.InspectionId,
+        p.FeeId,
+        p.BaseFee,
+        p.CertificateFee,
+        p.StickerFee,
+        p.TotalFee,
+        N'Tiền mặt',
+        0,                 -- PENDING
+        CONCAT(
+        N'RC-',
+        FORMAT(SYSDATETIME(), 'yyyyMMddHHmmssfff'),
+        N'-',
+        RIGHT(CONCAT('000000', CAST(s.InspectionId AS varchar(10))), 6)
+		) AS ReceiptNo,
+        0,
+        SYSDATETIME(),
+        NULL,
+        s.CreatedBy,
+        NULL,
+        NULL
+    FROM @src s
+    JOIN @pick p ON p.InspectionId = s.InspectionId
+    LEFT JOIN dbo.Payment pay ON pay.InspectionId = s.InspectionId
+    WHERE pay.InspectionId IS NULL;
+END
+GO
+
+
 
 CREATE INDEX IX_Payment_Status ON dbo.Payment(PaymentStatus); 
 CREATE INDEX IX_Payment_PaidAt ON dbo.Payment(PaidAt);

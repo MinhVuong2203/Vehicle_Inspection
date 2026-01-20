@@ -17,7 +17,7 @@ namespace Vehicle_Inspection.Service
             try
             {
                 var records = _context.Inspections
-                    .Where(i => !i.IsDeleted)
+                    .Where(i => !i.IsDeleted && i.Status == 2)
                     .Include(i => i.Vehicle)
                     .Include(i => i.Owner)
                     .Include(i => i.Lane)
@@ -52,6 +52,9 @@ namespace Vehicle_Inspection.Service
                         OwnerPhone = i.Owner.Phone,
                         OwnerEmail = i.Owner.Email,
                         OwnerAddress = i.Owner.Address,
+
+                        // Thông tin loại xe lấy từ bảng VehicleType qua VehicleId
+                        //VehicleType = i.Vehicle.VehicleType != null ? i.Vehicle.VehicleType.TypeName : null,
 
                         // Thông tin dây chuyền
                         LaneId = i.LaneId,

@@ -1,8 +1,13 @@
 ﻿@using Vehicle_Inspection.Models
 @using System.Linq
 @inject Vehicle_Inspection.Data.VehInsContext _context
+@using System.Security.Claims
 
-
+@{
+    var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    Guid? userId = Guid.TryParse(userIdStr, out var g) ? g : (Guid?)null;
+    var username = User.Identity?.Name; // hoặc ClaimTypes.Name
+}
 
 
 <!DOCTYPE html>
@@ -15,50 +20,10 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" rel="stylesheet" />
     @RenderSection("styles", required: false)
-    <style>
-        .notification-toast {
-            position: fixed;
-            top: 80px;
-            right: 20px;
-            z-index: 9999;
-            min-width: 350px;
-            animation: slideIn 0.3s ease-out;
-        }
-
-        @@keyframes slideIn {
-            from {
-                transform: translateX(400px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        .fade-out {
-            animation: fadeOut 0.3s ease-out forwards;
-        }
-
-        @@keyframes fadeOut {
-            to {
-                opacity: 0;
-                transform: translateX(400px);
-            }
-        }
-    </style>
 </head>
 <body>
 
-    @* <!-- DEBUG TEMPDATA - XÓA SAU KHI TEST XONG -->
-    <div style="position: fixed; bottom: 10px; left: 10px; background: yellow; padding: 10px; z-index: 99999; font-size: 12px;">
-        <strong>DEBUG TempData:</strong><br />
-        SuccessMessage: @(TempData["SuccessMessage"] ?? "NULL")<br />
-        ErrorMessage: @(TempData["ErrorMessage"] ?? "NULL")<br />
-        TempData Count: @TempData.Count<br />
-        Keys: @string.Join(", ", TempData.Keys)
-    </div> *@
+    
 
     <header class="header-main">
         <!-- Primary green top bar -->
@@ -79,6 +44,7 @@
                 </div>
                 <div class="user-links d-flex align-items-center">
                     <b class="me-2">Welcome</b>
+                    <div hidden id="UserId">@userId</div>
                     <a href="#" class="m-0">
                         <div class="icon-top"><i class="fa-solid fa-circle-user fa-xl"></i></div>
                     </a>

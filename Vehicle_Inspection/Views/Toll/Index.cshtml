@@ -462,6 +462,7 @@
         }, 5000);
    
         async function payWithPayOS(inspectionId) {
+            
             const res = await fetch(`/api/payos/create-link/${inspectionId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
@@ -489,7 +490,7 @@
 
                 const inspectionId = document.getElementById('modalInspectionIdInput').value;
                 if (!inspectionId) {
-                    alert("Thiếu inspectionId.");
+                    alert("Thiếu inspectionId");
                     return;
                 }
 

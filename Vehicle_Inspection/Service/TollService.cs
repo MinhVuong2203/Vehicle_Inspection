@@ -13,6 +13,8 @@ namespace Vehicle_Inspection.Service
             _context = context;
         }
 
+
+
         public List<Inspection> GetInspections(string? search, short? status)
             {
                 var query = _context.Inspections
@@ -47,6 +49,7 @@ namespace Vehicle_Inspection.Service
                 .FirstOrDefault(i => i.InspectionCode == inspectionCode && !i.IsDeleted);
         }
 
+        // Phục vụ cho thanh toán tiền mặt
         public string CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId)
         {
             using var transaction = _context.Database.BeginTransaction();
@@ -76,41 +79,24 @@ namespace Vehicle_Inspection.Service
                     return "Failed";
                 }
 
-                // Cập nhật hoặc tạo mới Payment
-                if (inspection.Payment == null)
-                {
-                    var payment = new Payment
-                    {
-                        InspectionId = inspection.InspectionId,
-                        TotalAmount = 500000, // Có thể tính toán dựa vào loại kiểm định
-                        PaymentMethod = paymentMethod,
-                        PaymentStatus = 1, // 1 = Đã thanh toán
-                        PaidAt = DateTime.Now,
-                        Notes = note,
-                        PaidBy = userId,
-
-                    };
-                    _context.Payments.Add(payment);
-                }
-                else
-                {
-                    //inspection.Payment.PaymentMethod = paymentMethod;
-                    //inspection.Payment.PaymentStatus = 1;
-                    //inspection.Payment.ReceiptPrintCount++;
-                    //inspection.Payment.PaidAt = DateTime.Now;
-                    //inspection.Payment.PaidBy = userId;
-                    inspection.Payment.Notes = note;
-                }
+                
+                inspection.Payment.PaymentMethod = paymentMethod;
+                inspection.Payment.PaymentStatus = 1;
+                inspection.Payment.ReceiptPrintCount++;
+                inspection.Payment.PaidAt = DateTime.Now;
+                inspection.Payment.PaidBy = userId;
+                inspection.Payment.Notes = note;
+          
 
                 // Cập nhật thông tin Inspection
-                //inspection.PaidAt = DateTime.Now;
+                inspection.PaidAt = DateTime.Now;
 
                 // Cập nhật Status nếu cần (tùy theo flow nghiệp vụ của bạn)
                 // Status = 2 có thể là "Đã thu phí" hoặc "Đã tiếp nhận"
-                //if (inspection.Status == 1)
-                //{
-                //    inspection.Status = 2;
-                //}
+                if (inspection.Status == 1)
+                {
+                    inspection.Status = 2;
+                }
 
                 _context.SaveChanges();
                 transaction.Commit();
@@ -125,5 +111,12 @@ namespace Vehicle_Inspection.Service
                 return "Errol";
             }
         }
+        
+        public Inspection getInspectionByOrderCode(long? orderCode)
+        {
+            return _context.Inspections.Include(i => i.Payment).FirstOrDefault(i => i.Payment.OrderCode == orderCode);
+        }
+
+
     }
 }

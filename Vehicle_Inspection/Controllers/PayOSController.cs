@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using PayOS;
 using PayOS.Models.V2.PaymentRequests;
 using System;
+using System.Security.Claims;
 using Vehicle_Inspection.Data;
 
 namespace Vehicle_Inspection.Controllers
@@ -23,11 +24,16 @@ namespace Vehicle_Inspection.Controllers
             _cfg = cfg;
         }
 
+        // Phục vụ cho tạo link thanh toán PayOS và đẩy 1 số dữ liệu có liên quan xuống db
         [HttpPost("create-link/{inspectionId:int}")]
         public async Task<IActionResult> CreateLink(int inspectionId)
-        {
+        {          
+            // 1) Lấy userId người đang đăng nhập
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                return Unauthorized("Không xác định được user đăng nhập.");
+
             var payment = await _db.Payments
-                .AsNoTracking()
                 .SingleAsync(p => p.InspectionId == inspectionId);
 
             // orderCode: payOS yêu cầu số (long/int). lấy khoảng cách từ 1/1/1970 đến hiện tại tính bằng milliseconds
@@ -35,13 +41,16 @@ namespace Vehicle_Inspection.Controllers
 
             // Lưu xuống DB để map khi return gọi về
             payment.OrderCode = orderCode;
+            payment.PaidBy = userId;
+            payment.Notes = "CK-" + inspectionId; 
+            Console.WriteLine("------------- " + payment.OrderCode + "--------------------");
             await _db.SaveChangesAsync();
 
             var req = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode,
                 Amount = (long)payment.TotalAmount,              // VND nguyên
-                Description = $"Thanh toán {inspectionId}",
+                Description = "CK-" + inspectionId,
                 ReturnUrl = _cfg["PayOS:ReturnUrl"]!,
                 CancelUrl = _cfg["PayOS:CancelUrl"]!
             };

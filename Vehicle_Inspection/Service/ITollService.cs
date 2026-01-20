@@ -7,5 +7,6 @@ namespace Vehicle_Inspection.Service
         List<Inspection> GetInspections(string? search, short? status);
         Inspection? GetInspectionDetails(string inspectionCode);
         string CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId);
+        Inspection getInspectionByOrderCode(long? orderCode);
     }
 }

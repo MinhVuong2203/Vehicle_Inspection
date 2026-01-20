@@ -1,17 +1,20 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Vehicle_Inspection.Service;
-using Vehicle_Inspection.Models;
 using System.Security.Claims;
+using Vehicle_Inspection.Data;
+using Vehicle_Inspection.Models;
+using Vehicle_Inspection.Service;
 
 namespace Vehicle_Inspection.Controllers
 {
     public class TollController : Controller
     {
         private readonly ITollService _tollService;
+        private readonly VehInsContext _context;
 
-        public TollController(ITollService tollService)
+        public TollController(ITollService tollService, VehInsContext context)
         {
             _tollService = tollService;
+            _context = context;
         }
 
         // GET: Toll/Index
@@ -47,6 +50,7 @@ namespace Vehicle_Inspection.Controllers
         }
 
         // POST: Toll/CollectPayment
+        // Form này submit cho thanh toán tiền mặt
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult CollectPayment(string inspectionCode, string paymentMethod, string? note)
@@ -70,7 +74,7 @@ namespace Vehicle_Inspection.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                string result = _tollService.CollectPayment(inspectionCode, paymentMethod, note, userId); // Thành công, Đơn
+                string result = _tollService.CollectPayment(inspectionCode, paymentMethod, note, userId); // Thành công Đơn tiền mặt
 
                 if (result == "Success")
                 {
@@ -145,16 +149,47 @@ namespace Vehicle_Inspection.Controllers
         public IActionResult Return(string? code, string? id, bool cancel, string? status, long? orderCode)
         {
 
+            Inspection inspection = _tollService.getInspectionByOrderCode(orderCode);
+
+            if (inspection == null)
+            {
+                TempData["ErrorMessage"] = $"Không tìm thấy khách hàng với mã thanh toán.";
+                return RedirectToAction(nameof(Index));
+            } 
+            else if (inspection.Payment != null && inspection.Payment.PaymentStatus == 1)
+            {
+                TempData["InfoMessage"] = $"Khách hàng này đã thanh toán";
+                return RedirectToAction(nameof(Index));
+            }
+            else if (inspection.Payment != null && inspection.Payment.PaymentStatus == 2)
+            {
+                // Cần xử lý xét PaymentStatus = 0 để thanh toán lại
+                TempData["InfoMessage"] = $"Giao dịch này đã bị hủy";
+                return RedirectToAction(nameof(Index));
+            }
+            
             // PayOS trả về PAID ở status
             if (!cancel && string.Equals(status, "PAID", StringComparison.OrdinalIgnoreCase))
             {
-                //_tollService
-
-                TempData["SuccessMessage"] = $"Thanh toán thành công (orderCode={orderCode}).";               
+                try
+                {
+                    inspection.Payment.PaymentMethod = "Chuyển khoản";
+                    inspection.Payment.PaymentStatus = 1;
+                    inspection.Payment.ReceiptPrintCount++;
+                    inspection.Payment.PaidAt = DateTime.Now;
+                    inspection.Status = 2;
+                    inspection.PaidAt = DateTime.Now;
+                    _context.SaveChanges();
+                    TempData["SuccessMessage"] = $"Thanh toán thành công {inspection.InspectionCode}.";               
+                }
+                catch (Exception ex)
+                {
+                    TempData["ErrorMessage"] = $"Có lỗi xảy ra khi cập nhật thanh toán: {ex.Message}";
+                }
             }
             else
             { 
-                TempData["ErrorMessage"] = $"Thanh toán chưa hoàn tất (status={status}, orderCode={orderCode}).";
+                TempData["ErrorMessage"] = $"Thanh toán chưa hoàn tất (status={status}, orderCode={inspection.InspectionCode}).";
             }
 
             return RedirectToAction(nameof(Index));
@@ -163,9 +198,9 @@ namespace Vehicle_Inspection.Controllers
         // TRẢ VỀ KHI HỦY THANH TOÁN
         [HttpGet("/toll/cancel")]
         public IActionResult Cancel(string? code, string? id, bool cancel, string? status, long? orderCode)
-        {    
-            TempData["InfoMessage"] = $"Bạn đã hủy thanh toán (orderCode={orderCode}).";
-
+        {
+            Inspection i = _tollService.getInspectionByOrderCode(orderCode);
+            TempData["InfoMessage"] = $"Bạn đã hủy thanh toán {i.InspectionCode}";
             return RedirectToAction(nameof(Index));
         }
 

@@ -361,6 +361,30 @@ namespace Vehicle_Inspection.Controllers
                     error = ex.Message
                 });
             }
+
+        /// <summary>
+        /// Hiển thị trang Xét duyệt hồ sơ
+        /// </summary>
+        [Route("receive-profile/approve")]
+        public async Task<IActionResult> Approve([FromQuery] string? cccd, [FromQuery] string? plateNo)
+        {
+            if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo))
+            {
+                TempData["ErrorMessage"] = "Vui lòng tìm kiếm hồ sơ trước khi xét duyệt";
+                return RedirectToAction("Index");
+            }
+
+            var result = await _receiveProfileService.SearchAsync(cccd, plateNo);
+
+            if (result == null)
+            {
+                TempData["ErrorMessage"] = "Không tìm thấy hồ sơ";
+                return RedirectToAction("Index");
+            }
+
+            ViewBag.SearchData = result.Data;
+            return View();
         }
     }
 }
+

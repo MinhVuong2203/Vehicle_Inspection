@@ -162,7 +162,7 @@ async function populateForm(data) {
     if (data.owner) {
         setFieldValue('owner-id', data.owner.ownerId);
         setFieldValue('owner-fullname', data.owner.fullName);
-        setFieldValue('owner-type', data.owner.ownerType);
+        setFieldValue('owner-type', data.owner.ownerType === 'PERSON' ? 'Cá nhân' : 'Công ty');
         setFieldValue('owner-cccd', data.owner.cccd);
 
         const phoneValue = data.owner.phone || '';
@@ -173,19 +173,18 @@ async function populateForm(data) {
         setFieldValue('owner-address', data.owner.address);
         setFieldValue('owner-company', data.owner.companyName);
         setFieldValue('owner-taxcode', data.owner.taxCode);
+        setFieldValue('owner-province', data.owner.province);
+        setFieldValue('owner-ward', data.owner.ward);
 
         const createdAt = data.owner.createdAt ? new Date(data.owner.createdAt).toLocaleString('vi-VN') : '';
         setFieldValue('owner-created', createdAt);
 
-        toggleOwnerType();
+        toggleOwnerType(data.owner.ownerType);
 
         // Display image
         if (data.owner.imageUrl) {
             displayOwnerImage(data.owner.imageUrl);
         }
-
-        // Load Province & Ward
-        await loadProvinceAndWard(data.owner.province, data.owner.ward);
     }
 
     // Vehicle fields
@@ -264,33 +263,6 @@ async function populateForm(data) {
     }
 
     console.log('✅ Form populated successfully');
-}
-
-// ========== LOAD PROVINCE AND WARD ==========
-async function loadProvinceAndWard(province, ward) {
-    const provinceSelect = document.getElementById('owner-province');
-    const wardSelect = document.getElementById('owner-ward');
-
-    if (!province || !provinceSelect) return;
-
-    // Set province
-    provinceSelect.value = province;
-    console.log('✅ Province set to:', province);
-
-    // Load wards
-    try {
-        await loadWards(province);
-
-        // Set ward sau khi load
-        setTimeout(() => {
-            if (ward && wardSelect) {
-                wardSelect.value = ward;
-                console.log('✅ Ward set to:', ward);
-            }
-        }, 200);
-    } catch (error) {
-        console.error('❌ Error loading wards:', error);
-    }
 }
 
 // ========== HELPER: SET FIELD VALUE ==========
@@ -633,6 +605,25 @@ function editProfile() {
     window.location.href = `/receive-profile/edit?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}`;
 }
 
+// ========== APPROVE PROFILE (CHO INDEX) ==========
+function approveProfile() {
+    console.log('✅ Approve Profile clicked');
+    console.log('Current Owner:', currentOwner);
+    console.log('Current Vehicle:', currentVehicle);
+
+    if (!currentOwner || !currentVehicle) {
+        showNotification('error', 'Vui lòng tìm kiếm thông tin trước');
+        return;
+    }
+
+    const cccd = currentOwner.cccd || currentOwner.taxCode || '';
+    const plateNo = currentVehicle.plateNo || '';
+
+    console.log('Navigating to approve with:', { cccd, plateNo });
+
+    window.location.href = `/receive-profile/approve?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}`;
+}
+
 // ========== CREATE NEW PROFILE (CHO INDEX) ==========
 function createNewProfile() {
     window.location.href = '/receive-profile/create';
@@ -809,12 +800,16 @@ function setupProvinceListener() {
 }
 
 // ========== TOGGLE OWNER TYPE ==========
-function toggleOwnerType() {
-    const ownerType = getFieldValue('owner-type');
+function toggleOwnerType(ownerType) {
+    // Nếu không truyền tham số, lấy từ select
+    if (!ownerType) {
+        ownerType = getFieldValue('owner-type');
+    }
+
     const personInfo = document.getElementById('person-info');
     const companyInfo = document.getElementById('company-info');
 
-    if (ownerType === 'PERSON') {
+    if (ownerType === 'PERSON' || ownerType === 'Cá nhân') {
         if (personInfo) personInfo.style.display = 'flex';
         if (companyInfo) companyInfo.style.display = 'none';
     } else {
@@ -855,6 +850,7 @@ function showNotification(type, message) {
         setTimeout(() => notification.remove(), 300);
     }, 5000);
 }
+
 // ========== AUTO INITIALIZE BASED ON PAGE ==========
 document.addEventListener('DOMContentLoaded', function () {
     // Detect page mode based on URL path
@@ -874,6 +870,7 @@ window.searchProfile = searchProfile;
 window.clearSearch = clearSearch;
 window.editProfile = editProfile;
 window.createNewProfile = createNewProfile;
+window.approveProfile = approveProfile;  // ✅ QUAN TRỌNG
 window.saveChanges = saveChanges;
 window.cancelChanges = cancelChanges;
 window.createProfile = createProfile;

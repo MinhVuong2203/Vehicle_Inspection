@@ -48,6 +48,7 @@ public class PayOsWebhookController : ControllerBase
         }
         else
         {
+            Console.WriteLine("---------------------------[" + data.OrderCode + " đã hủy]---------------------------");
             // Có thể set CANCELLED tùy nghiệp vụ
         }
 

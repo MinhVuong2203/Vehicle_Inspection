@@ -92,6 +92,8 @@ public partial class VehInsContext : DbContext
         {
             entity.HasKey(e => e.FeeId).HasName("PK__FeeSched__B387B2295EBD386E");
 
+            entity.ToTable("FeeSchedule", tb => tb.HasTrigger("trg_FeeSchedule_CalcTotalFee"));
+
             entity.Property(e => e.CertificateFee).HasDefaultValue(0m);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -103,6 +105,8 @@ public partial class VehInsContext : DbContext
         modelBuilder.Entity<Inspection>(entity =>
         {
             entity.HasKey(e => e.InspectionId).HasName("PK__Inspecti__30B2DC0814F10BF1");
+
+            entity.ToTable("Inspection", tb => tb.HasTrigger("trg_Inspection_AfterInsert_CreatePayment"));
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.InspectionType).HasDefaultValue("FIRST");
@@ -213,22 +217,20 @@ public partial class VehInsContext : DbContext
 
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.HasKey(e => e.PaymentId).HasName("PK__Payment__9B556A383382DECA");
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payment__9B556A38B807EC8F");
 
             entity.Property(e => e.CertificateFee).HasDefaultValue(0m);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.ReceiptPrintCount).HasDefaultValue(0);
             entity.Property(e => e.StickerFee).HasDefaultValue(0m);
 
-            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.PaymentCreatedByNavigations).HasConstraintName("FK__Payment__Created__0B5CAFEA");
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.PaymentCreatedByNavigations).HasConstraintName("FK__Payment__Created__7073AF84");
 
-            entity.HasOne(d => d.FeeSchedule).WithMany(p => p.Payments).HasConstraintName("FK__Payment__FeeSche__0A688BB1");
+            entity.HasOne(d => d.FeeSchedule).WithMany(p => p.Payments).HasConstraintName("FK__Payment__FeeSche__6F7F8B4B");
 
-            entity.HasOne(d => d.Inspection).WithOne(p => p.Payment)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Payment__Inspect__09746778");
+            entity.HasOne(d => d.Inspection).WithOne(p => p.Payment).HasConstraintName("FK__Payment__Inspect__6E8B6712");
 
-            entity.HasOne(d => d.PaidByNavigation).WithMany(p => p.PaymentPaidByNavigations).HasConstraintName("FK__Payment__PaidBy__0C50D423");
+            entity.HasOne(d => d.PaidByNavigation).WithMany(p => p.PaymentPaidByNavigations).HasConstraintName("FK__Payment__PaidBy__7167D3BD");
         });
 
         modelBuilder.Entity<Position>(entity =>

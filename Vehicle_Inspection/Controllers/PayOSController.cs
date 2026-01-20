@@ -30,8 +30,12 @@ namespace Vehicle_Inspection.Controllers
                 .AsNoTracking()
                 .SingleAsync(p => p.InspectionId == inspectionId);
 
-            // orderCode: payOS yêu cầu số (long/int).
+            // orderCode: payOS yêu cầu số (long/int). lấy khoảng cách từ 1/1/1970 đến hiện tại tính bằng milliseconds
             long orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
+            // Lưu xuống DB để map khi return gọi về
+            payment.OrderCode = orderCode;
+            await _db.SaveChangesAsync();
 
             var req = new CreatePaymentLinkRequest
             {

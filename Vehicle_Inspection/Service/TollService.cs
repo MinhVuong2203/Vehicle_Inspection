@@ -94,23 +94,23 @@ namespace Vehicle_Inspection.Service
                 }
                 else
                 {
-                    inspection.Payment.PaymentMethod = paymentMethod;
-                    inspection.Payment.PaymentStatus = 1;
-                    inspection.Payment.ReceiptPrintCount++;
-                    inspection.Payment.PaidAt = DateTime.Now;
-                    inspection.Payment.PaidBy = userId;
+                    //inspection.Payment.PaymentMethod = paymentMethod;
+                    //inspection.Payment.PaymentStatus = 1;
+                    //inspection.Payment.ReceiptPrintCount++;
+                    //inspection.Payment.PaidAt = DateTime.Now;
+                    //inspection.Payment.PaidBy = userId;
                     inspection.Payment.Notes = note;
                 }
 
                 // Cập nhật thông tin Inspection
-                inspection.PaidAt = DateTime.Now;
+                //inspection.PaidAt = DateTime.Now;
 
                 // Cập nhật Status nếu cần (tùy theo flow nghiệp vụ của bạn)
                 // Status = 2 có thể là "Đã thu phí" hoặc "Đã tiếp nhận"
-                if (inspection.Status == 1)
-                {
-                    inspection.Status = 2;
-                }
+                //if (inspection.Status == 1)
+                //{
+                //    inspection.Status = 2;
+                //}
 
                 _context.SaveChanges();
                 transaction.Commit();

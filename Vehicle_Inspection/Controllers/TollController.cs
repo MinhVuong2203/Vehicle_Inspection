@@ -140,15 +140,35 @@ namespace Vehicle_Inspection.Controllers
             return Guid.Empty;
         }
 
-        public IActionResult Return()
+        // TRẢ VỀ KHI THANH TOÁN THÀNH CÔNG
+        [HttpGet("/toll/return")]
+        public IActionResult Return(string? code, string? id, bool cancel, string? status, long? orderCode)
         {
-            return View();
+
+            // PayOS trả về PAID ở status
+            if (!cancel && string.Equals(status, "PAID", StringComparison.OrdinalIgnoreCase))
+            {
+                //_tollService
+
+                TempData["SuccessMessage"] = $"Thanh toán thành công (orderCode={orderCode}).";               
+            }
+            else
+            { 
+                TempData["ErrorMessage"] = $"Thanh toán chưa hoàn tất (status={status}, orderCode={orderCode}).";
+            }
+
+            return RedirectToAction(nameof(Index));
         }
 
-        public IActionResult Cancel()
-        {
-            return View();
+        // TRẢ VỀ KHI HỦY THANH TOÁN
+        [HttpGet("/toll/cancel")]
+        public IActionResult Cancel(string? code, string? id, bool cancel, string? status, long? orderCode)
+        {    
+            TempData["InfoMessage"] = $"Bạn đã hủy thanh toán (orderCode={orderCode}).";
+
+            return RedirectToAction(nameof(Index));
         }
+
 
 
     }

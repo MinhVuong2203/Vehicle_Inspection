@@ -1305,8 +1305,8 @@ FROM @Id WHERE TypeCode IN ('THREE_WHEEL');
 -- 5.2) Bảng Payment (Thanh toán)
 CREATE TABLE dbo.Payment (
     PaymentId INT IDENTITY(1,1) PRIMARY KEY,
-    InspectionId INT NOT NULL,
-     
+
+    InspectionId INT NOT NULL,  
     -- CHI TIẾT PHÍ
     FeeScheduleId INT NULL,-- Tham chiếu bảng giá
     BaseFee DECIMAL(18,2) NOT NULL,-- Phí cơ bản
@@ -1343,7 +1343,9 @@ CREATE TABLE dbo.Payment (
     
     -- GHI CHÚ
     Notes NVARCHAR(500) NULL,
-    
+   
+    -- Cung cấp cho PayOS
+	OrderCode BIGINT,
     
     FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
     FOREIGN KEY (FeeScheduleId) REFERENCES dbo.FeeSchedule(FeeId),
@@ -1353,6 +1355,7 @@ CREATE TABLE dbo.Payment (
     CONSTRAINT CK_Payment_Amount CHECK (TotalAmount >= 0),
     CONSTRAINT UQ_Payment_Inspection UNIQUE (InspectionId)  -- Mỗi hồ sơ 1 phiếu thu
 );
+
 
 EXEC sp_helpindex 'dbo.Payment';
 
@@ -1463,7 +1466,7 @@ BEGIN
         p.CertificateFee,
         p.StickerFee,
         p.TotalFee,
-        N'Tiền mặt',
+        N'Chưa xác định',
         0,                 -- PENDING
         CONCAT(
         N'RC-',

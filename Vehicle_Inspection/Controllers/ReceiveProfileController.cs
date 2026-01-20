@@ -363,9 +363,6 @@ namespace Vehicle_Inspection.Controllers
             }
         }
 
-        [Route("receive-profile/approve")]
-        private async Task<IActionResult> Approve([FromQuery] string? cccd, [FromQuery] string? plateNo)
-
         /// <summary>
         /// Hiển thị trang Xét duyệt hồ sơ
         /// </summary>

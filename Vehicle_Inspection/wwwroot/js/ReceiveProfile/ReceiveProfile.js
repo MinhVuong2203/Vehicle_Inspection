@@ -1,7 +1,4 @@
-﻿// ========================================
-// FILE: ReceiveProfileCommon.js
-// MỤC ĐÍCH: Dùng chung cho 3 trang Index, Edit, Create
-// ========================================
+﻿
 
 // ========== GLOBAL VARIABLES ==========
 let currentOwner = null;
@@ -10,12 +7,20 @@ let currentSpecification = null;
 let currentPageMode = 'view'; // 'view', 'edit', 'create'
 
 // ========== KHỞI TẠO TRANG ==========
-function initializePage(mode) {
+async function initializePage(mode) {
     currentPageMode = mode;
     console.log(`🚀 Initializing page in ${mode} mode`);
 
     // Load provinces cho tất cả các trang
     loadProvinces();
+
+    // ✅ THÊM await ĐỂ ĐỢI LOAD XONG
+    try {
+        console.log('🔥 CALLING loadVehicleTypes...');
+        await loadVehicleTypes();
+    } catch (err) {
+        console.error('💥 Error calling loadVehicleTypes:', err);
+    }
 
     // Event listener cho province select
     setupProvinceListener();
@@ -31,7 +36,7 @@ function initializePage(mode) {
 
     // Nếu là trang Edit, load data từ URL params
     if (mode === 'edit') {
-        loadDataForEdit();
+        await loadDataForEdit();
     }
 }
 
@@ -189,7 +194,12 @@ async function populateForm(data) {
         setFieldValue('vehicle-plate', data.vehicle.plateNo);
         setFieldValue('vehicle-inspection', data.vehicle.inspectionNo);
         setFieldValue('vehicle-group', data.vehicle.vehicleGroup);
-        setFieldValue('vehicle-type', data.vehicle.vehicleType);
+        if (data.vehicle.vehicleType) {
+            setTimeout(() => {
+                setFieldValue('vehicle-type', data.vehicle.vehicleType);
+                console.log(`✅ Vehicle type set to: ${data.vehicle.vehicleType}`);
+            }, 300);
+        }
         setFieldValue('vehicle-energy', data.vehicle.energyType);
         setCheckboxValue('vehicle-clean', data.vehicle.isCleanEnergy);
         setFieldValue('vehicle-usage', data.vehicle.usagePermission);
@@ -337,7 +347,8 @@ function collectFormData() {
 
     const formData = {
         Owner: {
-            OwnerId: getFieldValue('owner-id'),
+            // ✅ FIX: Parse OwnerId - có thể là GUID nên giữ nguyên string
+            OwnerId: getFieldValue('owner-id') || '00000000-0000-0000-0000-000000000000',
             OwnerType: ownerType || 'PERSON',
             FullName: getFieldValue('owner-fullname'),
             CompanyName: getFieldValue('owner-company'),
@@ -352,7 +363,11 @@ function collectFormData() {
             CreatedAt: currentOwner?.createdAt
         },
         Vehicle: {
-            VehicleId: getFieldValue('vehicle-id'),
+            // ✅ FIX: Parse VehicleId thành int, nếu rỗng hoặc null thì để null
+            VehicleId: (() => {
+                const val = getFieldValue('vehicle-id');
+                return val ? parseInt(val) : null;
+            })(),
             PlateNo: getFieldValue('vehicle-plate'),
             InspectionNo: getFieldValue('vehicle-inspection'),
             VehicleGroup: getFieldValue('vehicle-group'),
@@ -373,7 +388,11 @@ function collectFormData() {
             UpdatedAt: currentVehicle?.updatedAt
         },
         Specification: {
-            SpecificationId: getFieldValue('spec-id'),
+            // ✅ FIX: Parse SpecificationId thành int, nếu rỗng thì null
+            SpecificationId: (() => {
+                const val = getFieldValue('spec-id');
+                return val ? parseInt(val) : null;
+            })(),
             PlateNo: getFieldValue('vehicle-plate'),
             WheelFormula: getFieldValue('spec-wheel-formula'),
             WheelTread: parseInt(getFieldValue('spec-wheel-tread')) || null,
@@ -709,6 +728,69 @@ async function loadWards(provinceName) {
         showNotification('error', 'Không thể tải danh sách phường/xã');
     }
 }
+async function loadVehicleTypes() {
+    console.log('🚗 ========== BẮT ĐẦU LOAD VEHICLE TYPES ==========');
+
+    try {
+        const url = '/api/receive-profile/vehicle-types';
+        console.log('📡 Calling API:', url);
+
+        const response = await fetch(url);
+        console.log('📊 Response status:', response.status);
+
+        if (!response.ok) {
+            console.error('❌ Response not OK:', response.status, response.statusText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('📦 Response data:', data);
+
+        if (data.success && data.data) {
+            console.log(`✅ Received ${data.data.length} vehicle types`);
+            console.log('📋 Sample data:', data.data[0]);
+
+            const vehicleTypeSelect = document.getElementById('vehicle-type');
+            console.log('🔍 Select element found:', vehicleTypeSelect ? 'YES' : 'NO');
+
+            if (!vehicleTypeSelect) {
+                console.error('❌ Cannot find element with id="vehicle-type"');
+                return;
+            }
+
+            // Clear existing options
+            vehicleTypeSelect.innerHTML = '<option value="">-- Chọn loại phương tiện --</option>';
+            console.log('🗑️ Cleared existing options');
+
+            // Add new options
+            let optionsAdded = 0;
+            data.data.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type.typeName;
+                option.textContent = type.typeName;
+                option.setAttribute('data-id', type.vehicleTypeId);
+                vehicleTypeSelect.appendChild(option);
+                optionsAdded++;
+            });
+
+            console.log(`✅ Added ${optionsAdded} options to dropdown`);
+            console.log('🎯 Final options count:', vehicleTypeSelect.options.length);
+
+        } else {
+            console.warn('⚠️ API returned success=false or no data');
+            console.log('Response:', data);
+        }
+
+    } catch (error) {
+        console.error('❌ ========== ERROR IN loadVehicleTypes ==========');
+        console.error('Error type:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Stack trace:', error.stack);
+        showNotification('error', 'Không thể tải danh sách loại phương tiện');
+    }
+
+    console.log('🚗 ========== KẾT THÚC LOAD VEHICLE TYPES ==========');
+}
 
 // ========== SETUP PROVINCE LISTENER ==========
 function setupProvinceListener() {
@@ -798,5 +880,7 @@ window.createProfile = createProfile;
 window.cancelCreate = cancelCreate;
 window.previewOwnerImage = previewOwnerImage;
 window.toggleOwnerType = toggleOwnerType;
+window.loadVehicleTypes = loadVehicleTypes;
+
 
 console.log('✅ All functions exposed to window scope');

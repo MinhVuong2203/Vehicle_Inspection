@@ -329,5 +329,38 @@ namespace Vehicle_Inspection.Controllers
                 });
             }
         }
+        [HttpGet]
+        [Route("api/receive-profile/vehicle-types")]
+        public async Task<IActionResult> GetVehicleTypes()
+        {
+            try
+            {
+                var vehicleTypes = await _receiveProfileService.GetVehicleTypesAsync();
+
+                if (vehicleTypes == null || vehicleTypes.Count == 0)
+                {
+                    return NotFound(new
+                    {
+                        success = false,
+                        message = "Không tìm thấy dữ liệu loại phương tiện"
+                    });
+                }
+
+                return Ok(new
+                {
+                    success = true,
+                    data = vehicleTypes
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi tải dữ liệu loại phương tiện",
+                    error = ex.Message
+                });
+            }
+        }
     }
 }

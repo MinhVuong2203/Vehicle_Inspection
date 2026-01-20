@@ -737,5 +737,31 @@ namespace Vehicle_Inspection.Service
                 UpdatedAt = spec.UpdatedAt
             };
         }
+        public async Task<List<VehicleTypeDto>> GetVehicleTypesAsync()
+        {
+            try
+            {
+                var vehicleTypes = await _context.VehicleTypes
+                    .Where(vt => vt.IsActive == true || vt.IsActive == null) // Lấy các loại đang active
+                    .OrderBy(vt => vt.TypeName)
+                    .Select(vt => new VehicleTypeDto
+                    {
+                        VehicleTypeId = vt.VehicleTypeId,
+                        TypeCode = vt.TypeCode,
+                        TypeName = vt.TypeName,
+                        Description = vt.Description,
+                        IsActive = vt.IsActive
+                    })
+                    .ToListAsync();
+
+                Console.WriteLine($"✅ Loaded {vehicleTypes.Count} vehicle types");
+                return vehicleTypes;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error loading vehicle types: {ex.Message}");
+                throw new Exception($"Lỗi lấy danh sách loại phương tiện: {ex.Message}", ex);
+            }
+        }
     }
 }

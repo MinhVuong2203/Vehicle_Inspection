@@ -10,7 +10,7 @@ namespace Vehicle_Inspection.Service
         Task<List<string>> GetProvincesAsync();
         Task<List<object>> GetWardsByProvinceAsync(string provinceName);
         Task<bool> CreateProfileAsync(UpdateProfileRequest request, string? imageUrl);
-
+        Task<List<VehicleTypeDto>> GetVehicleTypesAsync();
 
         // DTOs
         public class SearchResponse
@@ -118,6 +118,14 @@ namespace Vehicle_Inspection.Service
             public OwnerDto Owner { get; set; }
             public VehicleDto Vehicle { get; set; }
             public SpecificationDto? Specification { get; set; }
+        }
+        public class VehicleTypeDto
+        {
+            public int VehicleTypeId { get; set; }
+            public string TypeCode { get; set; } = null!;
+            public string TypeName { get; set; } = null!;
+            public string? Description { get; set; }
+            public bool? IsActive { get; set; }
         }
     }
 }

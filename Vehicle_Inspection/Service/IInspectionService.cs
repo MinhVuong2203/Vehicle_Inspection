@@ -4,6 +4,9 @@
     {
         List<InspectionRecordDto> GetInspectionRecords();
         InspectionDetailDto? GetInspectionDetail(int inspectionId);
+
+        //lấy các bước kiểm định theo dây chuyền được gán với hồ sơ kiểm định
+        List<InspectionStageDto> GetInspectionStages(int inspectionId);
     }
 
     // DTO cho danh sách
@@ -176,5 +179,47 @@
             ManufactureYear.HasValue && !string.IsNullOrEmpty(ManufactureCountry)
             ? $"{ManufactureYear}/{ManufactureCountry}"
             : null;
+    }
+
+    public class InspectionStageDto
+    {
+        public int StageId { get; set; }
+        public string StageCode { get; set; }
+        public string StageName { get; set; }
+        public int SortOrder { get; set; }
+        public bool IsRequired { get; set; }
+
+        // Thông tin từ InspectionStage (nếu đã có)
+        public long? InspStageId { get; set; }
+        public int Status { get; set; } // 0: Pending, 1: InProgress, 2: Completed
+        public int? StageResult { get; set; } // 1: Pass, 2: Fail, 3: Minor
+        public Guid? AssignedUserId { get; set; }
+        public string? AssignedUserName { get; set; }
+        public string? Notes { get; set; }
+
+        // Danh sách các item cần đo
+        public List<StageItemDto> Items { get; set; } = new();
+    }
+
+    public class StageItemDto
+    {
+        public int ItemId { get; set; }
+        public string ItemCode { get; set; }
+        public string ItemName { get; set; }
+        public string? Unit { get; set; }
+        public string DataType { get; set; } // NUMBER, TEXT, BOOL
+        public bool IsRequired { get; set; }
+        public int SortOrder { get; set; }
+
+        // Tiêu chuẩn (từ StageItemThreshold)
+        public decimal? MinValue { get; set; }
+        public decimal? MaxValue { get; set; }
+        public string? AllowedValues { get; set; }
+        public string? PassCondition { get; set; }
+
+        // Giá trị đã đo (từ InspectionDetail nếu có)
+        public decimal? ActualValue { get; set; }
+        public string? ActualText { get; set; }
+        public bool? IsPassed { get; set; }
     }
 }

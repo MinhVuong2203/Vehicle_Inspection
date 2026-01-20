@@ -618,30 +618,19 @@ const stageItems = {
 };
 
 // Wrapper function để mở modal quy trình kiểm định bằng ID
-function openInspectionProcessById(inspectionId) {
+async function openInspectionProcessById(inspectionId) {
     const record = findRecordById(inspectionId);
     if (record) {
-        openInspectionProcess(record);
+        await openInspectionProcess(record);
     }
 }
 
 // Mở modal quy trình kiểm định
-function openInspectionProcess(record) {
+async function openInspectionProcess(record) {
     currentInspection = record;
     selectedLaneId = record.laneId;
     selectedLaneName = record.laneName;
     currentStageIndex = 0;
-    
-    // Load stages từ server hoặc khởi tạo mới
-    stagesData = [
-        { stageId: 1, stageName: "Kiểm tra ngoại thất", status: 0, result: null, assignedUser: null },
-        { stageId: 2, stageName: "Kiểm tra động cơ", status: 0, result: null, assignedUser: null },
-        { stageId: 3, stageName: "Kiểm tra hệ thống phanh", status: 0, result: null, assignedUser: null },
-        { stageId: 4, stageName: "Kiểm tra khí thải", status: 0, result: null, assignedUser: null },
-        { stageId: 5, stageName: "Kiểm tra hệ thống đèn", status: 0, result: null, assignedUser: null }
-    ];
-    
-    allDefects = [];
 
     // Điền thông tin hồ sơ
     document.getElementById('processInspectionCode').textContent = record.inspectionCode || 'N/A';
@@ -654,6 +643,27 @@ function openInspectionProcess(record) {
         alert('Hồ sơ chưa được thu phí. Vui lòng thu phí trước khi kiểm định.');
         return;
     }
+
+    // ✅ LOAD STAGES TỪ DATABASE
+    console.log('Loading stages from database...');
+
+    const dbStages = await window.InspectionStageLoader.loadStages(record.inspectionId);
+
+    if (!dbStages || dbStages.length === 0) {
+        alert('Không tìm thấy quy trình kiểm định cho dây chuyền này.');
+        return;
+    }
+
+    // Convert sang UI format
+    stagesData = window.InspectionStageLoader.convertToUIFormat(dbStages);
+
+    // Build stage items config
+    Object.assign(stageItems, window.InspectionStageLoader.buildItemsConfig(dbStages));
+
+    console.log('Loaded stages:', stagesData);
+    console.log('Stage items config:', stageItems);
+
+    allDefects = [];
 
     // Nếu đã có dây chuyền, bỏ qua bước chọn
     if (selectedLaneId) {

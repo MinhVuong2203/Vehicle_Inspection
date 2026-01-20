@@ -205,5 +205,159 @@ namespace Vehicle_Inspection.Service
                 return null;
             }
         }
+
+        public List<InspectionStageDto> GetInspectionStages(int inspectionId)
+        {
+            try
+            {
+                Console.WriteLine($"=== GetInspectionStages START for InspectionId: {inspectionId} ===");
+
+                // 1. Lấy thông tin Inspection và LaneId
+                var inspection = _context.Inspections
+                    .Where(i => i.InspectionId == inspectionId && !i.IsDeleted)
+                    .Include(i => i.Vehicle)
+                        .ThenInclude(v => v.VehicleType)
+                    .FirstOrDefault();
+
+                if (inspection == null)
+                {
+                    Console.WriteLine($"Inspection {inspectionId} not found");
+                    return new List<InspectionStageDto>();
+                }
+
+                if (!inspection.LaneId.HasValue)
+                {
+                    Console.WriteLine($"Inspection {inspectionId} has no lane assigned");
+                    return new List<InspectionStageDto>();
+                }
+
+                int laneId = inspection.LaneId.Value;
+                int? vehicleTypeId = inspection.Vehicle?.VehicleTypeId;
+
+                Console.WriteLine($"LaneId: {laneId}, VehicleTypeId: {vehicleTypeId}");
+
+                // 2. Lấy các Stage theo LaneId từ LaneStage
+                var laneStages = _context.LaneStages
+                    .Where(ls => ls.LaneId == laneId && ls.IsActive == true)
+                    .Include(ls => ls.Stage)
+                    .OrderBy(ls => ls.SortOrder)
+                    .Select(ls => new
+                    {
+                        ls.StageId,
+                        ls.Stage.StageCode,
+                        ls.Stage.StageName,
+                        ls.SortOrder,
+                        ls.IsRequired
+                    })
+                    .ToList();
+
+                Console.WriteLine($"Found {laneStages.Count} stages for lane {laneId}");
+
+                // 3. Lấy thông tin InspectionStage đã có (nếu có)
+                var existingStages = _context.InspectionStages
+                    .Where(ins => ins.InspectionId == inspectionId)
+                    .Include(ins => ins.AssignedUser)
+                    .ToDictionary(ins => ins.StageId);
+
+                // 4. Build DTO cho từng Stage
+                var result = new List<InspectionStageDto>();
+
+                foreach (var ls in laneStages)
+                {
+                    var stageDto = new InspectionStageDto
+                    {
+                        StageId = ls.StageId,
+                        StageCode = ls.StageCode,
+                        StageName = ls.StageName,
+                        SortOrder = ls.SortOrder,
+                        IsRequired = ls.IsRequired ?? true
+                    };
+
+                    // Nếu đã có InspectionStage, map thông tin
+                    if (existingStages.TryGetValue(ls.StageId, out var existingStage))
+                    {
+                        stageDto.InspStageId = existingStage.InspStageId;
+                        stageDto.Status = existingStage.Status;
+                        stageDto.StageResult = existingStage.StageResult;
+                        stageDto.AssignedUserId = existingStage.AssignedUserId;
+                        stageDto.AssignedUserName = existingStage.AssignedUser?.FullName;
+                        stageDto.Notes = existingStage.Notes;
+                    }
+                    else
+                    {
+                        stageDto.Status = 0; // Pending
+                    }
+
+                    // 5. Lấy danh sách StageItem
+                    var stageItems = _context.StageItems
+                        .Where(si => si.StageId == ls.StageId)
+                        .OrderBy(si => si.SortOrder)
+                        .ToList();
+
+                    Console.WriteLine($"Stage {ls.StageName} has {stageItems.Count} items");
+
+                    foreach (var item in stageItems)
+                    {
+                        var itemDto = new StageItemDto
+                        {
+                            ItemId = item.ItemId,
+                            ItemCode = item.ItemCode,
+                            ItemName = item.ItemName,
+                            Unit = item.Unit,
+                            DataType = item.DataType,
+                            IsRequired = item.IsRequired,
+                            SortOrder = item.SortOrder ?? 0
+                        };
+
+                        // 6. Lấy tiêu chuẩn từ StageItemThreshold (nếu có VehicleTypeId)
+                        if (vehicleTypeId.HasValue)
+                        {
+                            var threshold = _context.StageItemThresholds
+                                .Where(t => t.ItemId == item.ItemId
+                                         && t.VehicleTypeId == vehicleTypeId.Value
+                                         && t.IsActive == true)
+                                .OrderByDescending(t => t.EffectiveDate)
+                                .FirstOrDefault();
+
+                            if (threshold != null)
+                            {
+                                itemDto.MinValue = threshold.MinValue;
+                                itemDto.MaxValue = threshold.MaxValue;
+                                itemDto.AllowedValues = threshold.AllowedValues;
+                                itemDto.PassCondition = threshold.PassCondition;
+                            }
+                        }
+
+                        // 7. Lấy giá trị đã đo (nếu có InspectionDetail)
+                        if (stageDto.InspStageId.HasValue)
+                        {
+                            var detail = _context.InspectionDetails
+                                .FirstOrDefault(d => d.InspStageId == stageDto.InspStageId.Value
+                                                  && d.ItemId == item.ItemId);
+
+                            if (detail != null)
+                            {
+                                itemDto.ActualValue = detail.ActualValue;
+                                itemDto.ActualText = detail.ActualText;
+                                itemDto.IsPassed = detail.IsPassed;
+                            }
+                        }
+
+                        stageDto.Items.Add(itemDto);
+                    }
+
+                    result.Add(stageDto);
+                }
+
+                Console.WriteLine($"=== GetInspectionStages END - Returning {result.Count} stages ===");
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetInspectionStages: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                return new List<InspectionStageDto>();
+            }
+        }
     }
 }

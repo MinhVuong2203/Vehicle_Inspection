@@ -79,5 +79,25 @@ namespace Vehicle_Inspection.Controllers
                 return Json(new { success = false, message = ex.Message }, _jsonOptions);
             }
         }
+
+        [HttpGet]
+        public IActionResult GetInspectionStages(int inspectionId)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Getting stages for inspection: {inspectionId}");
+
+                var stages = _inspectionService.GetInspectionStages(inspectionId);
+
+                System.Diagnostics.Debug.WriteLine($"Found {stages.Count} stages");
+
+                return Json(new { success = true, data = stages }, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                return Json(new { success = false, message = ex.Message }, _jsonOptions);
+            }
+        }
     }
 }

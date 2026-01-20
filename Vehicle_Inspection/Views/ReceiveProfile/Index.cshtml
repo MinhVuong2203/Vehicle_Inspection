@@ -5,7 +5,6 @@
 
 <!-- Link CSS -->
 <link rel="stylesheet" href="~/css/ReceiveProfile/ReceiveProfile.css" />
-
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
 <!-- Main Wrapper -->
@@ -219,7 +218,10 @@
 
                             <div class="vehicle-item">
                                 <div class="vehicle-item-label"><i class="bi bi-tag"></i> Loại phương tiện</div>
-                                <input type="text" id="vehicle-type" class="vehicle-input" readonly>
+                                <select id="vehicle-type" class="vehicle-input form-select" readonly>
+                                    <option value="">-- Chọn loại phương tiện --</option>
+
+                                </select>
                             </div>
                             <div class="vehicle-item">
                                 <div class="vehicle-item-label"><i class="bi bi-award"></i> Nhãn hiệu</div>
@@ -492,10 +494,13 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons - CHỈ NÚT SỬA -->
+                <!-- Action Buttons - SỬA & XÉT DUYỆT -->
                 <div class="action-buttons">
                     <button type="button" class="btn-edit" onclick="editProfile()">
                         <i class="bi bi-pencil-square"></i> Sửa
+                    </button>
+                    <button type="button" class="btn-approve" onclick="approveProfile()">
+                        <i class="bi bi-check-circle"></i> Xét duyệt
                     </button>
                 </div>
 
@@ -510,4 +515,25 @@
 
 <!-- Link JavaScript -->
 <script src="~/js/ReceiveProfile/ReceiveProfile.js"></script>
-@* <script src="~/js/ReceiveProfile/ReceiveProfileIndex.js"></script> *@
+
+<style>
+    .btn-approve {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 18px 56px;
+        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+        color: white !important;
+        border: none;
+        border-radius: 14px;
+        font-size: 18px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+    }
+
+        .btn-approve:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(76, 175, 80, 0.6);
+        }
+</style>

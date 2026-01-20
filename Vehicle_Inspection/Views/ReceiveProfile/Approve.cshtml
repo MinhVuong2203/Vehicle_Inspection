@@ -1,0 +1,147 @@
+﻿@{
+    ViewData["Title"] = "Xét duyệt hồ sơ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Link CSS -->
+<link rel="stylesheet" href="~/css/ReceiveProfile/ReceiveProfile.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+<!-- Main Content -->
+<div class="main-content" style="max-width: 1200px; margin: 0 auto;">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div style="flex: 1;">
+            <h1><i class="bi bi-check-circle"></i> Xét duyệt hồ sơ đăng kiểm</h1>
+            <p>Tạo lượt kiểm định mới cho phương tiện</p>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb-custom">
+        <a href="/"><i class="bi bi-house-door"></i> Trang chủ</a> /
+        <a href="/receive-profile"><i class="bi bi-file-earmark-text"></i> Tiếp nhận hồ sơ</a> /
+        <span>Xét duyệt</span>
+    </nav>
+
+    <!-- LOADING STATE -->
+    <div class="loading-state" id="loading-state" style="display: none;">
+        <div class="spinner"></div>
+        <p class="loading-text">Đang tải dữ liệu...</p>
+    </div>
+
+    <!-- FORM CONTENT -->
+    <div id="form-content">
+
+        <!-- Owner & Vehicle Summary Card -->
+        <div class="owner-info-card">
+            <div class="owner-card-header">
+                <i class="bi bi-info-circle"></i>
+                <h2>Thông tin hồ sơ</h2>
+            </div>
+            <div class="owner-card-body">
+                <input type="hidden" id="owner-id" />
+                <input type="hidden" id="vehicle-id" />
+
+                <div class="detail-row">
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="bi bi-person"></i> Chủ xe</span>
+                        <input type="text" id="owner-fullname" class="detail-input" readonly>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="bi bi-credit-card"></i> CCCD/MST</span>
+                        <input type="text" id="owner-cccd" class="detail-input" readonly>
+                    </div>
+                </div>
+
+                <div class="detail-row">
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="bi bi-car-front"></i> Biển số xe</span>
+                        <input type="text" id="vehicle-plate" class="detail-input" readonly>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label"><i class="bi bi-tag"></i> Loại xe</span>
+                        <input type="text" id="vehicle-type" class="detail-input" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Inspection Form Card -->
+        <div class="vehicle-info-card">
+            <div class="vehicle-card-header">
+                <i class="bi bi-clipboard-check"></i>
+                <h2>Thông tin kiểm định</h2>
+            </div>
+            <div class="vehicle-card-body">
+
+                <!-- Inspection Code -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-hash"></i> Mã lượt kiểm định <span class="required">*</span>
+                    </label>
+                    <input type="text"
+                           id="inspection-code"
+                           class="form-control"
+                           placeholder="VD: INS-20260120-001"
+                           required>
+                </div>
+
+                <!-- Inspection Type -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-list-check"></i> Loại kiểm định <span class="required">*</span>
+                    </label>
+                    <select id="inspection-type" class="form-control" required>
+                        <option value="">-- Chọn loại kiểm định --</option>
+                        <option value="FIRST">Đăng kiểm lần đầu</option>
+                        <option value="PERIODIC">Định kỳ</option>
+                        <option value="RE_INSPECTION">Tái kiểm</option>
+                    </select>
+                </div>
+
+                <!-- Lane Selection -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-bezier2"></i> Dây chuyền kiểm định <span class="required">*</span>
+                    </label>
+                    <select id="lane-id" class="form-control" required>
+                        <option value="">-- Chọn dây chuyền --</option>
+                        <!-- Sẽ được load từ API -->
+                    </select>
+                </div>
+
+                <!-- Notes -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="bi bi-chat-left-text"></i> Ghi chú
+                    </label>
+                    <textarea id="inspection-notes"
+                              class="form-textarea"
+                              rows="4"
+                              placeholder="Nhập ghi chú (nếu có)..."></textarea>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button type="button" class="btn-cancel" onclick="cancelApprove()">
+                <i class="bi bi-x-circle"></i> Hủy bỏ
+            </button>
+            <button type="button" class="btn-save" onclick="submitApproval()">
+                <i class="bi bi-check-circle"></i> Xác nhận xét duyệt
+            </button>
+        </div>
+
+    </div>
+
+</div>
+
+<!-- Notification Container -->
+<div id="notification-container"></div>
+
+<!-- Link JavaScript -->
+<script src="~/js/ReceiveProfile/Approve.js"></script>

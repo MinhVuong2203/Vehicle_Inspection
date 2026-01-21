@@ -1413,11 +1413,11 @@ CREATE TABLE dbo.InspectionDetail (
     -- TIÊU CHUẨN (Lấy từ StageItemThreshold theo VehicleType)
     StandardMin DECIMAL(18,4) NULL, -- Giá trị min theo tiêu chuẩn
     StandardMax DECIMAL(18,4) NULL, -- Giá trị max theo tiêu chuẩn
-    StandardText NVARCHAR(100) NULL, -- Tiêu chuẩn dạng text (VD: "Bình thường")
+    --StandardText NVARCHAR(100) NULL, -- Tiêu chuẩn dạng text (VD: "Bình thường")
     
     -- GIÁ TRỊ ĐO ĐƯỢC
     ActualValue DECIMAL(18,4) NULL,-- Giá trị đo (số)
-    ActualText NVARCHAR(100) NULL, -- Giá trị đo (text)
+    --ActualText NVARCHAR(100) NULL, -- Giá trị đo (text)
     Unit NVARCHAR(20) NULL,-- Đơn vị (kg, N, lux, %)
     
     -- KẾT QUẢ ĐÁNH GIÁ
@@ -1427,7 +1427,7 @@ CREATE TABLE dbo.InspectionDetail (
         0: KHÔNG ĐẠT
         1: ĐẠT
     */
-    DeviationPercent DECIMAL(10,2) NULL,-- % chênh lệch so với tiêu chuẩn
+    --DeviationPercent DECIMAL(10,2) NULL,-- % chênh lệch so với tiêu chuẩn
     
     -- NGUỒN DỮ LIỆU
     DataSource NVARCHAR(20) NOT NULL DEFAULT N'MANUAL',
@@ -1437,17 +1437,17 @@ CREATE TABLE dbo.InspectionDetail (
         VISUAL: Kiểm tra mắt thường
         CALCULATED: Tính toán
     */
-    DeviceId NVARCHAR(50) NULL,-- ID thiết bị đo (nếu có)
+    --DeviceId NVARCHAR(50) NULL,-- ID thiết bị đo (nếu có)
     
     -- THÔNG TIN GHI NHẬN
     --RecordedBy UNIQUEIDENTIFIER NULL,-- KTV ghi nhận
     RecordedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
     
     -- ẢNH CHỤP 
-    ImageUrls NVARCHAR(1000) NULL,
+    --ImageUrls NVARCHAR(1000) NULL,
     
     -- GHI CHÚ
-    Notes NVARCHAR(500) NULL,
+    --Notes NVARCHAR(500) NULL,
     
     FOREIGN KEY (InspStageId) REFERENCES dbo.InspectionStage(InspStageId) ON DELETE CASCADE,
     FOREIGN KEY (ItemId) REFERENCES dbo.StageItem(ItemId),
@@ -1455,8 +1455,13 @@ CREATE TABLE dbo.InspectionDetail (
     CONSTRAINT UQ_InspDetail UNIQUE (InspStageId, ItemId)
 );
 
+
+alter table InspectionDetail
+DROP COLUMN ActualText, DeviationPercent, DeviceId, ImageUrls, Notes, StandardText
+
 CREATE INDEX IX_InspDetail_InspStageId ON dbo.InspectionDetail(InspStageId);
 CREATE INDEX IX_InspDetail_IsPassed ON dbo.InspectionDetail(IsPassed) WHERE IsPassed = 0;
+
 
 -- 4.4) Bảng InspectionDefect (Danh sách lỗi phát hiện)
 -- Ghi nhận các lỗi/hư hỏng phát hiện trong quá trình kiểm định

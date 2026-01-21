@@ -7,6 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Vehicle_Inspection.Models;
 
 [Table("Payment")]
+[Index("PaidAt", Name = "IX_Payment_PaidAt")]
+[Index("ReceiptNo", Name = "IX_Payment_ReceiptNo")]
+[Index("PaymentStatus", Name = "IX_Payment_Status")]
 [Index("InspectionId", Name = "UQ_Payment_Inspection", IsUnique = true)]
 [Index("ReceiptNo", Name = "UQ__Payment__CC0B72A69C7A8D95", IsUnique = true)]
 public partial class Payment

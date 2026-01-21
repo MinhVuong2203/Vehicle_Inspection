@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Vehicle_Inspection.Data;
+using Vehicle_Inspection.Models;
 
 namespace Vehicle_Inspection.Service
 {
@@ -212,6 +213,8 @@ namespace Vehicle_Inspection.Service
             {
                 Console.WriteLine($"=== GetInspectionStages START for InspectionId: {inspectionId} ===");
 
+                InitializeInspectionStages(inspectionId);
+
                 // 1. Lấy thông tin Inspection và LaneId
                 var inspection = _context.Inspections
                     .Where(i => i.InspectionId == inspectionId && !i.IsDeleted)
@@ -357,6 +360,91 @@ namespace Vehicle_Inspection.Service
                 Console.WriteLine($"Error in GetInspectionStages: {ex.Message}");
                 Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 return new List<InspectionStageDto>();
+            }
+        }
+
+        public bool InitializeInspectionStages(int inspectionId)
+        {
+            try
+            {
+                Console.WriteLine($"=== InitializeInspectionStages for InspectionId: {inspectionId} ===");
+
+                // 1. Lấy thông tin Inspection
+                var inspection = _context.Inspections
+                    .FirstOrDefault(i => i.InspectionId == inspectionId && !i.IsDeleted);
+
+                if (inspection == null)
+                {
+                    Console.WriteLine($"Inspection {inspectionId} not found");
+                    return false;
+                }
+
+                if (!inspection.LaneId.HasValue)
+                {
+                    Console.WriteLine($"Inspection {inspectionId} has no lane assigned");
+                    return false;
+                }
+
+                int laneId = inspection.LaneId.Value;
+                Console.WriteLine($"LaneId: {laneId}");
+
+                // 2. Kiểm tra xem đã có InspectionStage chưa
+                var existingCount = _context.InspectionStages
+                    .Count(ins => ins.InspectionId == inspectionId);
+
+                if (existingCount > 0)
+                {
+                    Console.WriteLine($"InspectionStages already exist ({existingCount} records). Skipping initialization.");
+                    return true; // Đã có rồi, bỏ qua
+                }
+
+                // 3. Lấy cấu hình LaneStage
+                var laneStages = _context.LaneStages
+                    .Where(ls => ls.LaneId == laneId && ls.IsActive == true)
+                    .OrderBy(ls => ls.SortOrder)
+                    .ToList();
+
+                if (laneStages.Count == 0)
+                {
+                    Console.WriteLine($"No active LaneStages found for LaneId {laneId}");
+                    return false;
+                }
+
+                Console.WriteLine($"Found {laneStages.Count} LaneStages to initialize");
+
+                // 4. Tạo các InspectionStage mới
+                var newInspectionStages = new List<InspectionStage>();
+
+                foreach (var ls in laneStages)
+                {
+                    var inspStage = new InspectionStage
+                    {
+                        InspectionId = inspectionId,
+                        StageId = ls.StageId,
+                        Status = 0,  // PENDING
+                        StageResult = null,
+                        AssignedUserId = null,
+                        SortOrder = ls.SortOrder,
+                        IsRequired = ls.IsRequired ?? true,
+                        Notes = null
+                    };
+
+                    newInspectionStages.Add(inspStage);
+                    Console.WriteLine($"Creating InspectionStage: StageId={ls.StageId}, SortOrder={ls.SortOrder}");
+                }
+
+                // 5. Lưu vào database
+                _context.InspectionStages.AddRange(newInspectionStages);
+                _context.SaveChanges();
+
+                Console.WriteLine($"✅ Successfully created {newInspectionStages.Count} InspectionStages");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error in InitializeInspectionStages: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                return false;
             }
         }
     }

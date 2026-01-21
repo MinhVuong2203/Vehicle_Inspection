@@ -7,6 +7,9 @@
 
         //lấy các bước kiểm định theo dây chuyền được gán với hồ sơ kiểm định
         List<InspectionStageDto> GetInspectionStages(int inspectionId);
+
+        //Tạo các bước kiểm định cho hồ sơ
+        bool InitializeInspectionStages(int inspectionId);
     }
 
     // DTO cho danh sách

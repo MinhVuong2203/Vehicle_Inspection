@@ -1455,6 +1455,24 @@ CREATE TABLE dbo.InspectionDetail (
     CONSTRAINT UQ_InspDetail UNIQUE (InspStageId, ItemId)
 );
 
+ALTER TABLE dbo.InspectionDetail
+ADD InspectionId INT NULL;
+GO
+
+SELECT
+    d.DetailId,
+    i.InspectionId,
+    d.ItemId,
+    d.ActualValue,
+    d.IsPassed
+FROM dbo.InspectionDetail d
+JOIN dbo.InspectionStage s ON d.InspStageId = s.InspStageId
+JOIN dbo.Inspection i ON s.InspectionId = i.InspectionId
+WHERE i.InspectionId = 30;
+
+
+
+
 
 alter table InspectionDetail
 DROP COLUMN ActualText, DeviationPercent, DeviceId, ImageUrls, Notes, StandardText

@@ -99,5 +99,108 @@ namespace Vehicle_Inspection.Controllers
                 return Json(new { success = false, message = ex.Message }, _jsonOptions);
             }
         }
+
+        // API: POST /Inspection/SaveStageResult (lưu kết quả công đoạn)
+        [HttpPost]
+        public IActionResult SaveStageResult([FromBody] SaveStageResultRequest request)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Saving stage result for InspStageId: {request.InspStageId}");
+
+                if (request.Measurements == null || request.Measurements.Count == 0)
+                {
+                    return Json(new { success = false, message = "Không có dữ liệu đo" }, _jsonOptions);
+                }
+
+                var success = _inspectionService.SaveStageResult(request);
+
+                if (success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Đã lưu kết quả công đoạn thành công"
+                    }, _jsonOptions);
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Không thể lưu kết quả"
+                    }, _jsonOptions);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                return Json(new
+                {
+                    success = false,
+                    message = $"Lỗi: {ex.Message}"
+                }, _jsonOptions);
+            }
+        }
+
+        //lấy danh sách lỗi của công đoạn
+        [HttpGet]
+        public IActionResult GetStageDefects(int inspectionId, int stageId)
+        {
+            try
+            {
+                var defects = _inspectionService.GetStageDefects(inspectionId, stageId);
+                return Json(new { success = true, data = defects }, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                return Json(new { success = false, message = ex.Message }, _jsonOptions);
+            }
+        }
+
+        // API: POST /Inspection/SubmitInspectionResult (nộp kết quả kiểm định)
+        [HttpPost]
+        public IActionResult SubmitInspectionResult([FromBody] SubmitInspectionResultRequest request)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Submitting inspection result for InspectionId: {request.InspectionId}");
+                System.Diagnostics.Debug.WriteLine($"FinalResult: {request.FinalResult}");
+
+                if (request.FinalResult == null || request.FinalResult < 1 || request.FinalResult > 3)
+                {
+                    return Json(new { success = false, message = "Vui lòng chọn kết luận cuối cùng!" }, _jsonOptions);
+                }
+
+                var success = _inspectionService.SubmitInspectionResult(request);
+
+                if (success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Đã hoàn thành kiểm định thành công!"
+                    }, _jsonOptions);
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Không thể hoàn thành kiểm định"
+                    }, _jsonOptions);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                return Json(new
+                {
+                    success = false,
+                    message = $"Lỗi: {ex.Message}"
+                }, _jsonOptions);
+            }
+        }
     }
 }

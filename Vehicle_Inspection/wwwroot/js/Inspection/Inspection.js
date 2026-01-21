@@ -850,51 +850,189 @@ function checkItemStandard(itemId) {
 }
 
 // Lưu kết quả giai đoạn
-function saveStageResult() {
+async function saveStageResult() {
     const stage = stagesData[currentStageIndex];
     const items = stageItems[stage.stageId] || [];
 
+    console.log('=== Saving Stage Result ===');
+    console.log('Current stage:', stage);
+    console.log('InspStageId:', stage.inspStageId); // ✅ LOG KIỂM TRA
+
+    // ✅ KIỂM TRA inspStageId có tồn tại không
+    if (!stage.inspStageId) {
+        alert('❌ Lỗi: Không tìm thấy InspStageId. Vui lòng load lại trang.');
+        console.error('Missing inspStageId in stage:', stage);
+        return;
+    }
+
     let allFilled = true;
     let allPassed = true;
-    const measurements = {};
+    const measurements = [];
 
-    items.forEach(item => {
-        const value = document.getElementById(`item_${item.id}`).value;
+    // Thu thập dữ liệu từ form
+    for (const item of items) {
+        const inputElement = document.getElementById(`item_${item.id}`);
+        const value = inputElement?.value;
+
         if (!value) {
             allFilled = false;
-            return;
+            console.warn(`Item ${item.id} (${item.name}) is not filled`);
+            continue;
         }
 
-        measurements[item.id] = value;
+        // Xác định giá trị actual
+        let actualValue = null;
+        let actualText = null;
 
+        if (item.type === 'number') {
+            actualValue = parseFloat(value);
+        } else {
+            actualText = value;
+        }
+
+        // Kiểm tra đạt/không đạt
         let isPassed = false;
+
         if (item.type === 'select') {
             isPassed = value === item.standard;
         } else if (item.type === 'number') {
             const numValue = parseFloat(value);
-            isPassed = numValue >= item.min && numValue <= item.max;
+            isPassed = numValue >= (item.min || 0) && numValue <= (item.max || 999999);
         }
 
-        if (!isPassed) allPassed = false;
-    });
+        if (!isPassed) {
+            allPassed = false;
+        }
+
+        // Tạo measurement object
+        const measurement = {
+            itemId: item.id,
+            itemCode: item.itemCode || `ITEM_${item.id}`,
+            itemName: item.name,
+            unit: item.unit,
+            dataType: item.type === 'number' ? 'NUMBER' : 'TEXT',
+            standardMin: item.min || null,
+            standardMax: item.max || null,
+            standardText: item.standard,
+            actualValue: actualValue,
+            actualText: actualText,
+            isPassed: isPassed
+        };
+
+        // Nếu không đạt, thêm thông tin defect
+        if (!isPassed) {
+            measurement.defectCategory = stage.stageName;
+            measurement.defectDescription = `${item.name}: Giá trị đo ${value} ${item.unit || ''} không đạt tiêu chuẩn ${item.standard}`;
+            measurement.defectSeverity = 2; // Major (Hư hỏng)
+        }
+
+        measurements.push(measurement);
+    }
 
     if (!allFilled) {
         alert('Vui lòng nhập đầy đủ tất cả các thông số!');
         return;
     }
 
-    stage.measurements = measurements;
-    stage.status = 2;
-    stage.result = allPassed ? 1 : 2;
+    console.log('Measurements to save:', measurements);
 
-    if (!allPassed) {
-        if (confirm('Công đoạn không đạt. Bạn có muốn ghi nhận lỗi chi tiết?')) {
-            document.getElementById('defectsSection').style.display = 'block';
+    // Chuẩn bị request data
+    const requestData = {
+        inspectionId: currentInspection.inspectionId,
+        inspStageId: stage.inspStageId, // ✅ DÙNG inspStageId từ stage
+        stageId: stage.stageId,
+        measurements: measurements,
+        notes: null
+    };
+
+    console.log('Request data:', requestData);
+
+    try {
+        // Gọi API để lưu
+        const response = await fetch('/Inspection/SaveStageResult', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        console.log('Save response status:', response.status);
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('API Error:', errorText);
+            throw new Error('Không thể lưu kết quả');
         }
-    }
 
-    alert('Đã lưu kết quả công đoạn!');
-    renderStagesList();
+        const result = await response.json();
+        console.log('Save result:', result);
+
+        if (result.success) {
+            // Cập nhật stage trong stagesData
+            stage.status = 2; // COMPLETED
+            stage.result = allPassed ? 1 : 2; // PASSED : FAILED
+            stage.measurements = {};
+            measurements.forEach(m => {
+                stage.measurements[m.itemId] = m.actualValue || m.actualText;
+            });
+
+            alert('✅ Đã lưu kết quả công đoạn thành công!');
+
+            // Hiển thị section defects nếu có lỗi
+            if (!allPassed) {
+                document.getElementById('defectsSection').style.display = 'block';
+                // Reload defects từ server
+                await loadStageDefects(stage.stageId);
+            }
+
+            // Cập nhật UI
+            renderStagesList();
+        } else {
+            alert('❌ Lưu thất bại: ' + (result.message || 'Lỗi không xác định'));
+        }
+    } catch (error) {
+        console.error('Error saving stage result:', error);
+        alert('❌ Không thể lưu kết quả. Vui lòng thử lại.\n\nLỗi: ' + error.message);
+    }
+}
+
+// ✅ THÊM HÀM LOAD DEFECTS TỪ DATABASE
+async function loadStageDefects(stageId) {
+    try {
+        const response = await fetch(`/Inspection/GetStageDefects?inspectionId=${currentInspection.inspectionId}&stageId=${stageId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Cannot load defects');
+            return;
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            // Cập nhật allDefects
+            allDefects = allDefects.filter(d => d.stageId !== stageId);
+            result.data.forEach(defect => {
+                allDefects.push({
+                    defectId: defect.defectId,
+                    stageId: stageId,
+                    category: defect.defectCategory,
+                    description: defect.defectDescription,
+                    severity: defect.severity
+                });
+            });
+
+            renderDefects(stageId);
+        }
+    } catch (error) {
+        console.error('Error loading defects:', error);
+    }
 }
 
 // Render danh sách lỗi
@@ -1044,8 +1182,9 @@ function backToStages() {
 // Hoàn thành kiểm định
 async function submitConclusion() {
     const finalResult = document.getElementById('finalResultSelect').value;
-    const conclusionNote = document.getElementById('conclusionNote').value;
+    const conclusionNote = document.getElementById('conclusionNote')?.value || '';
 
+    // ✅ KIỂM TRA finalResult có được chọn không
     if (!finalResult) {
         alert('Vui lòng chọn kết luận cuối cùng!');
         return;
@@ -1056,38 +1195,42 @@ async function submitConclusion() {
     }
 
     try {
-        // TODO: Gọi API để lưu kết quả kiểm định
+        console.log('=== Submitting Conclusion ===');
+        console.log('InspectionId:', currentInspection.inspectionId);
+        console.log('FinalResult:', finalResult);
+
         const response = await fetch('/Inspection/SubmitInspectionResult', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 inspectionId: currentInspection.inspectionId,
-                stages: stagesData,
-                defects: allDefects,
                 finalResult: parseInt(finalResult),
-                conclusionNote: conclusionNote,
-                laneId: selectedLaneId
+                conclusionNote: conclusionNote
             })
         });
+
+        console.log('Response status:', response.status);
 
         if (!response.ok) {
             throw new Error('Không thể lưu kết quả kiểm định');
         }
 
         const result = await response.json();
-        
+        console.log('Submit result:', result);
+
         if (result.success) {
-            alert('Đã hoàn thành kiểm định!');
+            alert('✅ Đã hoàn thành kiểm định!');
             closeInspectionProcess();
             await loadInspectionRecords();
         } else {
-            alert(result.message || 'Có lỗi xảy ra');
+            alert('❌ ' + (result.message || 'Có lỗi xảy ra'));
         }
     } catch (error) {
         console.error('Error submitting inspection:', error);
-        alert('Không thể hoàn thành kiểm định. Vui lòng thử lại.');
+        alert('❌ Không thể hoàn thành kiểm định. Vui lòng thử lại.\n\nLỗi: ' + error.message);
     }
 }
 

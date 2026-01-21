@@ -447,5 +447,265 @@ namespace Vehicle_Inspection.Service
                 return false;
             }
         }
+
+        // Lưu kết quả của một stage kiểm định
+        public bool SaveStageResult(SaveStageResultRequest request)
+        {
+            using var transaction = _context.Database.BeginTransaction();
+
+            try
+            {
+                Console.WriteLine($"=== SaveStageResult START ===");
+                Console.WriteLine($"InspectionId: {request.InspectionId}");
+                Console.WriteLine($"InspStageId: {request.InspStageId}");
+                Console.WriteLine($"Measurements count: {request.Measurements.Count}");
+
+                // 1. Kiểm tra InspectionStage tồn tại
+                var inspStage = _context.InspectionStages
+                    .Include(ins => ins.Stage)
+                    .FirstOrDefault(ins => ins.InspStageId == request.InspStageId
+                                        && ins.InspectionId == request.InspectionId);
+
+                if (inspStage == null)
+                {
+                    Console.WriteLine("InspectionStage not found");
+                    return false;
+                }
+
+                // 2. Lưu từng measurement vào InspectionDetail
+                int passedCount = 0;
+                int failedCount = 0;
+                var defectsToAdd = new List<InspectionDefect>();
+
+                foreach (var measurement in request.Measurements)
+                {
+                    // 2.1. Xóa InspectionDetail cũ nếu có (update)
+                    var existingDetail = _context.InspectionDetails
+                        .FirstOrDefault(d => d.InspStageId == request.InspStageId
+                                          && d.ItemId == measurement.ItemId);
+
+                    if (existingDetail != null)
+                    {
+                        _context.InspectionDetails.Remove(existingDetail);
+                    }
+
+                    // 2.2. Tạo InspectionDetail mới - CHỈ CÁC CỘT CÒN TỒN TẠI
+                    var detail = new InspectionDetail
+                    {
+                        InspStageId = request.InspStageId,
+                        ItemId = measurement.ItemId,
+
+                        // ✅ Chỉ giữ các cột còn tồn tại
+                        StandardMin = measurement.StandardMin,
+                        StandardMax = measurement.StandardMax,
+                        ActualValue = measurement.ActualValue,
+                        Unit = measurement.Unit,
+                        IsPassed = measurement.IsPassed,
+                        DataSource = "MANUAL",
+                        RecordedAt = DateTime.Now
+
+                        // ❌ XÓA các cột sau (đã bị xóa khỏi database):
+                        // ActualText - đã xóa
+                        // StandardText - đã xóa
+                        // DeviationPercent - đã xóa
+                        // DeviceId - đã xóa
+                        // RecordedBy - đã xóa
+                        // ImageUrls - đã xóa
+                        // Notes - đã xóa
+                    };
+
+                    _context.InspectionDetails.Add(detail);
+
+                    Console.WriteLine($"  - Item {measurement.ItemName}: " +
+                                    $"Actual={measurement.ActualValue}, " +
+                                    $"IsPassed={measurement.IsPassed}");
+
+                    // 2.3. Đếm số lượng đạt/không đạt
+                    if (measurement.IsPassed)
+                    {
+                        passedCount++;
+                    }
+                    else
+                    {
+                        failedCount++;
+
+                        // 2.4. Tạo InspectionDefect nếu không đạt
+                        if (!string.IsNullOrEmpty(measurement.DefectDescription))
+                        {
+                            var defect = new InspectionDefect
+                            {
+                                InspectionId = request.InspectionId,
+                                InspStageId = request.InspStageId,
+                                ItemId = measurement.ItemId,
+                                DefectCategory = measurement.DefectCategory ?? inspStage.Stage?.StageName ?? "Lỗi chung",
+                                DefectCode = measurement.ItemCode,
+                                DefectDescription = measurement.DefectDescription,
+                                Severity = measurement.DefectSeverity ?? 2, // Default: Major
+                                ImageUrls = null,
+                                IsFixed = false
+
+                                // ❌ XÓA: CreatedBy - đã bị xóa
+                            };
+
+                            defectsToAdd.Add(defect);
+
+                            Console.WriteLine($"  - Created defect: {defect.DefectDescription}");
+                        }
+                    }
+                }
+
+                // 3. Lưu InspectionDetails
+                _context.SaveChanges();
+                Console.WriteLine($"✅ Saved {request.Measurements.Count} InspectionDetails");
+
+                // 4. Lưu InspectionDefects (nếu có)
+                if (defectsToAdd.Count > 0)
+                {
+                    _context.InspectionDefects.AddRange(defectsToAdd);
+                    _context.SaveChanges();
+                    Console.WriteLine($"✅ Saved {defectsToAdd.Count} InspectionDefects");
+                }
+
+                // 5. Cập nhật InspectionStage
+                inspStage.Status = 2; // COMPLETED
+                inspStage.StageResult = failedCount > 0 ? 2 : 1; // FAILED : PASSED
+                inspStage.Notes = request.Notes;
+
+                _context.SaveChanges();
+                Console.WriteLine($"✅ Updated InspectionStage: Status=2, Result={inspStage.StageResult}");
+
+                // 6. Kiểm tra xem tất cả stages đã hoàn thành chưa
+                var allStagesCompleted = _context.InspectionStages
+                    .Where(ins => ins.InspectionId == request.InspectionId)
+                    .All(ins => ins.Status == 2);
+
+                if (allStagesCompleted)
+                {
+                    // Cập nhật Inspection status
+                    var inspection = _context.Inspections
+                        .FirstOrDefault(i => i.InspectionId == request.InspectionId);
+
+                    if (inspection != null)
+                    {
+                        inspection.Status = 4; // COMPLETED
+                        inspection.CompletedAt = DateTime.Now;
+                        _context.SaveChanges();
+                        Console.WriteLine("✅ All stages completed. Updated Inspection status to COMPLETED");
+                    }
+                }
+
+                transaction.Commit();
+                Console.WriteLine($"=== SaveStageResult END - SUCCESS ===");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"❌ Error in SaveStageResult: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+
+                // ✅ LOG CHI TIẾT LỖI DATABASE
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"❌ Inner Exception: {ex.InnerException.Message}");
+                }
+
+                return false;
+            }
+        }
+
+        // Lấy danh sách lỗi của một stage trong kiểm định
+        public List<InspectionDefectDto> GetStageDefects(int inspectionId, int stageId)
+        {
+            try
+            {
+                var defects = _context.InspectionDefects
+                    .Where(d => d.InspectionId == inspectionId)
+                    .Include(d => d.InspStage)
+                    .Where(d => d.InspStage.StageId == stageId)
+                    .Select(d => new InspectionDefectDto
+                    {
+                        DefectId = d.DefectId,
+                        StageId = stageId,
+                        DefectCategory = d.DefectCategory,
+                        DefectCode = d.DefectCode,
+                        DefectDescription = d.DefectDescription,
+                        Severity = d.Severity,
+                        IsFixed = d.IsFixed
+                    })
+                    .ToList();
+
+                return defects;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting defects: {ex.Message}");
+                return new List<InspectionDefectDto>();
+            }
+        }
+
+        // Nộp kết quả kiểm định
+        public bool SubmitInspectionResult(SubmitInspectionResultRequest request)
+        {
+            using var transaction = _context.Database.BeginTransaction();
+
+            try
+            {
+                Console.WriteLine($"=== SubmitInspectionResult START ===");
+                Console.WriteLine($"InspectionId: {request.InspectionId}");
+                Console.WriteLine($"FinalResult: {request.FinalResult}");
+
+                // 1. Tìm Inspection
+                var inspection = _context.Inspections
+                    .FirstOrDefault(i => i.InspectionId == request.InspectionId && !i.IsDeleted);
+
+                if (inspection == null)
+                {
+                    Console.WriteLine("Inspection not found");
+                    return false;
+                }
+
+                // 2. Kiểm tra tất cả stages đã hoàn thành chưa
+                var allStagesCompleted = _context.InspectionStages
+                    .Where(ins => ins.InspectionId == request.InspectionId)
+                    .All(ins => ins.Status == 2); // 2 = COMPLETED
+
+                if (!allStagesCompleted)
+                {
+                    Console.WriteLine("Not all stages are completed");
+                    return false;
+                }
+
+                // 3. Cập nhật Inspection
+                inspection.Status = 4; // COMPLETED
+                inspection.FinalResult = request.FinalResult;
+                inspection.ConclusionNote = request.ConclusionNote;
+                inspection.CompletedAt = DateTime.Now;
+
+                // TODO: Nếu có thông tin người kết luận, cập nhật ConcludedBy và ConcludedAt
+                // inspection.ConcludedBy = userId;
+                // inspection.ConcludedAt = DateTime.Now;
+
+                _context.SaveChanges();
+                Console.WriteLine($"✅ Updated Inspection: Status=4, FinalResult={request.FinalResult}");
+
+                transaction.Commit();
+                Console.WriteLine($"=== SubmitInspectionResult END - SUCCESS ===");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"❌ Error in SubmitInspectionResult: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"❌ Inner Exception: {ex.InnerException.Message}");
+                }
+
+                return false;
+            }
+        }
     }
 }

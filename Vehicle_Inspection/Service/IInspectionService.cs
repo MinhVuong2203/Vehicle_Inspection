@@ -10,6 +10,16 @@
 
         //Tạo các bước kiểm định cho hồ sơ
         bool InitializeInspectionStages(int inspectionId);
+
+        //Lưu kết quả của bước kiểm định
+        bool SaveStageResult(SaveStageResultRequest request);
+
+        // Lấy danh sách các lỗi phát hiện trong bước kiểm định
+        List<InspectionDefectDto> GetStageDefects(int inspectionId, int stageId);
+
+        // Nộp kết quả kiểm định
+        bool SubmitInspectionResult(SubmitInspectionResultRequest request);
+
     }
 
     // DTO cho danh sách
@@ -224,5 +234,59 @@
         public decimal? ActualValue { get; set; }
         public string? ActualText { get; set; }
         public bool? IsPassed { get; set; }
+    }
+
+    public class SaveStageResultRequest
+    {
+        public int InspectionId { get; set; }
+        public long InspStageId { get; set; }
+        public int StageId { get; set; }
+        public List<StageItemMeasurement> Measurements { get; set; } = new();
+        public string? Notes { get; set; }
+    }
+
+
+    public class StageItemMeasurement
+    {
+        public int ItemId { get; set; }
+        public string ItemCode { get; set; }
+        public string ItemName { get; set; }
+        public string? Unit { get; set; }
+        public string DataType { get; set; }
+
+        // Tiêu chuẩn
+        public decimal? StandardMin { get; set; }
+        public decimal? StandardMax { get; set; }
+        public string? StandardText { get; set; }
+
+        // Giá trị đo
+        public decimal? ActualValue { get; set; }
+        public string? ActualText { get; set; }
+
+        // Đánh giá
+        public bool IsPassed { get; set; }
+
+        // Defect info (nếu không đạt)
+        public string? DefectCategory { get; set; }
+        public string? DefectDescription { get; set; }
+        public int? DefectSeverity { get; set; } // 1: Minor, 2: Major, 3: Critical
+    }
+
+    public class InspectionDefectDto
+    {
+        public long DefectId { get; set; }
+        public int StageId { get; set; }
+        public string DefectCategory { get; set; }
+        public string DefectCode { get; set; }
+        public string DefectDescription { get; set; }
+        public int Severity { get; set; }
+        public bool IsFixed { get; set; }
+    }
+
+    public class SubmitInspectionResultRequest
+    {
+        public int InspectionId { get; set; }
+        public int FinalResult { get; set; } // 1: ĐẠT, 2: KHÔNG ĐẠT, 3: TẠM ĐÌNH CHỈ
+        public string? ConclusionNote { get; set; }
     }
 }

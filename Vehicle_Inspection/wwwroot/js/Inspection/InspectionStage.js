@@ -52,12 +52,13 @@ async function loadInspectionStagesFromDB(inspectionId) {
 function convertStagesToUIFormat(dbStages) {
     return dbStages.map(stage => ({
         stageId: stage.stageId,
+        inspStageId: stage.inspStageId, // ✅ QUAN TRỌNG: Phải có trường này
         stageName: stage.stageName,
         status: stage.status || 0,
         result: stage.stageResult,
         assignedUser: stage.assignedUserName,
         measurements: convertItemsToMeasurements(stage.items),
-        items: stage.items, // Giữ nguyên để dùng sau
+        items: stage.items,
         sortOrder: stage.sortOrder
     }));
 }
@@ -79,22 +80,33 @@ function convertItemsToMeasurements(items) {
  * Build stage items config cho form render
  */
 function buildStageItemsConfig(stages) {
+    console.log('Building stage items config...', stages);
+
     const stageItems = {};
 
     stages.forEach(stage => {
+        if (!stage.items || stage.items.length === 0) {
+            console.warn(`Stage ${stage.stageId} has no items`);
+            stageItems[stage.stageId] = [];
+            return;
+        }
+
         stageItems[stage.stageId] = stage.items.map(item => {
             const config = {
                 id: item.itemId,
+                itemCode: item.itemCode,  // ✅ THÊM itemCode
                 name: item.itemName,
-                type: item.dataType.toLowerCase() === 'number' ? 'number' : 'select',
-                standard: getStandardText(item)
+                unit: item.unit,
+                type: getInputType(item.dataType),
+                standard: getStandardText(item),
+                isRequired: item.isRequired
             };
 
             // Nếu là select, build options
             if (config.type === 'select') {
                 if (item.allowedValues) {
-                    config.options = item.allowedValues.split(';').map(v => v.trim());
-                    config.standard = config.options[0]; // Default first option
+                    config.options = item.allowedValues.split(';').map(v => v.trim()).filter(v => v);
+                    config.standard = config.options[0] || 'Đạt';
                 } else {
                     config.options = ['Đạt', 'Không đạt'];
                     config.standard = 'Đạt';
@@ -103,15 +115,32 @@ function buildStageItemsConfig(stages) {
 
             // Nếu là number, set min/max
             if (config.type === 'number') {
-                config.min = item.minValue || 0;
-                config.max = item.maxValue || 999999;
+                config.min = item.minValue !== null && item.minValue !== undefined ? item.minValue : 0;
+                config.max = item.maxValue !== null && item.maxValue !== undefined ? item.maxValue : 999999;
             }
 
             return config;
         });
+
+        console.log(`Stage ${stage.stageId} (${stage.stageName}) has ${stageItems[stage.stageId].length} items`);
     });
 
+    console.log('✅ Built stage items config:', stageItems);
     return stageItems;
+}
+
+function getInputType(dataType) {
+    if (!dataType) return 'select';
+
+    const type = dataType.toUpperCase();
+
+    if (type === 'NUMBER') {
+        return 'number';
+    } else if (type === 'BOOL' || type === 'BOOLEAN') {
+        return 'select';
+    } else {
+        return 'select';
+    }
 }
 
 /**

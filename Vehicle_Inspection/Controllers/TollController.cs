@@ -21,10 +21,10 @@ namespace Vehicle_Inspection.Controllers
         public IActionResult Index(string? search, short? status, string? type)
         {
             // Mặc định lấy các đơn chờ thu phí (status = 1) hoặc đã hoàn thành kiểm định
-            if (!status.HasValue && string.IsNullOrEmpty(search) && string.IsNullOrEmpty(type))
-            {
-                status = 1; // 1 = Chờ thu phí/tiếp nhận
-            }
+            //if (!status.HasValue && string.IsNullOrEmpty(search) && string.IsNullOrEmpty(type))
+            //{
+            //    status = 1; // 1 = Chờ thu phí/tiếp nhận
+            //}
 
             var inspections = _tollService.GetInspections(search, status);
 

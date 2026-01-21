@@ -1,0 +1,505 @@
+﻿@model Vehicle_Inspection.Models.Inspection
+
+@{
+    ViewData["Title"] = "Chi tiết đơn kiểm định";
+
+    string GetStatusText(short status)
+    {
+        return status switch
+        {
+            1 => "Chờ thu phí",
+            2 => "Đã tiếp nhận",
+            3 => "Đang kiểm định",
+            4 => "Hoàn thành",
+            5 => "Đã cấp giấy",
+            _ => "Không xác định"
+        };
+    }
+}
+
+@section Styles {
+    <link href="~/css/toll/main.css" rel="stylesheet" />
+}
+
+<div class="details-container">
+    <div class="details-header">
+        <div class="header-left">
+            <a asp-action="Index" class="btn-back">
+                <i class="fas fa-arrow-left"></i>
+                Quay lại
+            </a>
+            <h2 class="details-title">
+                <i class="fas fa-file-invoice"></i>
+                Chi tiết đơn kiểm định
+            </h2>
+        </div>
+        <div class="header-right">
+            <span class="status-badge status-@(Model.PaidAt != null ? "paid" : "unpaid")">
+                <i class="fas @(Model.PaidAt != null ? "fa-check-circle" : "fa-clock")"></i>
+                @(Model.PaidAt != null ? "Đã thu phí" : "Chưa thu phí")
+            </span>
+        </div>
+    </div>
+
+    <div class="details-content">
+        <!-- Thông tin cơ bản -->
+        <div class="info-card">
+            <div class="card-title">
+                <i class="fas fa-info-circle"></i>
+                Thông tin đơn kiểm định
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Mã kiểm định:</span>
+                    <span class="value"><strong>@Model.InspectionCode</strong></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Loại kiểm định:</span>
+                    <span class="value">@Model.InspectionType</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Trạng thái:</span>
+                    <span class="value">@GetStatusText(Model.Status)</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Làn kiểm định:</span>
+                    <span class="value">@(Model.Lane?.LaneName ?? "Chưa phân làn")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin xe và chủ xe -->
+        <div class="info-card">
+            <div class="card-title">
+                <i class="fas fa-car"></i>
+                Thông tin xe và chủ xe
+            </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="label">Biển số xe:</span>
+                    <span class="value"><strong>@Model.Vehicle?.EngineNo</strong></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Loại xe:</span>
+                    <span class="value">@Model.Vehicle?.VehicleType</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Chủ xe:</span>
+                    <span class="value">@Model.Owner?.FullName</span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Số điện thoại:</span>
+                    <span class="value">@Model.Owner?.Phone</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin thanh toán -->
+        <div class="info-card payment-card">
+            <div class="card-title">
+                <i class="fas fa-money-bill-wave"></i>
+                Thông tin thanh toán
+            </div>
+            @if (Model.Payment != null)
+            {
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">Số tiền:</span>
+                        <span class="value amount">@Model.Payment.TotalAmount.ToString("N0") VNĐ</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Phương thức:</span>
+                        <span class="value">@Model.Payment.PaymentMethod</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Ngày thanh toán:</span>
+                        <span class="value">@Model.Payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Trạng thái:</span>
+                        <span class="value">
+                            @(Model.Payment.PaymentStatus == 1 ? "Đã thanh toán" : "Chưa thanh toán")
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Payment.Notes))
+                    {
+                        <div class="info-item full-width">
+                            <span class="label">Ghi chú:</span>
+                            <span class="value">@Model.Payment.Notes</span>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="no-payment">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <p>Chưa có thông tin thanh toán</p>
+                </div>
+            }
+        </div>
+
+        <!-- Timeline -->
+        <div class="info-card">
+            <div class="card-title">
+                <i class="fas fa-history"></i>
+                Lịch sử xử lý
+            </div>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-icon">
+                        <i class="fas fa-plus-circle"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Tạo đơn</div>
+                        <div class="timeline-time">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                        @if (Model.CreatedByNavigation != null)
+                        {
+                            <div class="timeline-user">Bởi: @Model.CreatedByNavigation.FullName</div>
+                        }
+                    </div>
+                </div>
+
+                @if (Model.ReceivedAt != null)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon">
+                            <i class="fas fa-check"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Tiếp nhận</div>
+                            <div class="timeline-time">@Model.ReceivedAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                            @if (Model.ReceivedByNavigation != null)
+                            {
+                                <div class="timeline-user">Bởi: @Model.ReceivedByNavigation.FullName</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Model.PaidAt != null)
+                {
+                    <div class="timeline-item active">
+                        <div class="timeline-icon">
+                            <i class="fas fa-money-bill-wave"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Thu phí</div>
+                            <div class="timeline-time">@Model.PaidAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.StartedAt != null)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon">
+                            <i class="fas fa-play"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Bắt đầu kiểm định</div>
+                            <div class="timeline-time">@Model.StartedAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.CompletedAt != null)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon">
+                            <i class="fas fa-flag-checkered"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Hoàn thành kiểm định</div>
+                            <div class="timeline-time">@Model.CompletedAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.ConcludedAt != null)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon">
+                            <i class="fas fa-clipboard-check"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Kết luận</div>
+                            <div class="timeline-time">@Model.ConcludedAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                            @if (Model.ConcludedByNavigation != null)
+                            {
+                                <div class="timeline-user">Bởi: @Model.ConcludedByNavigation.FullName</div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.ConclusionNote))
+                            {
+                                <div class="timeline-note">@Model.ConclusionNote</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                @if (Model.CertifiedAt != null)
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-icon">
+                            <i class="fas fa-certificate"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">Cấp giấy chứng nhận</div>
+                            <div class="timeline-time">@Model.CertifiedAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="info-card">
+                <div class="card-title">
+                    <i class="fas fa-sticky-note"></i>
+                    Ghi chú
+                </div>
+                <div class="notes-content">
+                    @Model.Notes
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .details-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .details-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .btn-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 16px;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .btn-back:hover {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .details-title {
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .status-badge.status-paid {
+        background: rgba(16, 185, 129, 0.1);
+        color: var(--success-color);
+    }
+
+    .status-badge.status-unpaid {
+        background: rgba(245, 158, 11, 0.1);
+        color: var(--warning-color);
+    }
+
+    .details-content {
+        display: grid;
+        gap: 20px;
+    }
+
+    .info-card {
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .card-title i {
+        color: var(--primary-color);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 16px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .info-item.full-width {
+        grid-column: 1 / -1;
+    }
+
+    .info-item .label {
+        font-size: 13px;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .info-item .value {
+        font-size: 15px;
+        color: var(--text-primary);
+    }
+
+    .info-item .value.amount {
+        color: var(--success-color);
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    .no-payment {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary);
+    }
+
+    .no-payment i {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .timeline-item {
+        display: flex;
+        gap: 16px;
+        position: relative;
+    }
+
+    .timeline-item:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 20px;
+        top: 40px;
+        bottom: -20px;
+        width: 2px;
+        background: var(--border-color);
+    }
+
+    .timeline-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg-tertiary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+    }
+
+    .timeline-item.active .timeline-icon {
+        background: var(--success-color);
+        color: white;
+    }
+
+    .timeline-content {
+        flex: 1;
+    }
+
+    .timeline-title {
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 4px;
+    }
+
+    .timeline-time {
+        font-size: 13px;
+        color: var(--text-secondary);
+    }
+
+    .timeline-user {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-top: 4px;
+    }
+
+    .timeline-note {
+        margin-top: 8px;
+        padding: 8px 12px;
+        background: var(--bg-tertiary);
+        border-radius: 6px;
+        font-size: 13px;
+    }
+
+    .notes-content {
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 8px;
+        line-height: 1.6;
+    }
+
+    @@media (max-width: 768px) {
+        .details-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .header-left {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

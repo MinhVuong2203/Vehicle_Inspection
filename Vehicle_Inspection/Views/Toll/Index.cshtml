@@ -28,10 +28,11 @@
 
 @section Styles {
     <link href="~/css/toll/main.css" rel="stylesheet" />
+    <link href="~/css/toll/details.css" rel="stylesheet" />
 }
 
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-md-2">
         <!-- Header Section -->
         <div class="page-header">
             <div class="header-content">
@@ -91,11 +92,11 @@
                                     Trạng thái
                                 </label>
                                 <select class="filter-select" name="status">
-                                    <option value="">Tất cả trạng thái</option>
-                                    <option value="1" selected="@(ViewBag.StatusValue == 1)">Chờ thu phí</option>
-                                    <option value="2" selected="@(ViewBag.StatusValue == 2)">Đã tiếp nhận</option>
-                                    <option value="3" selected="@(ViewBag.StatusValue == 3)">Đang kiểm định</option>
-                                    <option value="4" selected="@(ViewBag.StatusValue == 4)">Hoàn thành</option>
+                                    <option value=""  >Tất cả trạng thái</option>
+                                    <option value="0" selected="@(ViewBag.StatusValue == 0)">Chờ thu phí</option>
+                                    <option value="1" selected="@(ViewBag.StatusValue == 1)">Đã thu phí</option>
+                                    <option value="2" selected="@(ViewBag.StatusValue == 2)">Hủy giao dịch</option>
+                             
                                 </select>
                             </div>
 
@@ -106,9 +107,9 @@
                                 </label>
                                 <select class="filter-select" name="type">
                                     <option value="">Tất cả loại</option>
-                                    <option value="Định kỳ" selected="@(ViewBag.TypeValue == "Định kỳ")">Định kỳ</option>
-                                    <option value="Bổ sung" selected="@(ViewBag.TypeValue == "Bổ sung")">Bổ sung</option>
-                                    <option value="Đặc biệt" selected="@(ViewBag.TypeValue == "Đặc biệt")">Đặc biệt</option>
+                                    <option value="PERIODIC" selected="@(ViewBag.TypeValue == "PERIODIC")">Định kỳ</option>
+                                    <option value="RE_INSPECTION" selected="@(ViewBag.TypeValue == "RE_INSPECTION")">Tái kiểm</option>
+                                    <option value="FIRST" selected="@(ViewBag.TypeValue == "FIRST")">Lần đầu</option>
                                 </select>
                             </div>
 
@@ -129,7 +130,7 @@
         </div>
     </div>
 
-    <div class="col-md-9">
+    <div class="col-md-10">
         <!-- Results Section -->
         <div class="results-section">
             <div class="results-header">
@@ -168,6 +169,7 @@
                         var statusText = GetStatusText(inspection.Status, inspection.PaidAt);
                         var statusIcon = inspection.PaidAt != null ? "fa-check-circle" : "fa-clock";
                         var amount = inspection.Payment?.TotalAmount ?? 0m;
+                       
 
                         <div class="inspection-card @statusClass">
                             <div class="card-header-section">
@@ -220,13 +222,25 @@
                             }
                             else
                             {
-                                <div class="card-footer-section">
+                                var isPaid = inspection.Payment?.PaymentStatus == 1 || inspection.PaidAt != null;
+
+                                <div class="card-footer-section" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
                                     <div class="paid-info">
                                         <i class="fas fa-check-circle"></i>
                                         Đã thu phí lúc @inspection.PaidAt?.ToString("dd/MM/yyyy HH:mm")
                                     </div>
+
+                                    @if (isPaid)
+                                    {
+                                        <button type="button" class="btn-toll btn-print"
+                                                onclick="printReceipt('@inspection.InspectionCode')">
+                                            <i class="fas fa-print"></i>
+                                            In biên nhận
+                                        </button>
+                                    }
                                 </div>
                             }
+
                         </div>
                     }
                 </div>
@@ -306,12 +320,26 @@
                                         }
                                         else
                                         {
-                                            <a asp-action="Details" asp-route-inspectionCode="@inspection.InspectionCode"
-                                               class="btn-action btn-view">
-                                                <i class="fas fa-eye"></i>
-                                                Xem
-                                            </a>
+                                            var isPaid = inspection.Payment?.PaymentStatus == 1 || inspection.PaidAt != null;
+
+                                            <div style="display:flex; gap:8px; align-items:center;">
+                                                <button type="button" class="btn-action btn-view"
+                                                        onclick="openDetailsModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', '@inspection.Owner?.Phone', @((double)amount2), '@inspection.Payment?.PaymentMethod', '@inspection.Payment?.PaidAt?.ToString("dd/MM/yyyy HH:mm")', '@inspection.CreatedAt.ToString("dd/MM/yyyy HH:mm")', '@inspection.ReceivedAt?.ToString("dd/MM/yyyy HH:mm")', '@inspection.PaidAt?.ToString("dd/MM/yyyy HH:mm")', '@GetStatusText(inspection.Status, inspection.PaidAt)')">
+                                                    <i class="fas fa-eye"></i>
+                                                    Xem chi tiết
+                                                </button>
+
+                                                @if (isPaid)
+                                                {
+                                                    <button type="button" class="btn-action btn-print"
+                                                            onclick="printReceipt('@inspection.InspectionCode')">
+                                                        <i class="fas fa-print"></i>
+                                                        In
+                                                    </button>
+                                                }
+                                            </div>
                                         }
+
                                     </td>
                                 </tr>
                             }
@@ -322,6 +350,125 @@
         </div>
     </div>
 </div>
+
+
+<!-- Details Modal -->
+<div class="modal-overlay" id="detailsModal">
+    <div class="modal-container modal-large">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-file-invoice"></i>
+                Chi tiết đơn kiểm định
+            </h3>
+            <button type="button" class="modal-close" onclick="closeDetailsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Thông tin cơ bản -->
+            <div class="detail-section">
+                <div class="section-title">
+                    <i class="fas fa-info-circle"></i>
+                    Thông tin đơn kiểm định
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="label">Mã kiểm định:</span>
+                        <span class="value" id="detailInspectionCode"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Loại kiểm định:</span>
+                        <span class="value" id="detailInspectionType"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Trạng thái:</span>
+                        <span class="value" id="detailStatus"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Ngày tạo:</span>
+                        <span class="value" id="detailCreatedAt"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin xe và chủ xe -->
+            <div class="detail-section">
+                <div class="section-title">
+                    <i class="fas fa-car"></i>
+                    Thông tin xe và chủ xe
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="label">Biển số xe:</span>
+                        <span class="value" id="detailPlateNo"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Chủ xe:</span>
+                        <span class="value" id="detailOwner"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Số điện thoại:</span>
+                        <span class="value" id="detailPhone"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin thanh toán -->
+            <div class="detail-section">
+                <div class="section-title">
+                    <i class="fas fa-money-bill-wave"></i>
+                    Thông tin thanh toán
+                </div>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="label">Số tiền:</span>
+                        <span class="value amount" id="detailAmount"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Phương thức:</span>
+                        <span class="value" id="detailPaymentMethod"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Ngày thanh toán:</span>
+                        <span class="value" id="detailPaidAt"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="detail-section">
+                <div class="section-title">
+                    <i class="fas fa-history"></i>
+                    Lịch sử xử lý
+                </div>
+                <div class="timeline-mini">
+                    <div class="timeline-item-mini" id="timelineCreated">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Tạo đơn: <strong id="timelineCreatedAt"></strong></span>
+                    </div>
+                    <div class="timeline-item-mini" id="timelineReceived" style="display: none;">
+                        <i class="fas fa-check"></i>
+                        <span>Tiếp nhận: <strong id="timelineReceivedAt"></strong></span>
+                    </div>
+                    <div class="timeline-item-mini" id="timelinePaid" style="display: none;">
+                        <i class="fas fa-money-bill-wave"></i>
+                        <span>Thu phí: <strong id="timelinePaidAt"></strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn btn-cancel" onclick="closeDetailsModal()">
+                <i class="fas fa-times"></i>
+                Đóng
+            </button>
+        </div>
+    </div>
+</div>
+
+
 
 <!-- Toll Collection Modal -->
 <div class="modal-overlay" id="tollModal">
@@ -415,90 +562,7 @@
 </div>
 
 @section scripts {
-    <script>
-        // View toggle
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-
-                const view = this.dataset.view;
-                if (view === 'card') {
-                    document.getElementById('cardView').style.display = 'grid';
-                    document.getElementById('tableView').style.display = 'none';
-                } else {
-                    document.getElementById('cardView').style.display = 'none';
-                    document.getElementById('tableView').style.display = 'block';
-                }
-            });
-        });
-
-        // Modal functions
-        function openTollModal(inspectionId, code, type, licensePlate, owner, amount) {
-            document.getElementById('modalInspectionIdInput').value = inspectionId;
-            document.getElementById('modalInspectionCode').textContent = code;
-            document.getElementById('modalInspectionType').textContent = type;
-            document.getElementById('modalLicensePlate').textContent = licensePlate || 'N/A';
-            document.getElementById('modalOwner').textContent = owner || 'N/A';
-            console.log(document.getElementById('modalAmount').textContent);
-            document.getElementById('modalAmount').textContent = amount.toLocaleString('vi-VN') + ' VNĐ';
-            document.getElementById('modalInspectionCodeInput').value = code;
-            document.getElementById('tollModal').classList.add('active');
-        }
-
-        function closeTollModal() {
-            document.getElementById('tollModal').classList.remove('active');
-        }
-
-        // Auto dismiss alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(alert => {
-                const closeBtn = alert.querySelector('.btn-close');
-                if (closeBtn) {
-                    closeBtn.click();
-                }
-            });
-        }, 5000);
-   
-        async function payWithPayOS(inspectionId) {
-            
-            const res = await fetch(`/api/payos/create-link/${inspectionId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                alert("Không tạo được link PayOS: " + text);
-                return;
-            }
-
-            const data = await res.json();
-            if (!data.checkoutUrl) {
-                alert("Server không trả checkoutUrl.");
-                return;
-            }
-
-            window.location.href = data.checkoutUrl;
-        }
-
-        document.getElementById('paymentForm').addEventListener('submit', async function (e) {
-            const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
-            if (method === "Chuyển khoản") {
-                e.preventDefault(); // chặn submit CollectPayment
-
-                const inspectionId = document.getElementById('modalInspectionIdInput').value;
-                if (!inspectionId) {
-                    alert("Thiếu inspectionId");
-                    return;
-                }
-
-                await payWithPayOS(inspectionId);
-            }
-            // Nếu không phải "Chuyển khoản" thì để form submit bình thường (CollectPayment)
-        });
-    </script>
+    <script src="~/js/Toll/main.js"></script>
 
 
 }

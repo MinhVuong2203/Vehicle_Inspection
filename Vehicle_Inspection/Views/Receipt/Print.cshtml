@@ -1,0 +1,170 @@
+﻿@using Microsoft.EntityFrameworkCore
+@model Vehicle_Inspection.Models.Inspection
+@inject Vehicle_Inspection.Data.VehInsContext _context
+@{
+    Layout = null;
+    var p = Model.Payment!;
+    var user = _context.Users.Include(u => u.Position).FirstOrDefault(u => u.UserId == p.PaidBy);
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Trung tâm đăng kiểm RAD</title>
+
+    <style>
+        body {
+            font-family: "Times New Roman", serif;
+            font-size: 14px;
+            margin: 24px;
+        }
+
+        .container {
+            max-width: 820px;
+            margin: auto;
+        }
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .subtitle {
+            font-style: italic;
+            margin-bottom: 16px;
+        }
+
+        .field {
+            margin: 6px 0;
+        }
+
+        .checkbox {
+            margin-left: 24px;
+        }
+
+        .note {
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        .sign {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            /* text-align: center; */
+        }
+
+        @@media print {
+            .no-print
+
+        {
+            display: none;
+        }
+
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <!-- HEADER -->
+        <div class="row">
+            <div>
+                <b>TRUNG TÂM ĐĂNG KIỂM RAD</b>
+            </div>
+            
+            <div>
+                Số Biên nhận: @p.ReceiptNo
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- TITLE -->
+        <div class="center">
+            <div class="title">GIẤY BIÊN NHẬN</div>
+            <div class="subtitle">
+                Hồ sơ kiểm định phương tiện biển số: <b>@Model.Vehicle.PlateNo</b>
+            </div>
+        </div>
+
+        <!-- CONTENT -->
+        <div class="field">
+            Họ và tên: <b>@user?.FullName</b>
+        </div>
+
+        <div class="field">
+            Chức vụ, đơn vị công tác: <b>@user?.Position?.PositionName, Trung tâm đăng kiểm RAD</b>
+        </div>
+
+        <div class="field">
+            <div>
+                Đã tiếp nhận hồ sơ của:
+            </div>
+            <br />
+            <div>1. Ông (Bà): <b>@Model.Owner.FullName</b></div>
+            <br />
+            <div>2. Số tiền đã nộp: <b>@p.TotalAmount.ToString("N0")</b> đồng, gồm: </div>
+        </div>
+
+       
+        <div class="checkbox">
+            ☐ Phí kiểm định an toàn kỹ thuật & bảo vệ môi trường
+        </div>
+        <div class="checkbox">
+            ☐ Phí cấp giấy chứng nhận, tem kiểm định
+        </div>
+        <div class="checkbox">
+            ☐ Bảo hiểm xe ô tô
+        </div>
+        <div class="checkbox">
+            ☐ Phí cấp GCN xe cơ giới cải tạo
+        </div>
+
+        <!-- NOTE -->
+        <div class="note">
+            Lưu ý:
+            <ul>
+                <li>Sau khi nhận giấy biên nhận, đề nghị Quý khách đưa phương tiện đến đúng dây chuyền kiểm định. (Cách nhà xưởng 5 mét).</li>
+                <li>Sau khi kiểm định xe xong, khách hàng nhận được tin nhắn vào đóng phí sử dụng đường bộ.</li>
+                <li>Giấy biên nhận này nộp lại phòng thủ tục (cửa số 3) làm cơ sở thu phí sử dụng đường bộ và xuất hóa đơn (đối với các phương tiện có kết quả đạt).</li>
+                <li>Tra cứu hóa đơn điện tử tại: https://localhost:7248/Toll</li>
+
+            </ul>
+        </div>
+
+        <!-- SIGN -->
+        <div class="sign">
+            <div>
+                <strong>Nơi nhận</strong>
+                <div>
+                    - Người nộp hồ sơ  
+                </div>
+                <div>- Lưu</div>
+            </div>
+            <div>
+               Tp. Hồ Chí Minh, ngày @DateTime.Now.Day tháng @DateTime.Now.Month năm @DateTime.Now.Year<br /><br />
+                <strong>NGƯỜI NHẬN HỒ SƠ</strong> 
+            </div>
+        </div>
+
+        <div class="no-print" style="margin-top:20px">
+            <button onclick="window.print()">In</button>
+            <button onclick="window.close()">Đóng</button>
+        </div>
+
+    </div>
+</body>
+</html>

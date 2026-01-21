@@ -26,15 +26,14 @@ namespace Vehicle_Inspection.Service
             // Lọc theo trạng thái
             if (status.HasValue)
             {
-                query = query.Where(i => i.Status == status.Value);
+                query = query.Where(i => i.Payment.PaymentStatus == status.Value);
             }
 
             // Tìm kiếm theo mã kiểm định hoặc loại kiểm định
             if (!string.IsNullOrEmpty(search))
             {
                 query = query.Where(i =>
-                    i.InspectionCode.Contains(search) ||
-                    i.InspectionType.Contains(search));
+                    i.InspectionCode.Contains(search));
             }
 
             return query.OrderByDescending(i => i.CreatedAt).ToList();

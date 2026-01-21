@@ -777,6 +777,494 @@ VALUES
     (@AxleLoadStageId, 'AXL_TOTAL', N'Tổng tải trọng',        N'kg', 'NUMBER', 1, 3);
 
 
+-- 1. XE Ô TÔ CON ≤10 CHỖ (PAX_LT_10)
+
+
+DECLARE @VehicleType_PAX_LT_10 INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'PAX_LT_10');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, AllowedValues, IsActive)
+SELECT si.ItemId, @VehicleType_PAX_LT_10, MinVal, MaxVal, Condition, Allowed, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        -- NGOẠI THẤT
+        ('EXT_TIRE_FL',     1.6,    NULL,   N'>= 1.6',                  NULL),
+        ('EXT_TIRE_FR',     1.6,    NULL,   N'>= 1.6',                  NULL),
+        ('EXT_TIRE_RL',     1.6,    NULL,   N'>= 1.6',                  NULL),
+        ('EXT_TIRE_RR',     1.6,    NULL,   N'>= 1.6',                  NULL),
+        ('EXT_MIRROR',      2,      NULL,   N'>= 2',                    NULL),
+        ('EXT_HORN',        90,     115,    N'BETWEEN 90 AND 115',      NULL),
+        ('EXT_BODY',        NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('EXT_DOOR',        NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('EXT_BUMPER',      NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('EXT_WIPER',       NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('EXT_PLATE',       NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        
+        -- PHANH
+        ('BRK_FORCE_FL',    450,    NULL,   N'>= 450',                  NULL),
+        ('BRK_FORCE_FR',    450,    NULL,   N'>= 450',                  NULL),
+        ('BRK_FORCE_RL',    350,    NULL,   N'>= 350',                  NULL),
+        ('BRK_FORCE_RR',    350,    NULL,   N'>= 350',                  NULL),
+        ('BRK_BALANCE_F',   NULL,   15,     N'<= 15',                   NULL),
+        ('BRK_BALANCE_R',   NULL,   15,     N'<= 15',                   NULL),
+        ('BRK_PARKING',     16,     NULL,   N'>= 16',                   NULL),
+        ('BRK_FLUID',       NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('BRK_PEDAL',       NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        
+        -- HỆ THỐNG LÁI
+        ('STR_FREE_PLAY',   NULL,   25,     N'<= 25',                   NULL),
+        ('STR_ALIGNMENT',   -3,     3,      N'BETWEEN -3 AND 3',        NULL),
+        ('STR_STABILITY',   NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('STR_MECHANISM',   NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        
+        -- ĐÈN CHIẾU SÁNG
+        ('LGT_HEADLIGHT_L', 10000,  NULL,   N'>= 10000',                NULL),
+        ('LGT_HEADLIGHT_R', 10000,  NULL,   N'>= 10000',                NULL),
+        ('LGT_LOWBEAM_L',   5000,   NULL,   N'>= 5000',                 NULL),
+        ('LGT_LOWBEAM_R',   5000,   NULL,   N'>= 5000',                 NULL),
+        
+        -- KHÍ THẢI (Xe xăng)
+        ('EMI_CO',          NULL,   0.3,    N'<= 0.3',                  NULL),
+        ('EMI_HC',          NULL,   200,    N'<= 200',                  NULL),
+        ('EMI_RPM',         2000,   3000,   N'BETWEEN 2000 AND 3000',   NULL),
+        
+        -- TIẾNG ỒN
+        ('NOI_STATIC',      NULL,   90,     N'<= 90',                   NULL),
+        ('NOI_MOVING',      NULL,   84,     N'<= 84',                   NULL),
+        
+        -- TỐC ĐỘ KẾ
+        ('SPD_ACCURACY',    NULL,   10,     N'<= 10',                   NULL),
+        
+        -- KÍNH
+        ('GLS_WINDSHIELD',  NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('GLS_TINT',        70,     NULL,   N'>= 70',                   NULL),
+        
+        -- DÂY ĐAI
+        ('SB_DRIVER',       NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT'),
+        ('SB_FRONT_PASS',   NULL,   NULL,   NULL,                       N'ĐẠT;KHÔNG ĐẠT')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition, Allowed)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition, Allowed)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 2. XE CỨU THƯƠNG (AMBULANCE)
+
+
+DECLARE @VehicleType_AMBULANCE INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'AMBULANCE');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_AMBULANCE, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    550,    NULL,   N'>= 550'),
+        ('BRK_FORCE_FR',    550,    NULL,   N'>= 550'),
+        ('BRK_FORCE_RL',    450,    NULL,   N'>= 450'),
+        ('BRK_FORCE_RR',    450,    NULL,   N'>= 450'),
+        ('BRK_PARKING',     17,     NULL,   N'>= 17'),
+        ('STR_FREE_PLAY',   NULL,   25,     N'<= 25'),
+        ('EMI_CO',          NULL,   0.4,    N'<= 0.4'),
+        ('EMI_HC',          NULL,   250,    N'<= 250'),
+        ('NOI_STATIC',      NULL,   92,     N'<= 92'),
+        ('NOI_MOVING',      NULL,   86,     N'<= 86')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+
+-- 3. XE KHÁCH 10-24 CHỖ (PAX_10_24)
+
+
+DECLARE @VehicleType_PAX_10_24 INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'PAX_10_24');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_PAX_10_24, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        -- PHANH (Yêu cầu cao hơn xe con)
+        ('BRK_FORCE_FL',    550,    NULL,   N'>= 550'),
+        ('BRK_FORCE_FR',    550,    NULL,   N'>= 550'),
+        ('BRK_FORCE_RL',    450,    NULL,   N'>= 450'),
+        ('BRK_FORCE_RR',    450,    NULL,   N'>= 450'),
+        ('BRK_BALANCE_F',   NULL,   15,     N'<= 15'),
+        ('BRK_BALANCE_R',   NULL,   15,     N'<= 15'),
+        ('BRK_PARKING',     17,     NULL,   N'>= 17'),
+        
+        -- HỆ THỐNG LÁI
+        ('STR_FREE_PLAY',   NULL,   28,     N'<= 28'),
+        
+        -- ĐÈN
+        ('LGT_HEADLIGHT_L', 12000,  NULL,   N'>= 12000'),
+        ('LGT_HEADLIGHT_R', 12000,  NULL,   N'>= 12000'),
+        
+        -- KHÍ THẢI
+        ('EMI_CO',          NULL,   0.5,    N'<= 0.5'),
+        ('EMI_HC',          NULL,   300,    N'<= 300'),
+        
+        -- TIẾNG ỒN
+        ('NOI_STATIC',      NULL,   92,     N'<= 92'),
+        ('NOI_MOVING',      NULL,   86,     N'<= 86')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+
+-- 4. XE TẢI ≤2 TẤN (TRUCK_LE_2T)
+
+
+DECLARE @VehicleType_TRUCK_LE_2T INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRUCK_LE_2T');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRUCK_LE_2T, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        -- PHANH
+        ('BRK_FORCE_FL',    500,    NULL,   N'>= 500'),
+        ('BRK_FORCE_FR',    500,    NULL,   N'>= 500'),
+        ('BRK_FORCE_RL',    400,    NULL,   N'>= 400'),
+        ('BRK_FORCE_RR',    400,    NULL,   N'>= 400'),
+        ('BRK_PARKING',     17,     NULL,   N'>= 17'),
+        
+        -- LÁI
+        ('STR_FREE_PLAY',   NULL,   28,     N'<= 28'),
+        
+        -- KHÍ THẢI (Diesel)
+        ('EMI_SMOKE',       NULL,   50,     N'<= 50'),
+        
+        -- TIẾNG ỒN
+        ('NOI_STATIC',      NULL,   93,     N'<= 93'),
+        ('NOI_MOVING',      NULL,   87,     N'<= 87'),
+        
+        -- TẢI TRỌNG
+        ('AXL_FRONT',       NULL,   1500,   N'<= 1500'),
+        ('AXL_REAR',        NULL,   2000,   N'<= 2000'),
+        ('AXL_TOTAL',       NULL,   2000,   N'<= 2000')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+
+-- 5. XE TẢI 2-7 TẤN (TRUCK_2_7T)
+
+
+DECLARE @VehicleType_TRUCK_2_7T INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRUCK_2_7T');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRUCK_2_7T, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        -- PHANH
+        ('BRK_FORCE_FL',    600,    NULL,   N'>= 600'),
+        ('BRK_FORCE_FR',    600,    NULL,   N'>= 600'),
+        ('BRK_FORCE_RL',    500,    NULL,   N'>= 500'),
+        ('BRK_FORCE_RR',    500,    NULL,   N'>= 500'),
+        ('BRK_BALANCE_F',   NULL,   15,     N'<= 15'),
+        ('BRK_BALANCE_R',   NULL,   15,     N'<= 15'),
+        ('BRK_PARKING',     18,     NULL,   N'>= 18'),
+        
+        -- LÁI
+        ('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+        
+        -- ĐÈN
+        ('LGT_HEADLIGHT_L', 12000,  NULL,   N'>= 12000'),
+        ('LGT_HEADLIGHT_R', 12000,  NULL,   N'>= 12000'),
+        
+        -- KHÍ THẢI (Diesel)
+        ('EMI_SMOKE',       NULL,   55,     N'<= 55'),
+        
+        -- TIẾNG ỒN
+        ('NOI_STATIC',      NULL,   94,     N'<= 94'),
+        ('NOI_MOVING',      NULL,   88,     N'<= 88'),
+        
+        -- TẢI TRỌNG
+        ('AXL_FRONT',       NULL,   3000,   N'<= 3000'),
+        ('AXL_REAR',        NULL,   5000,   N'<= 5000'),
+        ('AXL_TOTAL',       NULL,   7000,   N'<= 7000')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+
+-- 6. XE KHÁCH 25-40 CHỖ (PAX_25_40)
+
+
+DECLARE @VehicleType_PAX_25_40 INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'PAX_25_40');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_PAX_25_40, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    650,    NULL,   N'>= 650'),
+        ('BRK_FORCE_FR',    650,    NULL,   N'>= 650'),
+        ('BRK_FORCE_RL',    550,    NULL,   N'>= 550'),
+        ('BRK_FORCE_RR',    550,    NULL,   N'>= 550'),
+        ('BRK_PARKING',     18,     NULL,   N'>= 18'),
+        ('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+        ('EMI_SMOKE',       NULL,   55,     N'<= 55'),
+        ('NOI_STATIC',      NULL,   95,     N'<= 95'),
+        ('NOI_MOVING',      NULL,   88,     N'<= 88')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 7. XE KHÁCH >40 CHỖ (PAX_GT_40)
+
+
+DECLARE @VehicleType_PAX_GT_40 INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'PAX_GT_40');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_PAX_GT_40, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_FR',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_RL',    600,    NULL,   N'>= 600'),
+        ('BRK_FORCE_RR',    600,    NULL,   N'>= 600'),
+        ('BRK_PARKING',     18,     NULL,   N'>= 18'),
+        ('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+        ('EMI_SMOKE',       NULL,   60,     N'<= 60'),
+        ('NOI_STATIC',      NULL,   95,     N'<= 95'),
+        ('NOI_MOVING',      NULL,   89,     N'<= 89')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 8. XE BUÝT (BUS)
+
+
+DECLARE @VehicleType_BUS INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'BUS');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_BUS, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_FR',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_RL',    600,    NULL,   N'>= 600'),
+        ('BRK_FORCE_RR',    600,    NULL,   N'>= 600'),
+        ('BRK_PARKING',     18,     NULL,   N'>= 18'),
+        ('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+        ('EMI_SMOKE',       NULL,   60,     N'<= 60'),
+        ('NOI_STATIC',      NULL,   95,     N'<= 95'),
+        ('NOI_MOVING',      NULL,   89,     N'<= 89')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 9. XE TẢI 7-20 TẤN (TRUCK_7_20T)
+
+
+DECLARE @VehicleType_TRUCK_7_20T INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRUCK_7_20T');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRUCK_7_20T, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_FR',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_RL',    600,    NULL,   N'>= 600'),
+        ('BRK_FORCE_RR',    600,    NULL,   N'>= 600'),
+        ('BRK_PARKING',     18,     NULL,   N'>= 18'),
+        ('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+        ('EMI_SMOKE',       NULL,   60,     N'<= 60'),
+        ('NOI_STATIC',      NULL,   95,     N'<= 95'),
+        ('NOI_MOVING',      NULL,   89,     N'<= 89'),
+        ('AXL_FRONT',       NULL,   7000,   N'<= 7000'),
+        ('AXL_REAR',        NULL,   15000,  N'<= 15000'),
+        ('AXL_TOTAL',       NULL,   20000,  N'<= 20000')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+
+-- 10. XE ĐẦU KÉO ≤20 TẤN (TRACTOR_LE_20T)
+
+
+DECLARE @VehicleType_TRACTOR_LE_20T INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRACTOR_LE_20T');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRACTOR_LE_20T, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_FR',    700,    NULL,   N'>= 700'),
+        ('BRK_FORCE_RL',    600,    NULL,   N'>= 600'),
+        ('BRK_FORCE_RR',    600,    NULL,   N'>= 600'),
+        ('BRK_PARKING',     18,     NULL,   N'>= 18'),
+        ('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+        ('EMI_SMOKE',       NULL,   60,     N'<= 60'),
+        ('NOI_STATIC',      NULL,   95,     N'<= 95')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+
+-- 11. XE TẢI >20 TẤN (TRUCK_GT_20T)
+
+
+DECLARE @VehicleType_TRUCK_GT_20T INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRUCK_GT_20T');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRUCK_GT_20T, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    750,    NULL,   N'>= 750'),
+        ('BRK_FORCE_FR',    750,    NULL,   N'>= 750'),
+        ('BRK_FORCE_RL',    650,    NULL,   N'>= 650'),
+        ('BRK_FORCE_RR',    650,    NULL,   N'>= 650'),
+        ('BRK_PARKING',     18,     NULL,   N'>= 18'),
+        ('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+        ('EMI_SMOKE',       NULL,   65,     N'<= 65'),
+        ('NOI_STATIC',      NULL,   96,     N'<= 96'),
+        ('NOI_MOVING',      NULL,   90,     N'<= 90'),
+        ('AXL_FRONT',       NULL,   7500,   N'<= 7500'),
+        ('AXL_REAR',        NULL,   18000,  N'<= 18000'),
+        ('AXL_TOTAL',       NULL,   25000,  N'<= 25000')
+    ) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 12. XE ĐẦU KÉO >20 TẤN (TRACTOR_GT_20T)
+
+
+DECLARE @VehicleType_TRACTOR_GT_20T INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRACTOR_GT_20T');
+
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRACTOR_GT_20T, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+    SELECT * FROM (VALUES
+        ('BRK_FORCE_FL',    750,    NULL,   N'>= 750'),
+        ('BRK_FORCE_FR',    750,    NULL,   N'>= 750'),
+        ('BRK_FORCE_RL',    650,    NULL,   N'>= 650'),
+('BRK_FORCE_RR',    650,    NULL,   N'>= 650'),
+('BRK_PARKING',     18,     NULL,   N'>= 18'),
+('STR_FREE_PLAY',   NULL,   30,     N'<= 30'),
+('EMI_SMOKE',       NULL,   65,     N'<= 65'),
+('NOI_STATIC',      NULL,   96,     N'<= 96')
+) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 13. MÁY KÉO (TRACTOR)
+
+DECLARE @VehicleType_TRACTOR INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRACTOR');
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRACTOR, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+SELECT * FROM (VALUES
+('BRK_FORCE_FL',    400,    NULL,   N'>= 400'),
+('BRK_FORCE_FR',    400,    NULL,   N'>= 400'),
+('BRK_PARKING',     16,     NULL,   N'>= 16'),
+('STR_FREE_PLAY',   NULL,   35,     N'<= 35'),
+('EMI_SMOKE',       NULL,   70,     N'<= 70'),
+('NOI_STATIC',      NULL,   98,     N'<= 98')
+) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 14. XE CHỞ HÀNG 4 BÁNH GẮN ĐỘNG CƠ (MOTOR_4W_CARGO)
+
+DECLARE @VehicleType_MOTOR_4W_CARGO INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'MOTOR_4W_CARGO');
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_MOTOR_4W_CARGO, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+SELECT * FROM (VALUES
+('EXT_TIRE_FL',     0.8,    NULL,   N'>= 0.8'),
+('EXT_TIRE_FR',     0.8,    NULL,   N'>= 0.8'),
+('BRK_FORCE_FL',    150,    NULL,   N'>= 150'),
+('BRK_FORCE_FR',    150,    NULL,   N'>= 150'),
+('EMI_CO',          NULL,   4.5,    N'<= 4.5'),
+('EMI_HC',          NULL,   2000,   N'<= 2000'),
+('NOI_STATIC',      NULL,   85,     N'<= 85')
+) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 15. XE CHỞ NGƯỜI 4 BÁNH GẮN ĐỘNG CƠ (MOTOR_4W_PAX)
+
+DECLARE @VehicleType_MOTOR_4W_PAX INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'MOTOR_4W_PAX');
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_MOTOR_4W_PAX, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+SELECT * FROM (VALUES
+('EXT_TIRE_FL',     0.8,    NULL,   N'>= 0.8'),
+('EXT_TIRE_FR',     0.8,    NULL,   N'>= 0.8'),
+('BRK_FORCE_FL',    150,    NULL,   N'>= 150'),
+('BRK_FORCE_FR',    150,    NULL,   N'>= 150'),
+('EMI_CO',          NULL,   4.5,    N'<= 4.5'),
+('EMI_HC',          NULL,   2000,   N'<= 2000'),
+('NOI_STATIC',      NULL,   85,     N'<= 85')
+) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 16. RƠ MOÓC (TRAILER)
+
+DECLARE @VehicleType_TRAILER INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'TRAILER');
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_TRAILER, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+SELECT * FROM (VALUES
+('BRK_FORCE_RL',    500,    NULL,   N'>= 500'),
+('BRK_FORCE_RR',    500,    NULL,   N'>= 500'),
+('BRK_PARKING',     16,     NULL,   N'>= 16'),
+('AXL_REAR',        NULL,   18000,  N'<= 18000'),
+('AXL_TOTAL',       NULL,   24000,  N'<= 24000')
+) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 17. SƠ MI RƠ MOÓC (SEMI_TRAILER)
+
+DECLARE @VehicleType_SEMI_TRAILER INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'SEMI_TRAILER');
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_SEMI_TRAILER, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+SELECT * FROM (VALUES
+('BRK_FORCE_RL',    500,    NULL,   N'>= 500'),
+('BRK_FORCE_RR',    500,    NULL,   N'>= 500'),
+('BRK_PARKING',     16,     NULL,   N'>= 16'),
+('AXL_REAR',        NULL,   20000,  N'<= 20000'),
+('AXL_TOTAL',       NULL,   28000,  N'<= 28000')
+) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+-- 18. XE BA BÁNH (THREE_WHEEL)
+
+DECLARE @VehicleType_THREE_WHEEL INT = (SELECT VehicleTypeId FROM VehicleType WHERE TypeCode = 'THREE_WHEEL');
+INSERT INTO dbo.StageItemThreshold (ItemId, VehicleTypeId, MinValue, MaxValue, PassCondition, IsActive)
+SELECT si.ItemId, @VehicleType_THREE_WHEEL, MinVal, MaxVal, Condition, 1
+FROM dbo.StageItem si
+CROSS APPLY (
+SELECT * FROM (VALUES
+('EXT_TIRE_FL',     0.8,    NULL,   N'>= 0.8'),
+('EXT_TIRE_FR',     0.8,    NULL,   N'>= 0.8'),
+('BRK_FORCE_FL',    150,    NULL,   N'>= 150'),
+('BRK_FORCE_FR',    150,    NULL,   N'>= 150'),
+('EMI_CO',          NULL,   4.5,    N'<= 4.5'),
+('EMI_HC',          NULL,   2000,   N'<= 2000'),
+('NOI_STATIC',      NULL,   85,     N'<= 85')
+) AS T(ItemCode, MinVal, MaxVal, Condition)
+) AS Thresh(ItemCode, MinVal, MaxVal, Condition)
+WHERE si.ItemCode = Thresh.ItemCode;
+
+
+
 -- =========================
 -- 4) NHÓM HỒ SƠ KIỂM ĐỊNH (LÕI NGHIỆP VỤ)
 -- Status: 0 Draft, 1 Received, 2 Paid, 3 InProgress, 4 WaitingConclusion, 5 Passed, 6 Failed, 7 Cancelled

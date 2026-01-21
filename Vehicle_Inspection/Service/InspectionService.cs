@@ -341,7 +341,7 @@ namespace Vehicle_Inspection.Service
                             if (detail != null)
                             {
                                 itemDto.ActualValue = detail.ActualValue;
-                                itemDto.ActualText = detail.ActualText;
+                                //itemDto.ActualText = detail.ActualText;
                                 itemDto.IsPassed = detail.IsPassed;
                             }
                         }

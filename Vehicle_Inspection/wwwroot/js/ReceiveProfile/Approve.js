@@ -1,24 +1,25 @@
 ﻿// ========================================
-// FILE: Approve.js
-// MỤC ĐÍCH: Xử lý xét duyệt hồ sơ
+// FILE: Approve.js - Auto Detection Logic
+// MỤC ĐÍCH: Tự động xác định loại kiểm định
 // ========================================
 
 // ========== GLOBAL VARIABLES ==========
 let ownerId = null;
 let vehicleId = null;
+let detectedInspectionType = null;
 
 // ========== KHỞI TẠO TRANG ==========
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log('🚀 Initializing Approve page');
+    console.log('🚀 Initializing Approve page with Auto Detection');
 
     // Load data từ URL params
     await loadApprovalData();
 
-    // Load danh sách dây chuyền
-    await loadLanes();
-
     // Auto-generate inspection code
     generateInspectionCode();
+
+    // Phân tích lịch sử và xác định loại kiểm định
+    await detectInspectionType();
 });
 
 // ========== LOAD DATA TỪ URL ==========
@@ -77,30 +78,184 @@ async function loadApprovalData() {
     }
 }
 
-// ========== LOAD DANH SÁCH DÂY CHUYỀN ==========
-async function loadLanes() {
+// ========== PHÁT HIỆN LOẠI KIỂM ĐỊNH TỰ ĐỘNG ==========
+async function detectInspectionType() {
     try {
-        // ✅ SỬA: Đổi từ /api/inspection/lanes → /api/approve/lanes
-        const response = await fetch('/api/approve/lanes');
+        console.log('🔍 ========== BẮT ĐẦU PHÂN TÍCH LỊCH SỬ ==========');
+        console.log('📋 VehicleId:', vehicleId);
+
+        const historyInfo = document.getElementById('history-info');
+        if (historyInfo) {
+            historyInfo.innerHTML = '<div class="loading-indicator"><i class="bi bi-hourglass-split"></i> Đang phân tích lịch sử kiểm định...</div>';
+        }
+
+        // Gọi API để lấy lịch sử kiểm định
+        const response = await fetch(`/api/approve/detect-type?vehicleId=${vehicleId}`);
         const data = await response.json();
 
-        if (data.success && data.data) {
-            const laneSelect = document.getElementById('lane-id');
-            if (laneSelect) {
-                laneSelect.innerHTML = '<option value="">-- Chọn dây chuyền --</option>';
-                data.data.forEach(lane => {
-                    const option = document.createElement('option');
-                    option.value = lane.laneId;
-                    option.textContent = `${lane.laneCode} - ${lane.laneName}`;
-                    laneSelect.appendChild(option);
-                });
-                console.log(`✅ Loaded ${data.data.length} lanes`);
+        console.log('📊 Detection result:', data);
+
+        if (data.success) {
+            detectedInspectionType = data.data.inspectionType;
+            const history = data.data.history;
+
+            // Hiển thị kết quả phân tích
+            displayInspectionTypeResult(data.data);
+
+            // Cập nhật form
+            setFieldValue('inspection-type-value', detectedInspectionType);
+            setFieldValue('inspection-type-display', getInspectionTypeLabel(detectedInspectionType));
+
+            const reasonElement = document.getElementById('inspection-type-reason');
+            if (reasonElement) {
+                reasonElement.textContent = data.data.reason;
+                reasonElement.style.color = '#28a745';
+                reasonElement.style.fontWeight = '600';
+            }
+
+            // Enable submit button
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+
+            console.log('✅ Inspection type detected:', detectedInspectionType);
+        } else {
+            showNotification('error', data.message || 'Không thể xác định loại kiểm định');
+
+            if (historyInfo) {
+                historyInfo.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        <strong>Lỗi:</strong> ${data.message || 'Không thể phân tích lịch sử'}
+                    </div>
+                `;
             }
         }
     } catch (error) {
-        console.error('❌ Load lanes error:', error);
-        showNotification('warning', 'Không thể tải danh sách dây chuyền');
+        console.error('❌ Detect type error:', error);
+        showNotification('error', 'Có lỗi xảy ra khi phân tích lịch sử');
+
+        const historyInfo = document.getElementById('history-info');
+        if (historyInfo) {
+            historyInfo.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle"></i> Không thể kết nối server
+                </div>
+            `;
+        }
     }
+}
+
+// ========== HIỂN THỊ KẾT QUẢ PHÂN TÍCH ==========
+function displayInspectionTypeResult(data) {
+    const historyInfo = document.getElementById('history-info');
+    if (!historyInfo) return;
+
+    let html = '<div class="inspection-analysis">';
+
+    // Hiển thị kết quả chính
+    html += `
+        <div class="analysis-result ${getResultClass(data.inspectionType)}">
+            <div class="result-icon">
+                <i class="bi ${getResultIcon(data.inspectionType)}"></i>
+            </div>
+            <div class="result-content">
+                <h4>Kết quả phân tích</h4>
+                <p class="result-type">${getInspectionTypeLabel(data.inspectionType)}</p>
+                <p class="result-reason">${data.reason}</p>
+            </div>
+        </div>
+    `;
+
+    // Hiển thị lịch sử (nếu có)
+    if (data.history && data.history.length > 0) {
+        html += '<div class="history-section">';
+        html += '<h5><i class="bi bi-clock-history"></i> Lịch sử kiểm định gần đây</h5>';
+        html += '<div class="history-list">';
+
+        data.history.forEach((item, index) => {
+            const statusBadge = getStatusBadge(item.status);
+            const date = new Date(item.createdAt).toLocaleDateString('vi-VN');
+
+            html += `
+                <div class="history-item">
+                    <div class="history-icon">
+                        <i class="bi bi-check-circle"></i>
+                    </div>
+                    <div class="history-content">
+                        <div class="history-header">
+                            <span class="history-code">${item.inspectionCode}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="history-details">
+                            <span><i class="bi bi-calendar"></i> ${date}</span>
+                            <span><i class="bi bi-tag"></i> ${getInspectionTypeLabel(item.inspectionType)}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+    } else {
+        html += `
+            <div class="no-history">
+                <i class="bi bi-info-circle"></i>
+                <p>Chưa có lịch sử kiểm định trước đó</p>
+            </div>
+        `;
+    }
+
+    html += '</div>';
+
+    historyInfo.innerHTML = html;
+}
+
+// ========== HELPER: GET STATUS BADGE ==========
+function getStatusBadge(status) {
+    const badges = {
+        0: '<span class="badge badge-secondary">Nháp</span>',
+        1: '<span class="badge badge-info">Đã tiếp nhận</span>',
+        2: '<span class="badge badge-primary">Đã thu phí</span>',
+        3: '<span class="badge badge-warning">Đang kiểm định</span>',
+        4: '<span class="badge badge-info">Hoàn thành KĐ</span>',
+        5: '<span class="badge badge-success">Đạt</span>',
+        6: '<span class="badge badge-danger">Không đạt</span>',
+        7: '<span class="badge badge-success">Đã cấp GCN</span>',
+        8: '<span class="badge badge-secondary">Đã hủy</span>'
+    };
+    return badges[status] || '<span class="badge badge-secondary">N/A</span>';
+}
+
+// ========== HELPER: GET RESULT CLASS ==========
+function getResultClass(type) {
+    const classes = {
+        'FIRST': 'result-first',
+        'PERIODIC': 'result-periodic',
+        'RE_INSPECTION': 'result-reinspection'
+    };
+    return classes[type] || '';
+}
+
+// ========== HELPER: GET RESULT ICON ==========
+function getResultIcon(type) {
+    const icons = {
+        'FIRST': 'bi-star',
+        'PERIODIC': 'bi-arrow-repeat',
+        'RE_INSPECTION': 'bi-tools'
+    };
+    return icons[type] || 'bi-question-circle';
+}
+
+// ========== HELPER: GET INSPECTION TYPE LABEL ==========
+function getInspectionTypeLabel(type) {
+    const labels = {
+        'FIRST': 'Đăng kiểm lần đầu',
+        'PERIODIC': 'Kiểm định định kỳ',
+        'RE_INSPECTION': 'Tái kiểm'
+    };
+    return labels[type] || 'Không xác định';
 }
 
 // ========== GENERATE INSPECTION CODE ==========
@@ -123,19 +278,14 @@ function validateForm() {
     const errors = [];
 
     const inspectionCode = getFieldValue('inspection-code');
-    const inspectionType = getFieldValue('inspection-type');
-    const laneId = getFieldValue('lane-id');
+    const inspectionType = getFieldValue('inspection-type-value');
 
     if (!inspectionCode) {
-        errors.push('Vui lòng nhập mã lượt kiểm định');
+        errors.push('Vui lòng tạo mã lượt kiểm định');
     }
 
     if (!inspectionType) {
-        errors.push('Vui lòng chọn loại kiểm định');
-    }
-
-    if (!laneId) {
-        errors.push('Vui lòng chọn dây chuyền');
+        errors.push('Chưa xác định được loại kiểm định');
     }
 
     if (!ownerId || !vehicleId) {
@@ -162,25 +312,21 @@ async function submitApproval() {
             InspectionCode: getFieldValue('inspection-code'),
             VehicleId: parseInt(vehicleId),
             OwnerId: ownerId,
-            InspectionType: getFieldValue('inspection-type'),
-            LaneId: parseInt(getFieldValue('lane-id')),
-            Status: 1, // RECEIVED
-            Notes: getFieldValue('inspection-notes'),
-            CreatedAt: new Date().toISOString(),
-            IsDeleted: false
+            InspectionType: getFieldValue('inspection-type-value'),
+            Notes: getFieldValue('inspection-notes')
         };
 
         console.log('📤 Request data:', requestData);
 
         // Show loading
-        const submitBtn = document.querySelector('.btn-save');
+        const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Đang xử lý...';
         }
 
-        // ✅ SỬA: Đổi từ /api/inspection/approve → /api/approve/approve
-        const response = await fetch('/api/approve/approve', {
+        // Send request
+        const response = await fetch('/api/approve/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -200,7 +346,7 @@ async function submitApproval() {
         if (data.success) {
             showNotification('success', data.message || 'Xét duyệt thành công');
 
-            // Redirect về trang inspection hoặc index sau 2 giây
+            // Redirect về trang index sau 2 giây
             setTimeout(() => {
                 window.location.href = '/receive-profile';
             }, 2000);
@@ -213,7 +359,7 @@ async function submitApproval() {
         showNotification('error', 'Có lỗi xảy ra khi xét duyệt');
 
         // Reset button
-        const submitBtn = document.querySelector('.btn-save');
+        const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận xét duyệt';
@@ -273,4 +419,4 @@ function showNotification(type, message) {
     }, 5000);
 }
 
-console.log('✅ Approve.js loaded');
+console.log('✅ Approve.js with Auto Detection loaded');

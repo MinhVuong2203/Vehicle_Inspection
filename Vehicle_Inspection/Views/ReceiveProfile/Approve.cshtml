@@ -28,7 +28,7 @@
     <!-- LOADING STATE -->
     <div class="loading-state" id="loading-state" style="display: none;">
         <div class="spinner"></div>
-        <p class="loading-text">Đang tải dữ liệu...</p>
+        <p class="loading-text">Đang phân tích lịch sử kiểm định...</p>
     </div>
 
     <!-- FORM CONTENT -->
@@ -68,6 +68,24 @@
             </div>
         </div>
 
+        <!-- Inspection Analysis Card -->
+        <div class="vehicle-info-card">
+            <div class="vehicle-card-header">
+                <i class="bi bi-search"></i>
+                <h2>Phân tích lịch sử kiểm định</h2>
+            </div>
+            <div class="vehicle-card-body">
+
+                <!-- Inspection History Info -->
+                <div class="inspection-history-info" id="history-info">
+                    <div class="loading-indicator">
+                        <i class="bi bi-hourglass-split"></i> Đang kiểm tra lịch sử...
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
         <!-- Inspection Form Card -->
         <div class="vehicle-info-card">
             <div class="vehicle-card-header">
@@ -84,32 +102,21 @@
                     <input type="text"
                            id="inspection-code"
                            class="form-control"
-                           placeholder="VD: INS-20260120-001"
-                           required>
+                           readonly>
                 </div>
 
-                <!-- Inspection Type -->
+                <!-- Inspection Type - READONLY -->
                 <div class="form-group">
                     <label class="form-label">
                         <i class="bi bi-list-check"></i> Loại kiểm định <span class="required">*</span>
                     </label>
-                    <select id="inspection-type" class="form-control" required>
-                        <option value="">-- Chọn loại kiểm định --</option>
-                        <option value="FIRST">Đăng kiểm lần đầu</option>
-                        <option value="PERIODIC">Định kỳ</option>
-                        <option value="RE_INSPECTION">Tái kiểm</option>
-                    </select>
-                </div>
-
-                <!-- Lane Selection -->
-                <div class="form-group">
-                    <label class="form-label">
-                        <i class="bi bi-bezier2"></i> Dây chuyền kiểm định <span class="required">*</span>
-                    </label>
-                    <select id="lane-id" class="form-control" required>
-                        <option value="">-- Chọn dây chuyền --</option>
-                        <!-- Sẽ được load từ API -->
-                    </select>
+                    <input type="hidden" id="inspection-type-value">
+                    <input type="text"
+                           id="inspection-type-display"
+                           class="form-control"
+                           readonly
+                           placeholder="Đang phân tích...">
+                    <small class="form-text text-muted" id="inspection-type-reason"></small>
                 </div>
 
                 <!-- Notes -->
@@ -131,7 +138,7 @@
             <button type="button" class="btn-cancel" onclick="cancelApprove()">
                 <i class="bi bi-x-circle"></i> Hủy bỏ
             </button>
-            <button type="button" class="btn-save" onclick="submitApproval()">
+            <button type="button" class="btn-save" id="submit-btn" onclick="submitApproval()" disabled>
                 <i class="bi bi-check-circle"></i> Xác nhận xét duyệt
             </button>
         </div>

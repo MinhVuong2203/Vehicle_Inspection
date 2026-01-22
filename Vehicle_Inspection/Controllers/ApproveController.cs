@@ -17,46 +17,134 @@ namespace Vehicle_Inspection.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách dây chuyền (Lanes)
+        /// TỰ ĐỘNG PHÁT HIỆN LOẠI KIỂM ĐỊNH
+        /// Logic:
+        /// - Nếu chưa có lịch sử → FIRST
+        /// - Nếu có hồ sơ Status = 7 (Đã cấp GCN) → PERIODIC
+        /// - Nếu có hồ sơ Status = 6 (Không đạt) → RE_INSPECTION
         /// </summary>
-        [HttpGet("lanes")]
-        public async Task<IActionResult> GetLanes()
+        [HttpGet("detect-type")]
+        public async Task<IActionResult> DetectInspectionType([FromQuery] int vehicleId)
         {
             try
             {
-                var lanes = await _context.Lanes
-                    .Where(l => l.IsActive == true)
-                    .OrderBy(l => l.LaneCode)
-                    .Select(l => new
+                Console.WriteLine($"🔍 ========== PHÁT HIỆN LOẠI KIỂM ĐỊNH ==========");
+                Console.WriteLine($"📋 VehicleId: {vehicleId}");
+
+                if (vehicleId <= 0)
+                {
+                    return BadRequest(new
                     {
-                        l.LaneId,
-                        l.LaneCode,
-                        l.LaneName
+                        success = false,
+                        message = "VehicleId không hợp lệ"
+                    });
+                }
+
+                // Lấy lịch sử kiểm định của xe (sắp xếp theo thời gian mới nhất)
+                var history = await _context.Inspections
+                    .Where(i => i.VehicleId == vehicleId && i.IsDeleted == false)
+                    .OrderByDescending(i => i.CreatedAt)
+                    .Select(i => new
+                    {
+                        i.InspectionId,
+                        i.InspectionCode,
+                        i.InspectionType,
+                        i.Status,
+                        i.CreatedAt
                     })
+                    .Take(5) // Lấy 5 lượt gần nhất
                     .ToListAsync();
+
+                Console.WriteLine($"📊 Tìm thấy {history.Count} lượt kiểm định trong lịch sử");
+
+                string detectedType = "FIRST";
+                string reason = "";
+
+                if (history.Count == 0)
+                {
+                    // ✅ TRƯỜNG HỢP 1: Chưa có lịch sử → FIRST
+                    detectedType = "FIRST";
+                    reason = "Xe chưa từng kiểm định trước đó";
+                    Console.WriteLine("✅ Kết quả: FIRST (Chưa có lịch sử)");
+                }
+                else
+                {
+                    // Lấy lượt kiểm định gần nhất
+                    var latestInspection = history.First();
+
+                    if (latestInspection.Status == 6)
+                    {
+                        // ✅ TRƯỜNG HỢP 2: Lượt gần nhất không đạt → RE_INSPECTION
+                        detectedType = "RE_INSPECTION";
+                        reason = $"Lượt kiểm định gần nhất ({latestInspection.InspectionCode}) không đạt, cần tái kiểm";
+                        Console.WriteLine($"✅ Kết quả: RE_INSPECTION (Status = 6)");
+                    }
+                    else if (latestInspection.Status == 7)
+                    {
+                        // ✅ TRƯỜNG HỢP 3: Lượt gần nhất đã cấp GCN → PERIODIC
+                        detectedType = "PERIODIC";
+                        reason = $"Xe đã có giấy chứng nhận ({latestInspection.InspectionCode}), thực hiện kiểm định định kỳ";
+                        Console.WriteLine($"✅ Kết quả: PERIODIC (Status = 7)");
+                    }
+                    else
+                    {
+                        // TRƯỜNG HỢP ĐẶC BIỆT: Status khác (1,2,3,4,5,8)
+                        // Tìm lượt có Status = 7 hoặc 6 gần nhất
+                        var completedInspection = history.FirstOrDefault(h => h.Status == 7 || h.Status == 6);
+
+                        if (completedInspection != null)
+                        {
+                            if (completedInspection.Status == 7)
+                            {
+                                detectedType = "PERIODIC";
+                                reason = $"Xe đã có giấy chứng nhận trước đó, thực hiện kiểm định định kỳ";
+                            }
+                            else if (completedInspection.Status == 6)
+                            {
+                                detectedType = "RE_INSPECTION";
+                                reason = $"Lượt kiểm định trước đó không đạt, cần tái kiểm";
+                            }
+                        }
+                        else
+                        {
+                            // Nếu không có lượt nào Status = 7 hoặc 6 → Coi như FIRST
+                            detectedType = "FIRST";
+                            reason = "Chưa có lượt kiểm định hoàn thành, coi như lần đầu";
+                        }
+                    }
+                }
+
+                Console.WriteLine($"✅ Kết luận cuối cùng: {detectedType}");
+                Console.WriteLine($"📝 Lý do: {reason}");
 
                 return Ok(new
                 {
                     success = true,
-                    data = lanes
+                    data = new
+                    {
+                        inspectionType = detectedType,
+                        reason = reason,
+                        history = history
+                    }
                 });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ Error: {ex.Message}");
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "Có lỗi xảy ra khi tải danh sách dây chuyền",
+                    message = "Có lỗi xảy ra khi phát hiện loại kiểm định",
                     error = ex.Message
                 });
             }
         }
 
         /// <summary>
-        /// Xét duyệt và tạo Inspection mới
+        /// Tạo Inspection mới (không cần LaneId)
         /// </summary>
-        [HttpPost("approve")]
-        public async Task<IActionResult> ApproveInspection([FromBody] InspectionApprovalRequest request)
+        [HttpPost("create")]
+        public async Task<IActionResult> CreateInspection([FromBody] CreateInspectionRequest request)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -67,7 +155,6 @@ namespace Vehicle_Inspection.Controllers
                 Console.WriteLine($"📋 VehicleId: {request.VehicleId}");
                 Console.WriteLine($"📋 OwnerId: {request.OwnerId}");
                 Console.WriteLine($"📋 InspectionType: {request.InspectionType}");
-                Console.WriteLine($"📋 LaneId: {request.LaneId}");
 
                 // Validate dữ liệu
                 if (string.IsNullOrWhiteSpace(request.InspectionCode))
@@ -102,16 +189,7 @@ namespace Vehicle_Inspection.Controllers
                     return BadRequest(new
                     {
                         success = false,
-                        message = "Vui lòng chọn loại kiểm định"
-                    });
-                }
-
-                if (!request.LaneId.HasValue || request.LaneId <= 0)
-                {
-                    return BadRequest(new
-                    {
-                        success = false,
-                        message = "Vui lòng chọn dây chuyền"
+                        message = "Loại kiểm định không hợp lệ"
                     });
                 }
 
@@ -154,27 +232,14 @@ namespace Vehicle_Inspection.Controllers
                     });
                 }
 
-                // Kiểm tra Lane có tồn tại không
-                var lane = await _context.Lanes
-                    .FirstOrDefaultAsync(l => l.LaneId == request.LaneId && l.IsActive == true);
-
-                if (lane == null)
-                {
-                    return NotFound(new
-                    {
-                        success = false,
-                        message = "Dây chuyền không tồn tại hoặc không hoạt động"
-                    });
-                }
-
-                // Tạo Inspection mới
+                // Tạo Inspection mới (không có LaneId)
                 var inspection = new Inspection
                 {
                     InspectionCode = request.InspectionCode,
                     VehicleId = request.VehicleId,
                     OwnerId = request.OwnerId,
                     InspectionType = request.InspectionType,
-                    LaneId = request.LaneId,
+                    LaneId = null, // Không gán dây chuyền lúc tạo
                     Status = 1, // RECEIVED
                     CreatedAt = DateTime.Now,
                     Notes = request.Notes,
@@ -196,7 +261,8 @@ namespace Vehicle_Inspection.Controllers
                     data = new
                     {
                         inspectionId = inspection.InspectionId,
-                        inspectionCode = inspection.InspectionCode
+                        inspectionCode = inspection.InspectionCode,
+                        inspectionType = inspection.InspectionType
                     }
                 });
             }
@@ -217,14 +283,13 @@ namespace Vehicle_Inspection.Controllers
         }
     }
 
-    // DTO for Inspection Approval Request
-    public class InspectionApprovalRequest
+    // DTO for Create Inspection Request (không có LaneId)
+    public class CreateInspectionRequest
     {
         public string InspectionCode { get; set; }
         public int VehicleId { get; set; }
         public Guid OwnerId { get; set; }
         public string InspectionType { get; set; }
-        public int? LaneId { get; set; }
         public string? Notes { get; set; }
     }
 }

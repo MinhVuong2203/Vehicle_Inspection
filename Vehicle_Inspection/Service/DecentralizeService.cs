@@ -23,6 +23,7 @@ namespace Vehicle_Inspection.Service
                 .Include(u => u.Position)
                 .Include(u => u.Team)
                 .Include(u => u.Roles)
+                .Include(u => u.Stages)
                 .Where(u => u.IsActive)
                 .AsQueryable();
 
@@ -81,6 +82,14 @@ namespace Vehicle_Inspection.Service
             return await _context.Teams.OrderBy(t => t.TeamName).ToListAsync();
         }
 
+        public async Task<List<Stage>> GetAllStagesAsync()
+        {
+            return await _context.Stages
+                .Where(s => s.IsActive == true)
+                .OrderBy(s => s.StageName)
+                .ToListAsync();
+        }
+
         public async Task<bool> UpdateUserRoleAsync(Guid userId, int roleId, bool isChecked)
         {
             try
@@ -128,6 +137,60 @@ namespace Vehicle_Inspection.Service
             catch (Exception ex)
             {
                 Console.WriteLine($"Error updating user role: {ex.Message}");
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateUserStageAsync(Guid userId, int stageId, bool isChecked)
+        {
+            try
+            {
+              
+                var user = await _context.Users
+                    .Include(u => u.Stages)
+                    .Include(u => u.Position)
+                    .FirstOrDefaultAsync(u => u.UserId == userId);
+
+                if (user == null)
+                {
+                    return false;
+                }
+
+                if (user.Position?.PoitionCode != "KTV")
+                {
+                    Console.WriteLine($"User {userId} is not KTV, cannot assign stages");
+                    return false;
+                }
+
+                var stage = await _context.Stages.FirstOrDefaultAsync(s => s.StageId == stageId);
+                if (stage == null)
+                {
+                    return false;
+                }
+
+                var existingStage = user.Stages.FirstOrDefault(s => s.StageId == stageId);
+
+                if (isChecked)
+                {        
+                    if (existingStage == null)
+                    {
+                        user.Stages.Add(stage);
+                    }
+                }
+                else
+                {
+                    if (existingStage != null)
+                    {
+                        user.Stages.Remove(existingStage);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating user stage: {ex.Message}");
                 return false;
             }
         }

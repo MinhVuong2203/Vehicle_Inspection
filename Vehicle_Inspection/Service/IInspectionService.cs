@@ -1,4 +1,6 @@
-﻿namespace Vehicle_Inspection.Service
+﻿using Vehicle_Inspection.Models;
+
+namespace Vehicle_Inspection.Service
 {
     public interface IInspectionService
     {
@@ -19,6 +21,11 @@
 
         // Nộp kết quả kiểm định
         bool SubmitInspectionResult(SubmitInspectionResultRequest request);
+
+        //lấy danh sách các luồng kiểm định
+        List<Lane> GetInspectionLanes();
+
+        bool AssignLane(AssignLaneRequest request);
 
     }
 
@@ -288,5 +295,12 @@
         public int InspectionId { get; set; }
         public int FinalResult { get; set; } // 1: ĐẠT, 2: KHÔNG ĐẠT, 3: TẠM ĐÌNH CHỈ
         public string? ConclusionNote { get; set; }
+    }
+
+    public class AssignLaneRequest
+    {
+        public int InspectionId { get; set; }
+        public int LaneId { get; set; }
+        public string? Note { get; set; }
     }
 }

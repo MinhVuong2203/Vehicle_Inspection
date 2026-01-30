@@ -28,6 +28,10 @@ namespace Vehicle_Inspection.Controllers
         {
             var inspectionRecords = _inspectionService.GetInspectionRecords();
             ViewData["InspectionRecords"] = inspectionRecords;
+
+            var lanes = _inspectionService.GetInspectionLanes();
+            ViewData["Lanes"] = lanes;
+
             TempData["SuccessMessage"] = "Dữ liệu hồ sơ kiểm định đã được tải thành công.";
             return View();
         }
@@ -189,6 +193,50 @@ namespace Vehicle_Inspection.Controllers
                     {
                         success = false,
                         message = "Không thể hoàn thành kiểm định"
+                    }, _jsonOptions);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                return Json(new
+                {
+                    success = false,
+                    message = $"Lỗi: {ex.Message}"
+                }, _jsonOptions);
+            }
+        }
+
+        //luu dây chuyền kiểm định cho hồ sơ
+        [HttpPost]
+        public IActionResult AssignLane([FromBody] AssignLaneRequest request)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Assigning lane for InspectionId: {request.InspectionId}");
+                System.Diagnostics.Debug.WriteLine($"LaneId: {request.LaneId}");
+
+                if (request.InspectionId <= 0 || request.LaneId <= 0)
+                {
+                    return Json(new { success = false, message = "Thông tin không hợp lệ" }, _jsonOptions);
+                }
+
+                var success = _inspectionService.AssignLane(request);
+
+                if (success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Đã phân công dây chuyền thành công!"
+                    }, _jsonOptions);
+                }
+                else
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Không thể phân công dây chuyền. Vui lòng kiểm tra lại trạng thái hồ sơ."
                     }, _jsonOptions);
                 }
             }

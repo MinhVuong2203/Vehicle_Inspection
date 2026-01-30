@@ -1,0 +1,702 @@
+﻿@{
+    ViewData["Title"] = "Báo cáo thống kê";
+}
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+<style>
+    :root {
+        --primary-color: #10A37F;
+        --secondary-color: #1a73e8;
+        --success-color: #34a853;
+        --danger-color: #ea4335;
+        --warning-color: #fbbc04;
+        --dark-color: #202124;
+        --light-bg: #f8f9fa;
+    }
+
+    body {
+        background: linear-gradient(135deg, #202124 0%, #f8f9fa 100%);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .dashboard-container {
+        padding: 20px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+    .filter-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .kpi-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+    .kpi-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 15px;
+    }
+
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 10px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .kpi-label {
+        font-size: 0.95rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 600;
+    }
+
+    .chart-card {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .chart-title {
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        color: var(--dark-color);
+        padding-bottom: 15px;
+        border-bottom: 3px solid var(--primary-color);
+    }
+
+    .stat-badge {
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin: 5px;
+    }
+
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .badge-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .badge-info {
+        background: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .progress-custom {
+        height: 10px;
+        border-radius: 10px;
+        background: #e9ecef;
+        overflow: hidden;
+    }
+
+    .progress-bar-custom {
+        height: 100%;
+        background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+        transition: width 1s ease;
+    }
+
+    .table-responsive {
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .table-custom {
+        margin-bottom: 0;
+    }
+
+        .table-custom thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+            .table-custom thead th {
+                border: none;
+                padding: 15px;
+                font-weight: 600;
+            }
+
+        .table-custom tbody tr {
+            transition: all 0.2s ease;
+        }
+
+            .table-custom tbody tr:hover {
+                background: #f8f9fa;
+                transform: scale(1.01);
+            }
+
+    .severity-badge {
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .severity-1 {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .severity-2 {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .severity-3 {
+        background: #721c24;
+        color: white;
+    }
+
+    @@keyframes fadeInUp {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+
+    .animate-fade-in {
+        animation: fadeInUp 0.6s ease-out;
+    }
+
+    .date-picker {
+        border: 2px solid #e9ecef;
+        border-radius: 10px;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+
+        .date-picker:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(16, 163, 127, 0.25);
+        }
+
+    .btn-filter {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px 30px;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+        .btn-filter:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+</style>
+
+<div class="dashboard-container">
+    <!-- Page Header -->
+    <div class="page-header animate-fade-in">
+        <h1><i class="fas fa-chart-line me-3"></i>Báo cáo thống kê</h1>
+        <p>Tổng quan hiệu suất hoạt động trung tâm đăng kiểm</p>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="filter-card animate-fade-in">
+        <form method="get" asp-action="Index" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-calendar-alt me-2"></i>Từ ngày
+                </label>
+                <input type="date" name="startDate" class="form-control date-picker"
+                       value="@ViewBag.StartDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-calendar-alt me-2"></i>Đến ngày
+                </label>
+                <input type="date" name="endDate" class="form-control date-picker"
+                       value="@ViewBag.EndDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-filter w-100">
+                    <i class="fas fa-search me-2"></i>Xem báo cáo
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="kpi-card animate-fade-in">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #667eea 30%, #764ba2 100%);">
+                    <i class="fas fa-clipboard-check text-white"></i>
+                </div>
+                <div class="kpi-label">Tổng kiểm định</div>
+                <div class="kpi-value">@ViewBag.TotalInspections</div>
+                <small class="text-muted">lượt xe</small>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="kpi-card animate-fade-in" style="animation-delay: 0.1s;">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #34a853 0%, #0f9d58 100%);">
+                    <i class="fas fa-check-circle text-white"></i>
+                </div>
+                <div class="kpi-label">Đạt kiểm định</div>
+                <div class="kpi-value">@ViewBag.PassedInspections</div>
+                <div class="progress-custom mt-2">
+                    <div class="progress-bar-custom" style="width: @(ViewBag.PassRate)%"></div>
+                </div>
+                <small class="text-success fw-bold">@(ViewBag.PassRate.ToString("F1"))% tỷ lệ đạt</small>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="kpi-card animate-fade-in" style="animation-delay: 0.2s;">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #ea4335 0%, #d33b2c 100%);">
+                    <i class="fas fa-times-circle text-white"></i>
+                </div>
+                <div class="kpi-label">Không đạt</div>
+                <div class="kpi-value">@ViewBag.FailedInspections</div>
+                <small class="text-danger">Cần sửa chữa</small>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="kpi-card animate-fade-in" style="animation-delay: 0.3s;">
+                <div class="kpi-icon" style="background: linear-gradient(135deg, #fbbc04 0%, #f9ab00 100%);">
+                    <i class="fas fa-dollar-sign text-white"></i>
+                </div>
+                <div class="kpi-label">Tổng doanh thu</div>
+                <div class="kpi-value">@(ViewBag.TotalRevenue.ToString("N0"))</div>
+                <small class="text-muted">VNĐ</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row">
+        <!-- Daily Revenue Chart -->
+        <div class="col-lg-8 mb-4">
+            <div class="chart-card animate-fade-in">
+                <h3 class="chart-title">
+                    <i class="fas fa-chart-area me-2"></i>Doanh thu theo ngày
+                </h3>
+                <canvas id="dailyRevenueChart" height="80"></canvas>
+            </div>
+        </div>
+
+        <!-- Payment Method Chart -->
+        <div class="col-lg-4 mb-4">
+            <div class="chart-card animate-fade-in">
+                <h3 class="chart-title">
+                    <i class="fas fa-credit-card me-2"></i>Phương thức thanh toán
+                </h3>
+                <canvas id="paymentMethodChart"></canvas>
+                <div class="mt-3">
+                    @foreach (var method in ViewBag.PaymentMethods)
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>@method.Method</span>
+                            <span class="stat-badge badge-info">
+                                @method.Count lượt - @(method.Percentage.ToString("F1"))%
+                            </span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row">
+        <!-- Lane Production -->
+        <div class="col-lg-6 mb-4">
+            <div class="chart-card animate-fade-in">
+                <h3 class="chart-title">
+                    <i class="fas fa-road me-2"></i>Sản lượng theo dây chuyền
+                </h3>
+                <canvas id="laneProductionChart" height="100"></canvas>
+            </div>
+        </div>
+
+        <!-- Inspection Types -->
+        <div class="col-lg-6 mb-4">
+            <div class="chart-card animate-fade-in">
+                <h3 class="chart-title">
+                    <i class="fas fa-car me-2"></i>Phân loại kiểm định
+                </h3>
+                <canvas id="inspectionTypeChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- KTV Production Table -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="chart-card animate-fade-in">
+                <h3 class="chart-title">
+                    <i class="fas fa-users-cog me-2"></i>Năng suất kỹ thuật viên
+                </h3>
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Kỹ thuật viên</th>
+                                <th>Tổng công đoạn</th>
+                                <th>Hoàn thành</th>
+                                <th>Đạt</th>
+                                <th>Không đạt</th>
+                                <th>Tỷ lệ hoàn thành</th>
+                                <th>Tiến độ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int stt = 1;
+                            }
+                            @foreach (var ktv in ViewBag.KtvProduction)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@stt</td>
+                                    <td>
+                                        <i class="fas fa-user-tie me-2 text-primary"></i>
+                                        @ktv.FullName
+                                    </td>
+                                    <td><span class="stat-badge badge-info">@ktv.TotalStages</span></td>
+                                    <td><span class="stat-badge badge-success">@ktv.CompletedStages</span></td>
+                                    <td><span class="stat-badge badge-success">@ktv.PassedStages</span></td>
+                                    <td><span class="stat-badge badge-danger">@ktv.FailedStages</span></td>
+                                    <td class="fw-bold">@(ktv.CompletionRate.ToString("F1"))%</td>
+                                    <td style="width: 200px;">
+                                        <div class="progress-custom">
+                                            <div class="progress-bar-custom" style="width: @(ktv.CompletionRate)%"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                stt++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Defects Analysis -->
+    <div class="row">
+        <!-- Top Defects -->
+        <div class="col-lg-7 mb-4">
+            <div class="chart-card animate-fade-in">
+                <h3 class="chart-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Top lỗi phổ biến
+                </h3>
+                <div class="table-responsive">
+                    <table class="table table-custom">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Danh mục</th>
+                                <th>Mã lỗi</th>
+                                <th>Số lượng</th>
+                                <th>Mức độ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{
+                                int defectStt = 1;
+                            }
+                            @foreach (var defect in ViewBag.TopDefects)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@defectStt</td>
+                                    <td>@defect.Category</td>
+                                    <td><code>@defect.Code</code></td>
+                                    <td><span class="stat-badge badge-danger">@defect.Count</span></td>
+                                    <td>
+                                        <span class="severity-badge severity-@defect.Severity">
+                                            @defect.SeverityText
+                                        </span>
+                                    </td>
+                                </tr>
+                                defectStt++;
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Defects by Vehicle Type -->
+        <div class="col-lg-5 mb-4">
+            <div class="chart-card animate-fade-in">
+                <h3 class="chart-title">
+                    <i class="fas fa-car-crash me-2"></i>Lỗi theo loại xe
+                </h3>
+                <canvas id="defectsByVehicleChart"></canvas>
+                <div class="mt-3">
+                    @foreach (var item in ViewBag.DefectsByVehicleType)
+                    {
+                        <div class="mb-3 p-3" style="background: #f8f9fa; border-radius: 10px;">
+                            <div class="d-flex justify-content-between mb-2">
+                                <strong>@item.VehicleType</strong>
+                                <span class="badge bg-danger">@item.TotalDefects lỗi</span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <small class="severity-badge severity-3">Nguy hiểm: @item.CriticalDefects</small>
+                                <small class="severity-badge severity-2">Hư hỏng: @item.MajorDefects</small>
+                                <small class="severity-badge severity-1">Khuyết điểm: @item.MinorDefects</small>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Chart colors
+    const colors = {
+        primary: '#667eea',
+        secondary: '#764ba2',
+        success: '#34a853',
+        danger: '#ea4335',
+        warning: '#fbbc04',
+        info: '#1a73e8'
+    };
+
+    // Daily Revenue Chart
+    const dailyRevenueData = @Html.Raw(Json.Serialize(ViewBag.DailyRevenue));
+    new Chart(document.getElementById('dailyRevenueChart'), {
+        type: 'line',
+        data: {
+            labels: dailyRevenueData.map(d => new Date(d.date).toLocaleDateString('vi-VN')),
+            datasets: [{
+                label: 'Doanh thu (VNĐ)',
+                data: dailyRevenueData.map(d => d.amount),
+                borderColor: colors.primary,
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3
+            }, {
+                label: 'Số lượng',
+                data: dailyRevenueData.map(d => d.count),
+                borderColor: colors.success,
+                backgroundColor: 'rgba(52, 168, 83, 0.1)',
+                fill: true,
+                tension: 0.4,
+                borderWidth: 3,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: true, position: 'top' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) label += ': ';
+                            if (context.parsed.y !== null) {
+                                label += context.datasetIndex === 0
+                                    ? new Intl.NumberFormat('vi-VN').format(context.parsed.y) + ' VNĐ'
+                                    : context.parsed.y + ' lượt';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: { beginAtZero: true, position: 'left' },
+                y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false } }
+            }
+        }
+    });
+
+    // Payment Method Chart
+    const paymentData = @Html.Raw(Json.Serialize(ViewBag.PaymentMethods));
+    new Chart(document.getElementById('paymentMethodChart'), {
+        type: 'doughnut',
+        data: {
+            labels: paymentData.map(p => p.method),
+            datasets: [{
+                data: paymentData.map(p => p.amount),
+                backgroundColor: [colors.primary, colors.success, colors.warning],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { position: 'bottom' },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' +
+                                new Intl.NumberFormat('vi-VN').format(context.parsed) + ' VNĐ';
+                        }
+                    }
+                }
+            }
+        }
+    });
+
+    // Lane Production Chart
+    const laneData = @Html.Raw(Json.Serialize(ViewBag.LaneProduction));
+    new Chart(document.getElementById('laneProductionChart'), {
+        type: 'bar',
+        data: {
+            labels: laneData.map(l => l.laneName),
+            datasets: [{
+                label: 'Đạt',
+                data: laneData.map(l => l.passedCount),
+                backgroundColor: colors.success
+            }, {
+                label: 'Không đạt',
+                data: laneData.map(l => l.failedCount),
+                backgroundColor: colors.danger
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'top' } },
+            scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } }
+        }
+    });
+
+    // Inspection Type Chart
+    const inspectionTypes = @Html.Raw(Json.Serialize(ViewBag.InspectionTypes));
+    new Chart(document.getElementById('inspectionTypeChart'), {
+        type: 'bar',
+        data: {
+            labels: inspectionTypes.map(t => t.typeName),
+            datasets: [{
+                label: 'Số lượng',
+                data: inspectionTypes.map(t => t.count),
+                backgroundColor: [colors.primary, colors.success, colors.warning],
+                borderRadius: 10
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        afterLabel: function(context) {
+                            const item = inspectionTypes[context.dataIndex];
+                            return 'Doanh thu: ' + new Intl.NumberFormat('vi-VN').format(item.revenue) + ' VNĐ';
+                        }
+                    }
+                }
+            },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Defects by Vehicle Type Chart
+    const vehicleDefects = @Html.Raw(Json.Serialize(ViewBag.DefectsByVehicleType));
+    new Chart(document.getElementById('defectsByVehicleChart'), {
+        type: 'pie',
+        data: {
+            labels: vehicleDefects.map(v => v.vehicleType),
+            datasets: [{
+                data: vehicleDefects.map(v => v.totalDefects),
+                backgroundColor: [colors.danger, colors.warning, colors.info, colors.primary, colors.secondary],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>
+
+<script src="https://kit.fontawesome.com/your-fontawesome-kit.js"></script>

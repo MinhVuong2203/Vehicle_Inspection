@@ -17,14 +17,6 @@
     }
 }
 
-h4 {
-    font-size: 1.5rem;
-    color: #fff;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    animation: rgbTitle 3s infinite;
-    text-align: center
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
@@ -93,23 +85,6 @@ th {
     cursor: pointer;
 }
 
-@keyframes rgbBorderBottomGradient {
-    0% {
-        background: linear-gradient(to right, red, orange);
-    }
-
-    33% {
-        background: linear-gradient(to right, green, yellow);
-    }
-
-    66% {
-        background: linear-gradient(to right, blue, purple);
-    }
-
-    100% {
-        background: linear-gradient(to right, red, orange);
-    }
-}
 
 thead {
     position: static;
@@ -212,3 +187,113 @@ th {
     .non-ktv-row input[type="checkbox"] {
         pointer-events: none;
     }
+
+
+.filters-container {
+    background: #ffffff !important;
+    border-top: 4px solid #64D0EA;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, .08);
+    position: sticky; /* giữ cố định khi scroll */
+    top: 16px;
+}
+
+/* container */
+.filters-container .status-pills {
+    display: grid;
+    gap: 10px;
+}
+
+    /* ẩn input (Bootstrap btn-check đã làm tốt, nhưng chắc chắn luôn) */
+    .filters-container .status-pills .btn-check {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+/* pill */
+.filters-container .status-pill {
+    /*	font-size: 12px;*/
+    gap: 4px;
+    padding: .7rem .85rem;
+    border-radius: 14px;
+    border: 1px solid rgba(15, 23, 42, .10);
+    background: rgba(248, 250, 252, .85);
+    cursor: pointer;
+    user-select: none;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+}
+
+    /* icon + text */
+    .filters-container .status-pill i {
+        font-size: 1.05rem;
+        color: rgba(15, 23, 42, .55);
+    }
+
+    .filters-container .status-pill span {
+        font-weight: 600;
+        color: rgba(15, 23, 42, .85);
+    }
+
+    /* hover */
+    .filters-container .status-pill:hover {
+        transform: translateY(-1px);
+        border-color: rgba(15, 23, 42, .16);
+        box-shadow: 0 10px 20px rgba(15, 23, 42, .08);
+        background: #fff;
+    }
+
+/* selected state */
+.filters-container .status-pills .btn-check:checked + .status-pill {
+    border-color: rgba(59, 130, 246, .45);
+    background: rgba(59, 130, 246, .10);
+    box-shadow: 0 10px 22px rgba(37, 99, 235, .16);
+}
+
+    /* selected icon + text */
+    .filters-container .status-pills .btn-check:checked + .status-pill i {
+        color: rgba(37, 99, 235, .95);
+    }
+
+    .filters-container .status-pills .btn-check:checked + .status-pill span {
+        color: #0f172a;
+    }
+
+/* focus keyboard */
+.filters-container .status-pills .btn-check:focus + .status-pill {
+    box-shadow: 0 0 0 .25rem rgba(59, 130, 246, .18);
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid rgba(0,0,0,0.2);
+}
+
+.header-icon {
+    min-width: 48px;
+    min-height: 48px;
+    background: linear-gradient(135deg, #10A37F, #64D0EA);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 20px;
+    box-shadow: var(--shadow-md);
+}
+
+.page-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.page-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 4px 0 0 0;
+}

@@ -3,6 +3,7 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Danh Sách Hồ Sơ Kiểm Định Xe Cơ Giới";
     var inspectionRecords = ViewData["InspectionRecords"] as List<InspectionRecordDto>;
+    var laneList = ViewData["Lanes"] as List<Lane>;
 }
 
 
@@ -389,7 +390,7 @@
     <!-- Modal Chọn Dây Chuyền -->
     <div id="assignLaneModal" class="modal">
         <div class="modal-content assign-lane-modal">
-            <span class="close" onclick="closeAssignLane()">&times;</span>
+            <span class="close close-lanemodal" onclick="closeAssignLane()">&times;</span>
 
             <div class="assign-header">
                 <h2><i class="fa-solid fa-road"></i> PHÂN CÔNG DÂY CHUYỀN</h2>
@@ -423,43 +424,29 @@
                 <p class="help-text"><i class="fa-solid fa-info-circle"></i> Chọn dây chuyền phù hợp với loại xe cần kiểm định</p>
 
                 <div class="lane-cards">
-                    <div class="assign-lane-card" onclick="selectAssignLane(1, 'Dây chuyền 1')">
-                        <div class="lane-number">1</div>
-                        <h4>Dây Chuyền 1</h4>
-                        <p class="lane-desc">Chuyên kiểm định xe con, xe tải nhẹ</p>
-                        <div class="lane-specs">
-                            <div class="spec-item">
-                                <i class="fa-solid fa-car"></i>
-                                <span>Xe con</span>
+                    @foreach(var lane in laneList)
+                    {
+                        <div class="assign-lane-card" onclick="selectAssignLane(@lane.LaneId, '@lane.LaneName')">
+                            <div class="lane-number">@lane.LaneId</div>
+                            <h4>@lane.LaneCode</h4>
+                            <p class="lane-desc">@lane.LaneName</p>
+                            <!--
+                            <div class="lane-specs">
+                                <div class="spec-item">
+                                    <i class="fa-solid fa-car"></i>
+                                    <span>Xe con</span>
+                                </div>
+                                <div class="spec-item">
+                                    <i class="fa-solid fa-truck-pickup"></i>
+                                    <span>Xe tải nhẹ</span>
+                                </div>
                             </div>
-                            <div class="spec-item">
-                                <i class="fa-solid fa-truck-pickup"></i>
-                                <span>Xe tải nhẹ</span>
-                            </div>
-                        </div>
-                        <div class="lane-status available">
-                            <i class="fa-solid fa-circle-check"></i> Sẵn sàng
-                        </div>
-                    </div>
-
-                    <div class="assign-lane-card" onclick="selectAssignLane(2, 'Dây chuyền 2')">
-                        <div class="lane-number">2</div>
-                        <h4>Dây Chuyền 2</h4>
-                        <p class="lane-desc">Chuyên kiểm định xe tải, xe chuyên dụng</p>
-                        <div class="lane-specs">
-                            <div class="spec-item">
-                                <i class="fa-solid fa-truck"></i>
-                                <span>Xe tải</span>
-                            </div>
-                            <div class="spec-item">
-                                <i class="fa-solid fa-truck-moving"></i>
-                                <span>Xe chuyên dụng</span>
+                            -->
+                            <div class="lane-status available">
+                                <i class="fa-solid fa-circle-check"></i> Sẵn sàng
                             </div>
                         </div>
-                        <div class="lane-status available">
-                            <i class="fa-solid fa-circle-check"></i> Sẵn sàng
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
 

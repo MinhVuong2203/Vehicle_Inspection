@@ -11,26 +11,41 @@
 }
 
 
+
 <link rel="stylesheet" href="~/css/employee/main.css" />
 
 <div class="">
-    <h2 class="text-center mb-4">Employee List</h2>
+    @* <h2 class="text-center mb-4">Employee List</h2> *@
 
     <div class="row">
         <!-- Left: Filters (fixed) -->
         <div class="col-md-2">
+       
             <div class="filters-container p-3 bg-light rounded">
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="fa-regular fa-address-book"></i>
+                    </div>
+                    <div>
+                        <h2 class="page-title">Quản lý nhân sự</h2>
+                        <p class="page-subtitle">Danh sách các nhân sự trong hệ thống</p>
+                    </div>
+                </div>
                 <form method="get" asp-action="Index" asp-controller="Employee">
                     <div class="mb-3">
-                        <label class="form-label">Search</label>
+                        <label class="form-label">
+                            <i class="fa-solid fa-magnifying-glass me-2"></i> Tìm
+                        </label>
                         <input type="text" name="search" class="form-control"
                                placeholder="Name or email" value="@searchVal" />
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Position</label>
+                        <label class="form-label">
+                            <i class="fa-solid fa-id-badge me-2"></i> Chức vụ
+                        </label>
                         <select name="position" class="form-select">
-                            <option value="">All Positions</option>
+                            <option value="">Tất cả</option>
                             @foreach (var p in (List<Vehicle_Inspection.Models.Position>)ViewBag.Positions)
                             {
                                 if (positionVal == p.PositionId.ToString())
@@ -46,9 +61,11 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Team</label>
+                        <label class="form-label">
+                            <i class="fa-solid fa-people-group me-2"></i> Tổ
+                        </label>
                         <select name="team" class="form-select">
-                            <option value="">All Teams</option>
+                            <option value="">Tất cả</option>
                             @foreach (var t in (List<Vehicle_Inspection.Models.Team>)ViewBag.Teams)
                             {
                                 if (teamVal == t.TeamId.ToString())
@@ -64,10 +81,11 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Gender</label>
+                        <label class="form-label">
+                            <i class="fa-solid fa-venus-mars me-2"></i> Giới tính
+                        </label>
                         <select name="gender" class="form-select">
-                            <option value="">All Genders</option>
-
+                            <option value="">Tất cả</option>
                             @if (genderVal == "Nam")
                             {
                                 <option value="Nam" selected>Nam</option>
@@ -87,29 +105,37 @@
                     </div>
 
                     <div class="mb-3">
-                      
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="isActive" id="isActive_all"
-                                   value="" @(isActiveVal == "" ? "checked" : null) />
-                            <label class="form-check-label" for="isActive_all">Tất cả</label>
+                        <div class="filter-section-title">
+                            Trạng thái
                         </div>
 
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="isActive" id="isActive_true"
-                                   value="true" @(isActiveVal == "true" ? "checked" : null) />
-                            <label class="form-check-label" for="isActive_true">Đang hoạt động</label>
+                        <div class="status-pills" role="radiogroup" aria-label="Trạng thái">
+                            <input class="btn-check" type="radio" name="isActive" id="isActive_all"
+                                   value="" autocomplete="off" @(isActiveVal == "" ? "checked" : null)>
+                            <label class="status-pill" for="isActive_all">
+                              
+                                <span>Tất cả</span>
+                            </label>
+
+                            <input class="btn-check" type="radio" name="isActive" id="isActive_true"
+                                   value="true" autocomplete="off" @(isActiveVal == "true" ? "checked" : null)>
+                            <label class="status-pill" for="isActive_true">
+                             
+                                <span>Đang hoạt động</span>
+                            </label>
+
+                            <input class="btn-check" type="radio" name="isActive" id="isActive_false"
+                                   value="false" autocomplete="off" @(isActiveVal == "false" ? "checked" : null)>
+                            <label class="status-pill" for="isActive_false">
+                              
+                                <span>Đã nghỉ</span>
+                            </label>
                         </div>
 
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="isActive" id="isActive_false"
-                                   value="false" @(isActiveVal == "false" ? "checked" : null) />
-                            <label class="form-check-label" for="isActive_false">Đã nghỉ</label>
-                        </div>
                     </div>
 
-
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">Filter</button>
+                        <button type="submit" class="btn btn-primary">Tra cứu</button>
                     </div>
                 </form>
 
@@ -194,7 +220,113 @@
                 </div>                  
                 }
             </div>
+            @if (ViewBag.TotalPages > 1)
+            {
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination justify-content-center">
+                                <!-- Previous -->
+                                <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                                    <a class="page-link" 
+                                       href="@Url.Action("Index", new { 
+                                           search = searchVal, 
+                                           position = positionVal, 
+                                           team = teamVal, 
+                                           gender = genderVal, 
+                                           isActive = isActiveVal,
+                                           page = ViewBag.CurrentPage - 1 
+                                       })">
+                                       <i class="fa-solid fa-caret-left"></i>
+                                    </a>
+                                </li>
+
+                                @{
+                                    int currentPage = ViewBag.CurrentPage;
+                                    int totalPages = ViewBag.TotalPages;
+                                    int startPage = Math.Max(1, currentPage - 2);
+                                    int endPage = Math.Min(totalPages, currentPage + 2);
+                                }
+
+                                @if (startPage > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" 
+                                           href="@Url.Action("Index", new { 
+                                               search = searchVal, 
+                                               position = positionVal, 
+                                               team = teamVal, 
+                                               gender = genderVal, 
+                                               isActive = isActiveVal,
+                                               page = 1 
+                                           })">1</a>
+                                    </li>
+                                    @if (startPage > 2)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    }
+                                }
+
+                                @for (int i = startPage; i <= endPage; i++)
+                                {
+                                    <li class="page-item @(i == currentPage ? "active" : "")">
+                                        <a class="page-link" 
+                                           href="@Url.Action("Index", new { 
+                                               search = searchVal, 
+                                               position = positionVal, 
+                                               team = teamVal, 
+                                               gender = genderVal, 
+                                               isActive = isActiveVal,
+                                               page = i 
+                                           })">@i</a>
+                                    </li>
+                                }
+
+                                @if (endPage < totalPages)
+                                {
+                                    @if (endPage < totalPages - 1)
+                                    {
+                                        <li class="page-item disabled"><span class="page-link">...</span></li>
+                                    }
+                                    <li class="page-item">
+                                        <a class="page-link" 
+                                           href="@Url.Action("Index", new { 
+                                               search = searchVal, 
+                                               position = positionVal, 
+                                               team = teamVal, 
+                                               gender = genderVal, 
+                                               isActive = isActiveVal,
+                                               page = totalPages 
+                                           })">@totalPages</a>
+                                    </li>
+                                }
+
+                                <!-- Next -->
+                                <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                                    <a class="page-link" 
+                                       href="@Url.Action("Index", new { 
+                                           search = searchVal, 
+                                           position = positionVal, 
+                                           team = teamVal, 
+                                           gender = genderVal, 
+                                           isActive = isActiveVal,
+                                           page = ViewBag.CurrentPage + 1 
+                                       })">
+                                        <i class="fa-solid fa-caret-right"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+            
+                        <p class="text-center text-muted">
+                            Trang @ViewBag.CurrentPage / @ViewBag.TotalPages (Tổng: @ViewBag.TotalItems nhân viên)
+                        </p>
+                    </div>
+                </div>
+            }
+                   
         </div>
+            <!-- Pagination -->
 
     </div>
 </div>

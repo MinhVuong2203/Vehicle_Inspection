@@ -94,7 +94,7 @@ function buildStageItemsConfig(stages) {
         stageItems[stage.stageId] = stage.items.map(item => {
             const config = {
                 id: item.itemId,
-                itemCode: item.itemCode,  // ✅ THÊM itemCode
+                itemCode: item.itemCode,
                 name: item.itemName,
                 unit: item.unit,
                 type: getInputType(item.dataType),
@@ -102,21 +102,23 @@ function buildStageItemsConfig(stages) {
                 isRequired: item.isRequired
             };
 
-            // Nếu là select, build options
-            if (config.type === 'select') {
-                if (item.allowedValues) {
-                    config.options = item.allowedValues.split(';').map(v => v.trim()).filter(v => v);
-                    config.standard = config.options[0] || 'Đạt';
-                } else {
-                    config.options = ['Đạt', 'Không đạt'];
-                    config.standard = 'Đạt';
-                }
+            // ✅ NẾU CÓ AllowedValues → Dùng SELECT
+            if (item.allowedValues) {
+                config.type = 'select';
+                config.options = item.allowedValues.split(';').map(v => v.trim()).filter(v => v);
+                config.standard = config.options[0] || 'Đạt';
             }
-
-            // Nếu là number, set min/max
-            if (config.type === 'number') {
+            // ✅ NẾU KHÔNG CÓ AllowedValues → Dùng NUMBER INPUT
+            else if (config.type === 'number') {
                 config.min = item.minValue !== null && item.minValue !== undefined ? item.minValue : 0;
                 config.max = item.maxValue !== null && item.maxValue !== undefined ? item.maxValue : 999999;
+                config.standard = getStandardText(item);
+            }
+            // ✅ FALLBACK: Nếu là BOOL nhưng không có AllowedValues
+            else {
+                config.type = 'select';
+                config.options = ['Đạt', 'Không đạt'];
+                config.standard = 'Đạt';
             }
 
             return config;
@@ -147,19 +149,20 @@ function getInputType(dataType) {
  * Get standard text cho item
  */
 function getStandardText(item) {
-    if (item.passCondition) {
-        return item.passCondition;
+    if (item.passCondition && item.minValue != null && item.maxValue != null) {
+        //return item.passCondition;
+        return `${item.minValue} - ${item.maxValue}`;
     }
 
     if (item.minValue !== null && item.maxValue !== null) {
         return `${item.minValue} - ${item.maxValue}`;
     }
 
-    if (item.minValue !== null) {
+    if (item.minValue !== null && item.maxValue == null) {
         return `≥ ${item.minValue}`;
     }
 
-    if (item.maxValue !== null) {
+    if (item.maxValue !== null && item.minValue == null) {
         return `≤ ${item.maxValue}`;
     }
 

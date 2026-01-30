@@ -18,7 +18,7 @@ namespace Vehicle_Inspection.Service
             try
             {
                 var records = _context.Inspections
-                    .Where(i => !i.IsDeleted && i.Status == 2)
+                    .Where(i => !i.IsDeleted && (i.Status == 2 || i.Status == 3))
                     .Include(i => i.Vehicle)
                      .ThenInclude(v => v.Owner)
                     .Include(i => i.Lane)
@@ -224,20 +224,26 @@ namespace Vehicle_Inspection.Service
 
                 if (inspection == null)
                 {
-                    Console.WriteLine($"Inspection {inspectionId} not found");
+                    Console.WriteLine($"❌ Inspection {inspectionId} not found");
                     return new List<InspectionStageDto>();
                 }
 
                 if (!inspection.LaneId.HasValue)
                 {
-                    Console.WriteLine($"Inspection {inspectionId} has no lane assigned");
+                    Console.WriteLine($"❌ Inspection {inspectionId} has no lane assigned");
                     return new List<InspectionStageDto>();
                 }
 
                 int laneId = inspection.LaneId.Value;
                 int? vehicleTypeId = inspection.Vehicle?.VehicleTypeId;
 
-                Console.WriteLine($"LaneId: {laneId}, VehicleTypeId: {vehicleTypeId}");
+                // ✅ LOG THÔNG TIN CHỦ CHỐT
+                Console.WriteLine($"📋 InspectionId: {inspectionId}");
+                Console.WriteLine($"📋 InspectionCode: {inspection.InspectionCode}");
+                Console.WriteLine($"📋 PlateNo: {inspection.Vehicle?.PlateNo}");
+                Console.WriteLine($"📋 LaneId: {laneId}");
+                Console.WriteLine($"📋 VehicleTypeId: {vehicleTypeId?.ToString() ?? "NULL"}");
+                Console.WriteLine($"📋 VehicleTypeName: {inspection.Vehicle?.VehicleType?.TypeName ?? "NULL"}");
 
                 // 2. Lấy các Stage theo LaneId từ LaneStage
                 var laneStages = _context.LaneStages
@@ -297,7 +303,7 @@ namespace Vehicle_Inspection.Service
                         .OrderBy(si => si.SortOrder)
                         .ToList();
 
-                    Console.WriteLine($"Stage {ls.StageName} has {stageItems.Count} items");
+                    Console.WriteLine($"🔹 Stage {ls.StageName} (StageId={ls.StageId}) has {stageItems.Count} items");
 
                     foreach (var item in stageItems)
                     {
@@ -312,10 +318,17 @@ namespace Vehicle_Inspection.Service
                             SortOrder = item.SortOrder ?? 0
                         };
 
-                        // 6. Lấy tiêu chuẩn từ StageItemThreshold (nếu có VehicleTypeId)
+                        // ✅ LOG CHI TIẾT CHO TỪNG ITEM
+                        Console.WriteLine($"   🔸 Item {item.ItemId}: {item.ItemName} (Code: {item.ItemCode})");
+
+                        // 6. Lấy tiêu chuẩn từ StageItemThreshold
+                        StageItemThreshold? threshold = null;
+
                         if (vehicleTypeId.HasValue)
                         {
-                            var threshold = _context.StageItemThresholds
+                            Console.WriteLine($"      🔍 Looking for threshold: ItemId={item.ItemId}, VehicleTypeId={vehicleTypeId.Value}");
+
+                            threshold = _context.StageItemThresholds
                                 .Where(t => t.ItemId == item.ItemId
                                          && t.VehicleTypeId == vehicleTypeId.Value
                                          && t.IsActive == true)
@@ -324,11 +337,59 @@ namespace Vehicle_Inspection.Service
 
                             if (threshold != null)
                             {
-                                itemDto.MinValue = threshold.MinValue;
-                                itemDto.MaxValue = threshold.MaxValue;
-                                itemDto.AllowedValues = threshold.AllowedValues;
-                                itemDto.PassCondition = threshold.PassCondition;
+                                Console.WriteLine($"      ✅ Found threshold: Min={threshold.MinValue}, Max={threshold.MaxValue}, Pass={threshold.PassCondition}");
                             }
+                            else
+                            {
+                                Console.WriteLine($"      ⚠️ No threshold for VehicleTypeId={vehicleTypeId.Value}, trying default...");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"      ⚠️ VehicleTypeId is NULL, using default threshold...");
+                        }
+
+                        // ✅ FALLBACK: Nếu không tìm thấy, lấy tiêu chuẩn chung (VehicleTypeId = NULL)
+                        if (threshold == null)
+                        {
+                            threshold = _context.StageItemThresholds
+                                .Where(t => t.ItemId == item.ItemId
+                                         && t.VehicleTypeId == null
+                                         && t.IsActive == true)
+                                .OrderByDescending(t => t.EffectiveDate)
+                                .FirstOrDefault();
+
+                            if (threshold != null)
+                            {
+                                Console.WriteLine($"      ✅ Using default threshold: Min={threshold.MinValue}, Max={threshold.MaxValue}, Pass={threshold.PassCondition}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"      ❌ NO THRESHOLD FOUND (specific or default) for ItemId={item.ItemId}");
+                            }
+                        }
+
+                        if (threshold != null)
+                        {
+                            itemDto.MinValue = threshold.MinValue;
+                            itemDto.MaxValue = threshold.MaxValue;
+                            itemDto.PassCondition = threshold.PassCondition;
+
+                            // ✅ CHỈ GÁN AllowedValues NẾU NÓ CÓ TRONG DATABASE
+                            itemDto.AllowedValues = threshold.AllowedValues;
+
+                            if (!string.IsNullOrEmpty(threshold.AllowedValues))
+                            {
+                                Console.WriteLine($"      ✅ Has AllowedValues: {threshold.AllowedValues}");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"      ℹ️ No AllowedValues - will use Min/Max validation: {threshold.MinValue} - {threshold.MaxValue}");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"      ⚠️ No threshold found for ItemId={item.ItemId}");
                         }
 
                         // 7. Lấy giá trị đã đo (nếu có InspectionDetail)
@@ -341,8 +402,8 @@ namespace Vehicle_Inspection.Service
                             if (detail != null)
                             {
                                 itemDto.ActualValue = detail.ActualValue;
-                                //itemDto.ActualText = detail.ActualText;
                                 itemDto.IsPassed = detail.IsPassed;
+                                Console.WriteLine($"      📊 Actual value: {detail.ActualValue}, IsPassed: {detail.IsPassed}");
                             }
                         }
 
@@ -357,7 +418,7 @@ namespace Vehicle_Inspection.Service
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error in GetInspectionStages: {ex.Message}");
+                Console.WriteLine($"❌ Error in GetInspectionStages: {ex.Message}");
                 Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 return new List<InspectionStageDto>();
             }
@@ -702,6 +763,109 @@ namespace Vehicle_Inspection.Service
                 if (ex.InnerException != null)
                 {
                     Console.WriteLine($"❌ Inner Exception: {ex.InnerException.Message}");
+                }
+
+                return false;
+            }
+        }
+
+        public List<Lane> GetInspectionLanes()
+        {
+            try
+            {
+                var lanes = _context.Lanes
+                    .Where(l => l.IsActive)
+                    .OrderBy(l => l.LaneCode)
+                    .ToList();
+                return lanes;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting lanes: {ex.Message}");
+                return new List<Lane>();
+            }
+        }
+
+        public bool AssignLane(AssignLaneRequest request)
+        {
+            using var transaction = _context.Database.BeginTransaction();
+
+            try
+            {
+                Console.WriteLine($"=== AssignLane START ===");
+                Console.WriteLine($"InspectionId: {request.InspectionId}");
+                Console.WriteLine($"LaneId: {request.LaneId}");
+
+                // 1. Kiểm tra Inspection tồn tại và có status phù hợp
+                var inspection = _context.Inspections
+                    .FirstOrDefault(i => i.InspectionId == request.InspectionId && !i.IsDeleted);
+
+                if (inspection == null)
+                {
+                    Console.WriteLine("Inspection not found");
+                    return false;
+                }
+
+                // Kiểm tra trạng thái (chỉ cho phép gán khi Status = 2: PAID)
+                if (inspection.Status != 2)
+                {
+                    Console.WriteLine($"Invalid status: {inspection.Status}. Only status 2 (PAID) can be assigned.");
+                    return false;
+                }
+
+                // 2. Kiểm tra Lane tồn tại và active
+                var lane = _context.Lanes
+                    .FirstOrDefault(l => l.LaneId == request.LaneId && l.IsActive);
+
+                if (lane == null)
+                {
+                    Console.WriteLine("Lane not found or inactive");
+                    return false;
+                }
+
+                // 3. Cập nhật LaneId cho Inspection
+                inspection.LaneId = request.LaneId;
+                inspection.Status = 3; // IN_PROGRESS - Đang kiểm định
+                inspection.StartedAt = DateTime.Now;
+
+                // Nếu có ghi chú, thêm vào Notes
+                if (!string.IsNullOrEmpty(request.Note))
+                {
+                    inspection.Notes = string.IsNullOrEmpty(inspection.Notes)
+                        ? $"Phân công: {request.Note}"
+                        : $"{inspection.Notes}\nPhân công: {request.Note}";
+                }
+
+                _context.SaveChanges();
+                Console.WriteLine($"Updated Inspection: LaneId={request.LaneId}, Status=3");
+
+                // 4. Khởi tạo InspectionStages nếu chưa có
+                var existingStagesCount = _context.InspectionStages
+                    .Count(ins => ins.InspectionId == request.InspectionId);
+
+                if (existingStagesCount == 0)
+                {
+                    Console.WriteLine("Initializing InspectionStages...");
+                    InitializeInspectionStages(request.InspectionId);
+                }
+                else
+                {
+                    Console.WriteLine($"InspectionStages already exist ({existingStagesCount} records)");
+                }
+
+                transaction.Commit();
+                Console.WriteLine($"=== AssignLane END - SUCCESS ===");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                transaction.Rollback();
+                Console.WriteLine($"Error in AssignLane: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
                 }
 
                 return false;

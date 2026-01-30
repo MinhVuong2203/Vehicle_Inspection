@@ -500,6 +500,10 @@ function openAssignLane(record) {
 
 // Chọn dây chuyền trong modal phân công
 function selectAssignLane(laneId, laneName) {
+    console.log('=== selectAssignLane ===');
+    console.log('LaneId:', laneId);
+    console.log('LaneName:', laneName);
+
     assignedLaneId = laneId;
     assignedLaneName = laneName;
 
@@ -507,10 +511,21 @@ function selectAssignLane(laneId, laneName) {
     document.querySelectorAll('.assign-lane-card').forEach(card => {
         card.classList.remove('selected');
     });
-    event.target.closest('.assign-lane-card').classList.add('selected');
+
+    // ✅ Tìm card được click và highlight
+    const cards = document.querySelectorAll('.assign-lane-card');
+    cards.forEach(card => {
+        // Lấy onclick attribute và parse ra laneId
+        const onclickAttr = card.getAttribute('onclick');
+        if (onclickAttr && onclickAttr.includes(`selectAssignLane(${laneId},`)) {
+            card.classList.add('selected');
+        }
+    });
 
     // Enable nút xác nhận
     document.getElementById('btnConfirmAssign').disabled = false;
+
+    console.log('✅ Lane selected successfully');
 }
 
 // Xác nhận phân công dây chuyền
@@ -520,14 +535,23 @@ async function confirmAssignLane() {
         return;
     }
 
+    if (!assigningInspection) {
+        alert('Không tìm thấy thông tin hồ sơ!');
+        return;
+    }
+
     const note = document.getElementById('assignNote').value;
 
     try {
-        // TODO: Gọi API để cập nhật dây chuyền
+        console.log('=== Assigning Lane ===');
+        console.log('InspectionId:', assigningInspection.inspectionId);
+        console.log('LaneId:', assignedLaneId);
+
         const response = await fetch('/Inspection/AssignLane', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
             },
             body: JSON.stringify({
                 inspectionId: assigningInspection.inspectionId,
@@ -536,24 +560,27 @@ async function confirmAssignLane() {
             })
         });
 
+        console.log('Response status:', response.status);
+
         if (!response.ok) {
             throw new Error('Không thể phân công dây chuyền');
         }
 
         const result = await response.json();
-        
+        console.log('Assign result:', result);
+
         if (result.success) {
             alert(`Đã phân công hồ sơ ${assigningInspection.inspectionCode} vào ${assignedLaneName}!`);
             closeAssignLane();
-            
+
             // Reload lại danh sách
             await loadInspectionRecords();
         } else {
-            alert(result.message || 'Có lỗi xảy ra');
+            alert((result.message || 'Có lỗi xảy ra'));
         }
     } catch (error) {
         console.error('Error assigning lane:', error);
-        alert('Không thể phân công dây chuyền. Vui lòng thử lại.');
+        alert('Không thể phân công dây chuyền. Vui lòng thử lại.\n\nLỗi: ' + error.message);
     }
 }
 
@@ -1233,6 +1260,9 @@ async function submitConclusion() {
         alert('❌ Không thể hoàn thành kiểm định. Vui lòng thử lại.\n\nLỗi: ' + error.message);
     }
 }
+
+//phân công dây chuyền
+
 
 // Đóng modal quy trình kiểm định
 function closeInspectionProcess() {

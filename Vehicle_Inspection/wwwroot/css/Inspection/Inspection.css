@@ -298,13 +298,17 @@ tbody tr {
     }
 }
 
+.close-lanemodal {
+    margin-bottom: 20px;
+}
+
 .close {
     color: #aaa;
     float: right;
     font-size: 35px;
     font-weight: bold;
     padding: 10px 20px;
-/*    margin-bottom: 25px;*/
+    /*    margin-bottom: 25px;*/
     cursor: pointer;
     transition: color 0.3s;
 }
@@ -1162,6 +1166,7 @@ h3 {
 
 .assign-lane-modal {
     max-width: 900px;
+    padding: 20px;
 }
 
 .assign-header {

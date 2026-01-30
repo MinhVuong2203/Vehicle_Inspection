@@ -57,6 +57,8 @@ public partial class Inspection
 
     public bool IsDeleted { get; set; }
 
+    public int? Count_Re { get; set; }
+
     [InverseProperty("Inspection")]
     public virtual Certificate? Certificate { get; set; }
 

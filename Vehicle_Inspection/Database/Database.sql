@@ -1580,6 +1580,7 @@ CREATE TABLE dbo.Inspection (
     Notes               NVARCHAR(1000) NULL,-- Ghi chú chung
     -- Priority            SMALLINT DEFAULT 1,-- Mức ưu tiên (1: Thường, 2: Cao, 3: Khẩn cấp)
     IsDeleted           BIT NOT NULL DEFAULT 0,
+	Count_Re INT,
     
     FOREIGN KEY (VehicleId) REFERENCES dbo.Vehicle(VehicleId),
     --FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),

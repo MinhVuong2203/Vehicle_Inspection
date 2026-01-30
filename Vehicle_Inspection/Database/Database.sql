@@ -423,6 +423,249 @@ INSERT INTO dbo.Specification (PlateNo, WheelFormula, WheelTread, OverallLength,
 StandingCapacity, LyingCapacity, EngineType, EnginePosition, EngineModel, EngineDisplacement, MaxPower, MaxPowerRPM, FuelType, MotorType, NumberOfMotors, MotorModel, TotalMotorPower, MotorVoltage, BatteryType, BatteryVoltage, BatteryCapacity, TireCount, TireSize, TireAxleInfo, ImagePosition, HasTachograph, HasDriverCamera, NotIssuedStamp, Notes) VALUES 
 (N'51A-12245', N'4x2', 1460, 4425, 1730, 1475, NULL, NULL, NULL, 2550, 1025.00, 450.00, 0.00, 1650.00, 5, 0, 0, N'Xăng 4 kỳ, 4 xi-lanh thẳng hàng', N'Phía trước', N'3NR-FE', 1496, 79.00, 6000, N'Xăng RON 95', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 4, N'185/60R15', N'Trục trước: 185/60R15; Trục sau: 185/60R15', N'Góc trên bên phải kính lái', 0, 0, 0, N'Xe đăng ký lần đầu, tình trạng tốt');
 
+
+INSERT INTO dbo.Owner (OwnerId, OwnerType, FullName, CompanyName, TaxCode, CCCD, Phone, Email, Address, Ward, Province, ImageUrl)
+VALUES
+    -- Chủ xe cá nhân (6 bản ghi)
+    (NEWID(), N'PERSON', N'Nguyễn Văn An', NULL, NULL, N'001244567890', N'0901234567', N'nguyenvanan@gmail.com', N'123 Lê Lợi, Quận 1', N'Phường Bến Nghé', N'TP. Hồ Chí Minh', N'https://example.com/images/owner1.jpg'),
+    
+    (NEWID(), N'PERSON', N'Trần Thị Bình', NULL, NULL, N'001234567891', N'0912345678', N'tranthibinh@gmail.com', N'456 Nguyễn Huệ, Quận 1', N'Phường Bến Thành', N'TP. Hồ Chí Minh', N'https://example.com/images/owner2.jpg'),
+    
+    (NEWID(), N'PERSON', N'Lê Hoàng Cường', NULL, NULL, N'001234567892', N'0923456789', N'lehoangcuong@gmail.com', N'789 Hai Bà Trưng, Quận 1', N'Phường Đa Kao', N'TP. Hồ Chí Minh', NULL),
+    
+    (NEWID(), N'PERSON', N'Phạm Minh Đức', NULL, NULL, N'001234567893', N'0934567890', N'phamminhduc@gmail.com', N'321 Trần Hưng Đạo, Quận 1', N'Phường Cầu Kho', N'TP. Hồ Chí Minh', N'https://example.com/images/owner4.jpg'),
+    
+    (NEWID(), N'PERSON', N'Võ Thị Em', NULL, NULL, N'001234567894', N'0945678901', N'vothiem@gmail.com', N'654 Điện Biên Phủ, Quận 3', N'Phường 25', N'TP. Hồ Chí Minh', NULL),
+    
+    (NEWID(), N'PERSON', N'Hoàng Văn Phong', NULL, NULL, N'001234567895', N'0956789012', N'hoangvanphong@gmail.com', N'987 Cách Mạng Tháng 8, Quận 10', N'Phường 7', N'TP. Hồ Chí Minh', N'https://example.com/images/owner6.jpg'),
+    
+    -- Chủ xe công ty (4 bản ghi)
+    (NEWID(), N'COMPANY', N'Nguyễn Văn Giang', N'Công ty TNHH Vận Tải Sài Gòn', N'0123456789', N'001334567895', N'0967890123', N'contact@vantaisaigon.vn', N'100 Nguyễn Thị Minh Khai, Quận 3', N'Phường Võ Thị Sáu', N'TP. Hồ Chí Minh', N'https://example.com/images/company1.jpg'),
+    
+    (NEWID(), N'COMPANY', N'Trần Thị Hương', N'Công ty Cổ Phần Xe Khách Phương Trang', N'0234567890', N'001244567895', N'0978901234', N'info@phuongtrang.vn', N'272 Đề Thám, Quận 1', N'Phường Phạm Ngũ Lão', N'TP. Hồ Chí Minh', N'https://example.com/images/company2.jpg'),
+    
+    (NEWID(), N'COMPANY', N'Lê Minh Tuấn', N'Công ty TNHH Logistic Việt Nam', N'0345678901', N'001235567895', N'0989012345', N'contact@logisticvn.com', N'300 Võ Văn Tần, Quận 3', N'Phường 5', N'TP. Hồ Chí Minh', NULL),
+    
+    (NEWID(), N'COMPANY', N'Phạm Thị Lan', N'Công ty TNHH MTV Vận Tải Miền Đông', N'0456789012', N'0012345667895', N'0990123456', N'info@vantaimiendong.vn', N'400 Hoàng Sa, Quận 1', N'Phường Đa Kao', N'TP. Hồ Chí Minh', N'https://example.com/images/company4.jpg');
+
+GO
+
+-- =============================================
+-- 2. DỮ LIỆU BẢNG VEHICLE (10 bản ghi)
+-- Sử dụng VehicleTypeId: 9, 10, 11, 12, 13, 14, 15, 16, 17, 21
+-- =============================================
+
+DECLARE @Owner1 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE FullName = N'Nguyễn Văn An' ORDER BY CreatedAt DESC);
+DECLARE @Owner2 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE FullName = N'Trần Thị Bình' ORDER BY CreatedAt DESC);
+DECLARE @Owner3 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE FullName = N'Lê Hoàng Cường' ORDER BY CreatedAt DESC);
+DECLARE @Owner4 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE FullName = N'Phạm Minh Đức' ORDER BY CreatedAt DESC);
+DECLARE @Owner5 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE FullName = N'Võ Thị Em' ORDER BY CreatedAt DESC);
+DECLARE @Owner6 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE FullName = N'Hoàng Văn Phong' ORDER BY CreatedAt DESC);
+DECLARE @Owner7 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE CompanyName = N'Công ty TNHH Vận Tải Sài Gòn' ORDER BY CreatedAt DESC);
+DECLARE @Owner8 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE CompanyName = N'Công ty Cổ Phần Xe Khách Phương Trang' ORDER BY CreatedAt DESC);
+DECLARE @Owner9 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE CompanyName = N'Công ty TNHH Logistic Việt Nam' ORDER BY CreatedAt DESC);
+DECLARE @Owner10 UNIQUEIDENTIFIER = (SELECT TOP 1 OwnerId FROM dbo.Owner WHERE CompanyName = N'Công ty TNHH MTV Vận Tải Miền Đông' ORDER BY CreatedAt DESC);
+
+INSERT INTO dbo.Vehicle (
+    PlateNo, InspectionNo, VehicleGroup, VehicleTypeId, 
+    EnergyType, IsCleanEnergy, UsagePermission, 
+    Brand, Model, EngineNo, Chassis, 
+    ManufactureYear, ManufactureCountry, LifetimeLimitYear, 
+    HasCommercialModification, HasModification, OwnerId
+)
+VALUES
+    -- 1. Xe con Toyota (VehicleTypeId = 9: PAX_LT_10)
+    (N'51A-12347', N'VN-HCM-2024-001234', N'Xe con', 9, 
+     N'Xăng', 0, N'Không', 
+     N'Toyota', N'Vios 1.5E CVT', N'2NR1234567', N'VNKKK1234ABC56789', 
+     2022, N'Việt Nam', 2042, 
+     0, 0, @Owner1),
+    
+    -- 2. Xe cứu thương Ford (VehicleTypeId = 10: AMBULANCE)
+    (N'51B-23456', N'VN-HCM-2024-002345', N'Xe cứu thương', 10, 
+     N'Dầu diesel', 0, N'Không', 
+     N'Ford', N'Transit Ambulance', N'P8FA2345678', N'WF0XXXTTGFKE12345', 
+     2023, N'Thái Lan', 2043, 
+     1, 0, @Owner2),
+    
+    -- 3. Xe khách 16 chỗ Hyundai (VehicleTypeId = 11: PAX_10_24)
+    (N'51C-34567', N'VN-HCM-2024-003456', N'Xe khách', 11, 
+     N'Dầu diesel', 0, N'Không', 
+     N'Hyundai', N'County', N'D4GA3456789', N'KMJHC41CBPU123456', 
+     2021, N'Hàn Quốc', 2041, 
+     1, 0, @Owner3),
+    
+    -- 4. Xe tải nhẹ Isuzu 1.9T (VehicleTypeId = 12: TRUCK_LT_2T)
+    (N'51D-45678', N'VN-HCM-2024-004567', N'Xe tải nhẹ', 12, 
+     N'Dầu diesel', 0, N'Không', 
+     N'Isuzu', N'QKR77FE4', N'4JH14567890', N'MRALQKR1JK0123456', 
+     2022, N'Việt Nam', 2042, 
+     1, 0, @Owner4),
+    
+    -- 5. Xe khách 29 chỗ Thaco (VehicleTypeId = 13: PAX_25_40)
+    (N'51E-56789', N'VN-HCM-2024-005678', N'Xe khách', 13, 
+     N'Dầu diesel', 0, N'Không', 
+     N'Thaco', N'TB85S', N'WP105678901', N'LZYTBKMB5JA123456', 
+     2023, N'Việt Nam', 2043, 
+     1, 0, @Owner5),
+    
+    -- 6. Xe tải Hino 5 tấn (VehicleTypeId = 14: TRUCK_2_7T)
+    (N'51F-67890', N'VN-HCM-2024-006789', N'Xe tải trung', 14, 
+     N'Dầu diesel', 0, N'Không', 
+     N'Hino', N'FC9JLSW', N'J08E6789012', N'LHHFC8JR8MK123456', 
+     2022, N'Nhật Bản', 2042, 
+     1, 0, @Owner6),
+    
+    -- 7. Xe khách 47 chỗ Thaco (VehicleTypeId = 15: PAX_GT_40)
+    (N'51G-78901', N'VN-HCM-2024-007890', N'Xe khách cao cấp', 15, 
+     N'Dầu diesel', 0, N'Một phần', 
+     N'Thaco', N'TB120SL', N'WP127890123', N'LZYTBKMB8KA234567', 
+     2024, N'Việt Nam', 2044, 
+     1, 0, @Owner7),
+    
+    -- 8. Xe buýt Hyundai (VehicleTypeId = 16: BUS)
+    (N'51H-89012', N'VN-HCM-2024-008901', N'Xe buýt', 16, 
+     N'CNG', 1, N'Không', 
+     N'Hyundai', N'Universe', N'D6CC8901234', N'KMJHM45CBRU234567', 
+     2023, N'Hàn Quốc', 2043, 
+     1, 0, @Owner8),
+    
+    -- 9. Xe tải Dongfeng 15 tấn (VehicleTypeId = 17: TRUCK_7_20T)
+    (N'51K-90123', N'VN-HCM-2024-009012', N'Xe tải nặng', 17, 
+     N'Dầu diesel', 0, N'Không', 
+     N'Dongfeng', N'Hoàng Huy L315', N'YC6L9012345', N'LGDFL5RM5LA345678', 
+     2022, N'Trung Quốc', 2042, 
+     1, 0, @Owner9),
+    
+    -- 10. Máy kéo FAW (VehicleTypeId = 21: TRACTOR)
+    (N'51L-01234', N'VN-HCM-2024-010123', N'Máy kéo đầu', 21, 
+     N'Dầu diesel', 0, N'Không', 
+     N'FAW', N'J6P 430HP', N'CA6DM30123456', N'LFNAKPCH5MBE56789', 
+     2023, N'Trung Quốc', 2043, 
+     1, 0, @Owner10);
+
+GO
+
+-- =============================================
+-- 3. DỮ LIỆU BẢNG SPECIFICATION (10 bản ghi)
+-- =============================================
+
+INSERT INTO dbo.Specification (
+    PlateNo, WheelFormula, WheelTread, 
+    OverallLength, OverallWidth, OverallHeight,
+    CargoInsideLength, CargoInsideWidth, CargoInsideHeight, 
+    Wheelbase, KerbWeight, AuthorizedCargoWeight, AuthorizedTowedWeight, AuthorizedTotalWeight,
+    SeatingCapacity, StandingCapacity, LyingCapacity,
+    EngineType, EnginePosition, EngineModel, EngineDisplacement, MaxPower, MaxPowerRPM, FuelType,
+    MotorType, NumberOfMotors, MotorModel, TotalMotorPower, MotorVoltage,
+    BatteryType, BatteryVoltage, BatteryCapacity,
+    TireCount, TireSize, TireAxleInfo,
+    ImagePosition, HasTachograph, HasDriverCamera, NotIssuedStamp, Notes
+)
+VALUES
+    -- 1. Toyota Vios (Xe con 5 chỗ - 51A-12345)
+    (N'51A-12347', N'4x2', 1540, 
+     4425, 1730, 1475, NULL, NULL, NULL, 
+     2550, 1075.00, 425.00, 0.00, 1500.00,
+     5, 0, 0,
+     N'Xăng, 4 kỳ', N'Trước dọc', N'2NR-FE', 1496, 79.00, 6000, N'Xăng RON 95',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     4, N'185/60 R15', N'Trục 1: 2 lốp, Trục 2: 2 lốp',
+     N'Dashboard', 0, 0, 0, N'Xe gia đình, sử dụng cá nhân'),
+    
+    -- 2. Ford Transit Ambulance (Xe cứu thương - 51B-23456)
+    (N'51B-23456', N'4x2', 1830, 
+     5981, 2474, 2720, 3300, 1700, 1800, 
+     3750, 2350.00, 1150.00, 0.00, 3500.00,
+     3, 0, 2,
+     N'Dầu, 4 kỳ, tăng áp', N'Trước dọc', N'P8FA (Puma)', 2198, 92.00, 3500, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     6, N'215/75 R16C', N'Trục 1: 2 lốp, Trục 2: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe cứu thương bệnh viện, có trang bị y tế đầy đủ'),
+    
+    -- 3. Hyundai County (Xe khách 16 chỗ - 51C-34567)
+    (N'51C-34567', N'4x2', 1815, 
+     6995, 2385, 2960, NULL, NULL, NULL, 
+     3930, 3480.00, 1520.00, 0.00, 5000.00,
+     16, 0, 0,
+     N'Dầu, 4 kỳ, tăng áp', N'Trước dọc', N'D4GA', 3933, 110.00, 2800, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     6, N'225/70 R19.5', N'Trục 1: 2 lốp, Trục 2: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe khách vận chuyển hành khách liên tỉnh'),
+    
+    -- 4. Isuzu QKR (Xe tải nhẹ 1.9 tấn - 51D-45678)
+    (N'51D-45678', N'4x2', 1610, 
+     5995, 1995, 2240, 4200, 1850, 450, 
+     3815, 2275.00, 1925.00, 0.00, 4200.00,
+     3, 0, 0,
+     N'Dầu, 4 kỳ, tăng áp', N'Trước dọc', N'4JH1-TC', 2999, 96.00, 3000, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     6, N'195/70 R15C', N'Trục 1: 2 lốp, Trục 2: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe tải nhẹ chở hàng nội thành'),
+    
+    -- 5. Thaco TB85S (Xe khách 29 chỗ - 51E-56789)
+    (N'51E-56789', N'4x2', 1970, 
+     8470, 2420, 3280, NULL, NULL, NULL, 
+     4700, 4950.00, 2550.00, 0.00, 7500.00,
+     29, 0, 0,
+     N'Dầu, 6 xy-lanh, tăng áp', N'Sau dọc', N'WP10.336E32', 9726, 247.00, 2200, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     6, N'9.00-20', N'Trục 1: 2 lốp, Trục 2: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe khách du lịch, có tivi và điều hòa'),
+    
+    -- 6. Hino FC9JLSW (Xe tải 5 tấn - 51F-67890)
+    (N'51F-67890', N'4x2', 1860, 
+     7385, 2390, 2850, 5200, 2200, 600, 
+     4800, 4150.00, 4850.00, 0.00, 9000.00,
+     3, 0, 0,
+     N'Dầu, 4 kỳ, tăng áp trung gian', N'Trước dọc', N'J08E-WU', 7684, 176.00, 2500, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     6, N'8.25-16', N'Trục 1: 2 lốp, Trục 2: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe tải trung chở hàng đường dài'),
+    
+    -- 7. Thaco TB120SL (Xe khách 47 chỗ - 51G-78901)
+    (N'51G-78901', N'4x2', 2040, 
+     12000, 2500, 3650, NULL, NULL, NULL, 
+     6100, 9800.00, 4200.00, 0.00, 14000.00,
+     47, 0, 0,
+     N'Dầu, 6 xy-lanh thẳng hàng, tăng áp', N'Sau dọc', N'WP12.430E32', 11596, 316.00, 1900, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     6, N'11.00R22.5', N'Trục 1: 2 lốp, Trục 2: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe khách giường nằm cao cấp, có wifi và ổ cắm điện'),
+    
+    -- 8. Hyundai Universe (Xe buýt - 51H-89012)
+    (N'51H-89012', N'4x2', 2100, 
+     11990, 2490, 3580, NULL, NULL, NULL, 
+     6040, 11200.00, 4800.00, 0.00, 16000.00,
+     43, 30, 0,
+     N'CNG, 6 xy-lanh, tăng áp', N'Sau ngang', N'D6CC', 11149, 294.00, 1900, N'Khí thiên nhiên nén (CNG)',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     6, N'275/70 R22.5', N'Trục 1: 2 lốp, Trục 2: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe buýt BRT, thân thiện môi trường'),
+    
+    -- 9. Dongfeng L315 (Xe tải 15 tấn - 51K-90123)
+    (N'51K-90123', N'6x4', 1820, 
+     9480, 2500, 3200, 7600, 2350, 800, 
+     4600, 8750.00, 15250.00, 0.00, 24000.00,
+     3, 0, 0,
+     N'Dầu, 6 xy-lanh thẳng hàng, tăng áp', N'Trước dọc', N'YC6L310-50', 8424, 228.00, 2100, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     10, N'10.00R20', N'Trục 1: 2 lốp, Trục 2: 4 lốp, Trục 3: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Xe tải nặng chở hàng container'),
+    
+    -- 10. FAW J6P (Máy kéo đầu - 51L-01234)
+    (N'51L-01234', N'6x4', 1850, 
+     7220, 2550, 3150, NULL, NULL, NULL, 
+     3650, 8900.00, 0.00, 40000.00, 48900.00,
+     2, 0, 0,
+     N'Dầu, 6 xy-lanh thẳng hàng, tăng áp trung gian', N'Trước dọc', N'CA6DM3-46E62', 11980, 316.00, 1900, N'Dầu diesel',
+     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+     10, N'12.00R22.5', N'Trục 1: 2 lốp, Trục 2: 4 lốp, Trục 3: 4 lốp',
+     N'Dashboard', 1, 1, 0, N'Đầu kéo container 40 feet, phù hợp đường dài');
+
+GO
+
+
 DROP TABLE Specification
 DROP TABLE Vehicle
 DROP TABLE dbo.Owner

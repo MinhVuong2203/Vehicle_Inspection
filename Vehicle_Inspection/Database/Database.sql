@@ -235,16 +235,22 @@ CREATE TABLE dbo.Owner (
     FullName        NVARCHAR(150) NOT NULL,
 	CompanyName         NVARCHAR(200) NULL,
     TaxCode             NVARCHAR(30)  NULL, -- MST
-    CCCD            NVARCHAR(30) NULL UNIQUE,  
+    CCCD            NVARCHAR(30) NULL,  
     Phone           NVARCHAR(20) NULL UNIQUE,
     Email           NVARCHAR(120) NULL,
     Address         NVARCHAR(255) NULL,
     CreatedAt       DATETIME2 NOT NULL DEFAULT SYSDATETIME()
 );
+
 -- MST chỉ unique với công ty
 CREATE UNIQUE INDEX UX_Owner_TaxCode_Company
 ON dbo.Owner(TaxCode)
 WHERE OwnerType = N'COMPANY' AND TaxCode IS NOT NULL;
+GO
+
+CREATE UNIQUE INDEX UX_Owner_CCCD_Company
+ON dbo.Owner(CCCD)
+WHERE OwnerType = N'PERSON' AND CCCD IS NOT NULL;
 GO
 
 ALTER TABLE dbo.Owner
@@ -1576,7 +1582,7 @@ CREATE TABLE dbo.Inspection (
     IsDeleted           BIT NOT NULL DEFAULT 0,
     
     FOREIGN KEY (VehicleId) REFERENCES dbo.Vehicle(VehicleId),
-    FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
+    --FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
     --FOREIGN KEY (ParentInspectionId) REFERENCES dbo.Inspection(InspectionId),
     FOREIGN KEY (LaneId) REFERENCES dbo.Lane(LaneId),
     FOREIGN KEY (ConcludedBy) REFERENCES dbo.[User](UserId),

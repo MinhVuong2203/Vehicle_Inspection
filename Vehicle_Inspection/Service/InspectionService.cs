@@ -20,7 +20,7 @@ namespace Vehicle_Inspection.Service
                 var records = _context.Inspections
                     .Where(i => !i.IsDeleted && i.Status == 2)
                     .Include(i => i.Vehicle)
-                    .Include(i => i.Owner)
+                     .ThenInclude(v => v.Owner)
                     .Include(i => i.Lane)
                     .OrderByDescending(i => i.CreatedAt)
                     .Select(i => new InspectionRecordDto
@@ -47,12 +47,12 @@ namespace Vehicle_Inspection.Service
                         Chassis = i.Vehicle.Chassis,
 
                         // Thông tin chủ xe
-                        OwnerFullName = i.Owner.FullName,
-                        OwnerType = i.Owner.OwnerType,
-                        CompanyName = i.Owner.CompanyName,
-                        OwnerPhone = i.Owner.Phone,
-                        OwnerEmail = i.Owner.Email,
-                        OwnerAddress = i.Owner.Address,
+                        OwnerFullName = i.Vehicle.Owner.FullName,
+                        OwnerType = i.Vehicle.Owner.OwnerType,
+                        CompanyName = i.Vehicle.Owner.CompanyName,
+                        OwnerPhone = i.Vehicle.Owner.Phone,
+                        OwnerEmail = i.Vehicle.Owner.Email,
+                        OwnerAddress = i.Vehicle.Owner.Address,
 
                         // Thông tin loại xe lấy từ bảng VehicleType qua VehicleId
                         //VehicleType = i.Vehicle.VehicleType != null ? i.Vehicle.VehicleType.TypeName : null,
@@ -82,7 +82,7 @@ namespace Vehicle_Inspection.Service
                 var inspection = _context.Inspections
                     .Where(i => i.InspectionId == inspectionId && !i.IsDeleted)
                     .Include(i => i.Vehicle)
-                    .Include(i => i.Owner)
+                    //.Include(i => i.Owner)
                     .Include(i => i.Lane)
                     .Include(i => i.Certificate)
                     .FirstOrDefault();
@@ -131,12 +131,12 @@ namespace Vehicle_Inspection.Service
                     HasModification = inspection.Vehicle.HasModification,
 
                     // Thông tin chủ xe
-                    OwnerFullName = inspection.Owner.FullName,
-                    OwnerType = inspection.Owner.OwnerType,
-                    CompanyName = inspection.Owner.CompanyName,
-                    OwnerPhone = inspection.Owner.Phone,
-                    OwnerEmail = inspection.Owner.Email,
-                    OwnerAddress = inspection.Owner.Address,
+                    OwnerFullName = inspection.Vehicle.Owner.FullName,
+                    OwnerType = inspection.Vehicle.Owner.OwnerType,
+                    CompanyName = inspection.Vehicle.Owner.CompanyName,
+                    OwnerPhone = inspection.Vehicle.Owner.Phone,
+                    OwnerEmail = inspection.Vehicle.Owner.Email,
+                    OwnerAddress = inspection.Vehicle.Owner.Address,
 
                     // Thông tin dây chuyền
                     LaneId = inspection.LaneId,

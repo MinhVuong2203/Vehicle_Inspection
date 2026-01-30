@@ -78,10 +78,6 @@ public partial class Inspection
     [InverseProperty("Inspections")]
     public virtual Lane? Lane { get; set; }
 
-    [ForeignKey("OwnerId")]
-    [InverseProperty("Inspections")]
-    public virtual Owner Owner { get; set; } = null!;
-
     [InverseProperty("Inspection")]
     public virtual Payment? Payment { get; set; }
 

@@ -193,7 +193,7 @@
                                 </div>
                                 <div class="card-detail">
                                     <i class="fas fa-user"></i>
-                                    <span>Chủ xe: <strong>@inspection.Owner?.FullName</strong></span>
+                                    <span>Chủ xe: <strong>@inspection.Vehicle.Owner?.FullName</strong></span>
                                 </div>
                                 <div class="card-detail">
                                     <i class="fas fa-calendar"></i>
@@ -212,7 +212,7 @@
                                            '@inspection.InspectionCode',
                                            '@inspection.InspectionType',
                                            '@inspection.Vehicle?.PlateNo',
-                                           '@inspection.Owner?.FullName',
+                                                       '@inspection.Vehicle?.Owner?.FullName',
                                            @((double)amount))">
                                         <i class="fas fa-cash-register"></i>
                                         Thu phí
@@ -312,7 +312,7 @@
                                                    '@inspection.InspectionCode',
                                                    '@inspection.InspectionType',
                                                    '@inspection.Vehicle?.PlateNo',
-                                                   '@inspection.Owner?.FullName',
+                                                               '@inspection.Vehicle.Owner?.FullName',
                                                    @((double)amount2))">
                                                 <i class="fas fa-cash-register"></i>
                                                 Thu phí
@@ -324,7 +324,7 @@
 
                                             <div style="display:flex; gap:8px; align-items:center;">
                                                 <button type="button" class="btn-action btn-view"
-                                                        onclick="openDetailsModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Owner?.FullName', '@inspection.Owner?.Phone', @((double)amount2), '@inspection.Payment?.PaymentMethod', '@inspection.Payment?.PaidAt?.ToString("dd/MM/yyyy HH:mm")', '@inspection.CreatedAt.ToString("dd/MM/yyyy HH:mm")', '@inspection.ReceivedAt?.ToString("dd/MM/yyyy HH:mm")', '@inspection.PaidAt?.ToString("dd/MM/yyyy HH:mm")', '@GetStatusText(inspection.Status, inspection.PaidAt)')">
+                                                        onclick="openDetailsModal('@inspection.InspectionCode', '@inspection.InspectionType', '@inspection.Vehicle?.PlateNo', '@inspection.Vehicle.Owner?.FullName', '@inspection.Vehicle.Owner?.Phone', @((double)amount2), '@inspection.Payment?.PaymentMethod', '@inspection.Payment?.PaidAt?.ToString("dd/MM/yyyy HH:mm")', '@inspection.CreatedAt.ToString("dd/MM/yyyy HH:mm")', '@inspection.ReceivedAt?.ToString("dd/MM/yyyy HH:mm")', '@inspection.PaidAt?.ToString("dd/MM/yyyy HH:mm")', '@GetStatusText(inspection.Status, inspection.PaidAt)')">
                                                     <i class="fas fa-eye"></i>
                                                     Xem chi tiết
                                                 </button>

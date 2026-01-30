@@ -117,10 +117,6 @@ public partial class VehInsContext : DbContext
 
             entity.HasOne(d => d.Lane).WithMany(p => p.Inspections).HasConstraintName("FK__Inspectio__LaneI__58D1301D");
 
-            entity.HasOne(d => d.Owner).WithMany(p => p.Inspections)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__Inspectio__Owner__57DD0BE4");
-
             entity.HasOne(d => d.ReceivedByNavigation).WithMany(p => p.InspectionReceivedByNavigations).HasConstraintName("FK__Inspectio__Recei__5BAD9CC8");
 
             entity.HasOne(d => d.Vehicle).WithMany(p => p.Inspections)
@@ -198,6 +194,10 @@ public partial class VehInsContext : DbContext
         modelBuilder.Entity<Owner>(entity =>
         {
             entity.HasKey(e => e.OwnerId).HasName("PK__Owner__819385B8E11FB884");
+
+            entity.HasIndex(e => e.CCCD, "UX_Owner_CCCD_Company")
+                .IsUnique()
+                .HasFilter("([OwnerType]=N'PERSON' AND [CCCD] IS NOT NULL)");
 
             entity.HasIndex(e => e.TaxCode, "UX_Owner_TaxCode_Company")
                 .IsUnique()

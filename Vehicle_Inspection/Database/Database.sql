@@ -1582,7 +1582,7 @@ CREATE TABLE dbo.Inspection (
     IsDeleted           BIT NOT NULL DEFAULT 0,
     
     FOREIGN KEY (VehicleId) REFERENCES dbo.Vehicle(VehicleId),
-    FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
+    --FOREIGN KEY (OwnerId) REFERENCES dbo.Owner(OwnerId),
     --FOREIGN KEY (ParentInspectionId) REFERENCES dbo.Inspection(InspectionId),
     FOREIGN KEY (LaneId) REFERENCES dbo.Lane(LaneId),
     FOREIGN KEY (ConcludedBy) REFERENCES dbo.[User](UserId),

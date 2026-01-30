@@ -1,5 +1,4 @@
 ﻿@{
-
     var query = ViewContext.HttpContext.Request.Query;
 }
 @{
@@ -9,24 +8,31 @@
     string positionVal = q["position"];
     string teamVal = q["team"];
     string genderVal = q["gender"];
+    string modeVal = ViewBag.Mode ?? "role";
 }
 
 
 @section Styles {
     <link rel="stylesheet" href="~/css/decentralize/main.css" />
+    <style>
+        
+    </style>
 }
 
 <h4>QUYỀN HỆ THỐNG</h4>
+
 <div class="">
     <div class="row">
 
         <div class="col-md-2">
             <div class="filters-container p-3 bg-light rounded">
                 <form method="get" asp-action="Index" asp-controller="Decentralize">
+                    <input type="hidden" name="mode" value="@modeVal" />
+
                     <div class="mb-3">
                         <label class="form-label">Search</label>
                         <input type="text" name="search" class="form-control" placeholder="Name or email"
-                            value="@searchVal" />
+                               value="@searchVal" />
                     </div>
 
                     <div class="mb-3">
@@ -88,8 +94,6 @@
                         </select>
                     </div>
 
-                    
-
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary">Filter</button>
                     </div>
@@ -99,33 +103,90 @@
         </div>
 
         <div class="col-md-10">
+            <!-- Mode Switch Buttons -->
+            <div class="mode-switch">
+                <button class="mode-btn @(modeVal == "role" ? "active" : "")" onclick="switchMode('role')" title="Phân quyền thao tác">
+                    <i class="fa-solid fa-scroll-torah"></i>
+                </button>
+                <button class="mode-btn @(modeVal == "stage" ? "active" : "")" onclick="switchMode('stage')" title="Phân quyền công đoạn (KTV)">
+                    <i class="fa-solid fa-gears"></i>
+                </button>
+            </div>
+
+            @if (modeVal == "stage")
+            {
+                <div class="ktv-only-notice">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Lưu ý:</strong> Chỉ nhân viên có chức vụ KTV mới được phân quyền theo công đoạn.
+                    Các nhân viên khác sẽ bị vô hiệu hóa trong chế độ này.
+                </div>
+            }
+
             <!-- Bảng phân quyền -->
             <table class="table">
                 <thead>
                     <tr>
                         <th>Nhân sự</th>
                         <th>Chức vụ</th>
-                        @foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
+                        @if (modeVal == "role")
                         {
-                            <th>@role.RoleAcronym</th>
+                            @foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
+                            {
+                                <th>@role.RoleAcronym</th>
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var stage in (List<Vehicle_Inspection.Models.Stage>)ViewBag.Stages)
+                            {
+                                <th>@stage.StageName</th>
+                            }
                         }
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        <tr>
-                            <td>@item.User.FullName</td>
+                        var isKTV = item.User.Position?.PoitionCode == "KTV";
+                        var rowClass = (modeVal == "stage" && !isKTV) ? "non-ktv-row" : "";
+
+                        <tr class="@rowClass">
+                            <td>
+                                @item.User.FullName
+                                @if (modeVal == "stage" && !isKTV)
+                                {
+                                    @* <small class="text-muted">(Không phải KTV)</small> *@
+                                }
+                            </td>
                             <td>@item.User.Position?.PositionName</td>
-                            @foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
+
+                            @if (modeVal == "role")
                             {
-                                <td>
-                                    <input type="checkbox" class="role-checkbox" data-user-id="@item.User.UserId"
-                                        data-role-id="@role.RoleId" @(item.RoleAssignments[role.RoleId] ? "checked" : "") />
-                                    <script>
-                                        console.log("UserId: @item.User.UserId, RoleId: @role.RoleId");
-                                    </script>
-                                </td>
+                                @foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
+                                {
+                                    <td>
+                                        <input type="checkbox"
+                                               class="role-checkbox"
+                                               data-user-id="@item.User.UserId"
+                                               data-role-id="@role.RoleId"
+                                               @(item.RoleAssignments[role.RoleId] ? "checked" : "") />
+                                    </td>
+                                }
+                            }
+                            else
+                            {
+                                @foreach (var stage in (List<Vehicle_Inspection.Models.Stage>)ViewBag.Stages)
+                                {
+                                    <td>
+                                        <input type="checkbox"
+                                               class="stage-checkbox"
+                                               data-user-id="@item.User.UserId"
+                                               data-stage-id="@stage.StageId"
+                                               data-is-ktv="@isKTV"
+                                               @(item.StageAssignments[stage.StageId] ? "checked" : "")
+                                               @(isKTV ? "" : "disabled") />
+                                    </td>
+                                }
                             }
                         </tr>
                     }
@@ -150,6 +211,14 @@
 
 @section Scripts {
     <script>
+        // Switch between Role and Stage mode
+        function switchMode(mode) {
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('mode', mode);
+            window.location.search = urlParams.toString();
+        }
+
+        // Handle Role checkbox changes
         document.querySelectorAll('.role-checkbox').forEach(checkbox => {
             checkbox.addEventListener('change', function () {
                 const userId = this.dataset.userId;
@@ -166,10 +235,48 @@
                     .then(response => {
                         if (!response.ok) {
                             alert('Cập nhật thất bại!');
+                            this.checked = !isChecked; // Revert checkbox
                         }
                     })
                     .catch(error => {
                         console.error('Error:', error);
+                        alert('Có lỗi xảy ra!');
+                        this.checked = !isChecked; // Revert checkbox
+                    });
+            });
+        });
+
+        // Handle Stage checkbox changes
+        document.querySelectorAll('.stage-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', function () {
+                const userId = this.dataset.userId;
+                const stageId = this.dataset.stageId;
+                const isChecked = this.checked;
+                const isKTV = this.dataset.isKtv === 'True';
+
+                if (!isKTV) {
+                    alert('Chỉ nhân viên KTV mới được phân quyền theo Stage!');
+                    this.checked = !isChecked; // Revert checkbox
+                    return;
+                }
+
+                fetch('/Decentralize/UpdateUserStage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId, stageId, isChecked })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            alert('Cập nhật thất bại!');
+                            this.checked = !isChecked; // Revert checkbox
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Có lỗi xảy ra!');
+                        this.checked = !isChecked; // Revert checkbox
                     });
             });
         });

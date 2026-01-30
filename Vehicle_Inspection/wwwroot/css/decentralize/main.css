@@ -87,7 +87,7 @@ th {
     }
 
 /* Thêm kiểu cho checkbox */
-.role-checkbox {
+.role-checkbox, .stage-checkbox {
     width: 20px;
     height: 20px;
     cursor: pointer;
@@ -165,3 +165,50 @@ th {
     transform: scale(1.2);
     transition: transform 0.2s ease;
 }
+
+
+.mode-switch {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 4px;
+}
+
+.mode-btn {
+    padding: 5px 10px;
+    border: 2px solid #007bff;
+    background: white;
+    color: #007bff;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s;
+}
+
+    .mode-btn:hover {
+        background: #0056b3;
+        color: white;
+        border-color: #0056b3;
+    }
+
+    .mode-btn.active {
+        background: #007bff;
+        color: white;
+    }
+
+.ktv-only-notice {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    color: #856404;
+}
+
+.non-ktv-row {
+    opacity: 0.5;
+    background: #f8f9fa;
+}
+
+    .non-ktv-row input[type="checkbox"] {
+        pointer-events: none;
+    }

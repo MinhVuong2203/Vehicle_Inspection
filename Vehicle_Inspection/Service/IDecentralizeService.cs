@@ -8,6 +8,8 @@ namespace Vehicle_Inspection.Service
         Task<List<Role>> GetAllRolesAsync();
         Task<List<Position>> GetAllPositionsAsync();
         Task<List<Team>> GetAllTeamsAsync();
+        Task<List<Stage>> GetAllStagesAsync();
         Task<bool> UpdateUserRoleAsync(Guid userId, int roleId, bool isChecked);
+        Task<bool> UpdateUserStageAsync(Guid userId, int stageId, bool isChecked);
     }
 }

@@ -15,13 +15,15 @@ namespace Vehicle_Inspection.Controllers
             _decentralizeService = decentralizeService;
         }
 
-        public async Task<IActionResult> Index(string search, int? position, int? team, string gender, bool? isActive, string sort, string mode = "role")
+        public async Task<IActionResult> Index(string search, int? position, int? team, string gender, bool? isActive, string sort, string mode = "role", int page = 1)
         {
+            int pageSize = 10; // Số nhân viên mỗi trang
+
             var employees = await _decentralizeService.GetFilteredUsersAsync(search, position, team, gender, sort);
             var roles = await _decentralizeService.GetAllRolesAsync();
             var stages = await _decentralizeService.GetAllStagesAsync();
 
-            var viewModel = employees.Select(user => new
+            var allViewModel = employees.Select(user => new
             {
                 User = user,
                 RoleAssignments = roles.ToDictionary(
@@ -34,13 +36,27 @@ namespace Vehicle_Inspection.Controllers
                 )
             }).ToList();
 
+            // Đếm tổng số
+            var totalItems = allViewModel.Count;
+
+            // Phân trang
+            var paginatedViewModel = allViewModel
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Truyền thông tin phân trang
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            ViewBag.TotalItems = totalItems;
+
             ViewBag.Positions = await _decentralizeService.GetAllPositionsAsync();
             ViewBag.Teams = await _decentralizeService.GetAllTeamsAsync();
             ViewBag.Roles = roles;
             ViewBag.Stages = stages;
-            ViewBag.Mode = mode; // "role" or "stage"
+            ViewBag.Mode = mode;
 
-            return View(viewModel);
+            return View(paginatedViewModel);
         }
 
         [HttpPost]

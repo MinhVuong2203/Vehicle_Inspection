@@ -62,8 +62,10 @@ namespace Vehicle_Inspection.Controllers
 
         #region Actions
 
-        public IActionResult Index(string? search, int? position, int? team, string? gender, bool? isActive, string? sort)
+        public IActionResult Index(string? search, int? position, int? team, string? gender, bool? isActive, string? sort, int page = 1)
         {
+            int pageSize = 11;
+
             var employees = _context.Users
           
                 .Include(u => u.Position)
@@ -102,10 +104,24 @@ namespace Vehicle_Inspection.Controllers
                 _ => employees.OrderByDescending(u => u.CreatedAt)
             };
 
+            // Đếm tổng số bản ghi sau khi filter
+            var totalItems = employees.Count();
+
+            // Phân trang
+            var paginatedEmployees = employees
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
+
+            // Truyền thông tin phân trang qua ViewBag
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            ViewBag.TotalItems = totalItems;
+
             ViewBag.Positions = _context.Positions.OrderBy(p => p.PositionName).ToList();
             ViewBag.Teams = _context.Teams.OrderBy(t => t.TeamName).ToList();
 
-            return View(employees.ToList());
+            return View(paginatedEmployees);
         }
 
 

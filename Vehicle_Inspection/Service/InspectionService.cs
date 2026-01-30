@@ -83,6 +83,7 @@ namespace Vehicle_Inspection.Service
                     .Where(i => i.InspectionId == inspectionId && !i.IsDeleted)
                     .Include(i => i.Vehicle)
                     //.Include(i => i.Owner)
+                    .ThenInclude(v => v.Owner)
                     .Include(i => i.Lane)
                     .Include(i => i.Certificate)
                     .FirstOrDefault();

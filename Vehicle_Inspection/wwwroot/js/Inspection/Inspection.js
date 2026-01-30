@@ -277,11 +277,18 @@ async function showDetailById(inspectionId) {
         alert('Không tìm thấy hồ sơ');
         return;
     }
+
+    showFullScreenLoading('Đang tải chi tiết hồ sơ...');
     
-    // Load thông tin chi tiết từ server nếu cần
-    const detailRecord = await loadInspectionDetail(inspectionId);
-    if (detailRecord) {
-        showDetail(detailRecord);
+    try {
+        // Load thông tin chi tiết từ server nếu cần
+        const detailRecord = await loadInspectionDetail(inspectionId);
+        if (detailRecord) {
+            showDetail(detailRecord);
+        }
+    } finally {
+        // ✅ HIDE LOADING
+        hideFullScreenLoading();
     }
 }
 
@@ -456,9 +463,17 @@ let assignedLaneName = '';
 
 // Wrapper function để mở modal phân công bằng ID
 function openAssignLaneById(inspectionId) {
-    const record = findRecordById(inspectionId);
-    if (record) {
-        openAssignLane(record);
+    //SHOW LOADING
+    showFullScreenLoading('Đang tải thông tin phân công...');
+
+    try {
+        const record = findRecordById(inspectionId);
+        if (record) {
+            openAssignLane(record);
+        }
+    } finally {
+        //HIDE LOADING
+        hideFullScreenLoading();
     }
 }
 
@@ -542,6 +557,9 @@ async function confirmAssignLane() {
 
     const note = document.getElementById('assignNote').value;
 
+    //SHOW LOADING
+    showFullScreenLoading('Đang phân công dây chuyền...');
+
     try {
         console.log('=== Assigning Lane ===');
         console.log('InspectionId:', assigningInspection.inspectionId);
@@ -581,6 +599,9 @@ async function confirmAssignLane() {
     } catch (error) {
         console.error('Error assigning lane:', error);
         alert('Không thể phân công dây chuyền. Vui lòng thử lại.\n\nLỗi: ' + error.message);
+    } finally {
+        //HIDE LOADING
+        hideFullScreenLoading();
     }
 }
 
@@ -646,9 +667,17 @@ const stageItems = {
 
 // Wrapper function để mở modal quy trình kiểm định bằng ID
 async function openInspectionProcessById(inspectionId) {
-    const record = findRecordById(inspectionId);
-    if (record) {
-        await openInspectionProcess(record);
+    //SHOW LOADING
+    showFullScreenLoading('Đang tải quy trình kiểm định...');
+
+    try {
+        const record = findRecordById(inspectionId);
+        if (record) {
+            await openInspectionProcess(record);
+        }
+    } finally {
+        //HIDE LOADING
+        hideFullScreenLoading();
     }
 }
 
@@ -974,6 +1003,8 @@ async function saveStageResult() {
 
     console.log('Request data:', requestData);
 
+    showFullScreenLoading('Đang lưu kết quả...');
+
     try {
         // Gọi API để lưu
         const response = await fetch('/Inspection/SaveStageResult', {
@@ -1022,6 +1053,8 @@ async function saveStageResult() {
     } catch (error) {
         console.error('Error saving stage result:', error);
         alert('❌ Không thể lưu kết quả. Vui lòng thử lại.\n\nLỗi: ' + error.message);
+    } finally {
+        hideFullScreenLoading();
     }
 }
 
@@ -1221,6 +1254,8 @@ async function submitConclusion() {
         return;
     }
 
+    showFullScreenLoading('Đang hoàn thành kiểm định...');
+
     try {
         console.log('=== Submitting Conclusion ===');
         console.log('InspectionId:', currentInspection.inspectionId);
@@ -1258,6 +1293,8 @@ async function submitConclusion() {
     } catch (error) {
         console.error('Error submitting inspection:', error);
         alert('❌ Không thể hoàn thành kiểm định. Vui lòng thử lại.\n\nLỗi: ' + error.message);
+    } finally {
+        hideFullScreenLoading();
     }
 }
 

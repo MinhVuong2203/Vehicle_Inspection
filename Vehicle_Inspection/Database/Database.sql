@@ -1598,6 +1598,9 @@ INSERT INTO Inspection(InspectionCode, VehicleId, OwnerId, InspectionType, Statu
 VALUES ('4', 3, '00BE74E5-56F1-4152-8D42-15D66856BB7A', 'FIRST', 1, SYSDATETIME(), 0)
 
 
+INSERT INTO Inspection(InspectionCode, VehicleId, OwnerId, InspectionType, Status, CreatedAt, IsDeleted)
+VALUES ('5', 3, '00BE74E5-56F1-4152-8D42-15D66856BB7A', 'RE_INSPECTION', 5, SYSDATETIME(), 0)
+
 
 CREATE INDEX IX_Inspection_VehicleId ON dbo.Inspection(VehicleId);
 CREATE INDEX IX_Inspection_Status ON dbo.Inspection(Status) WHERE IsDeleted = 0;

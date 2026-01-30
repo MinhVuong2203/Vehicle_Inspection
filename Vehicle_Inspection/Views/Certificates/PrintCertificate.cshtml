@@ -1,0 +1,610 @@
+﻿@model Vehicle_Inspection.Models.Inspection
+
+@{
+    Layout = null;
+    var vehicle = Model.Vehicle;
+    var owner = vehicle?.Owner;
+    var spec = vehicle?.Specification;
+    var certificate = Model.Certificate;
+    var validityMonths = ViewBag.ValidityMonths ?? 12;
+
+    // Tính ngày hết hạn
+    var issueDate = certificate?.IssueDate ?? DateOnly.FromDateTime(DateTime.Now);
+    var expiryDate = issueDate.AddMonths(validityMonths);
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chứng Nhận Kiểm Định - @Model.InspectionCode</title>
+    <style>
+        @@page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 10pt;
+            line-height: 1.3;
+            background: repeating-linear-gradient( 45deg, #f5f5dc, #f5f5dc 10px, #ede7d4 10px, #ede7d4 20px );
+        }
+
+        .certificate-wrapper {
+            width: 297mm;
+            height: 210mm;
+            margin: 0 auto;
+            padding: 10mm;
+            display: flex;
+            gap: 3mm;
+        }
+
+        .page {
+            flex: 1;
+            border: 2px solid #000;
+            padding: 8mm 6mm;
+            background: white;
+            position: relative;
+        }
+
+        /* Page 1 - Chủ xe lái xe cần biết */
+        .page-1 h3 {
+            text-align: center;
+            font-size: 13pt;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .page-1 .subtitle {
+            text-align: center;
+            font-style: italic;
+            font-size: 9pt;
+            margin-bottom: 8px;
+        }
+
+        .note-section {
+            font-size: 9pt;
+            text-align: justify;
+        }
+
+        .note-item {
+            margin: 5px 0;
+        }
+
+            .note-item strong {
+                font-weight: bold;
+            }
+
+        .note-en {
+            font-style: italic;
+            font-size: 8pt;
+            margin: 2px 0 5px 0;
+        }
+
+        /* Page 2 - Chứng nhận */
+        .header-center {
+            text-align: center;
+        }
+
+            .header-center h3 {
+                font-size: 11pt;
+                font-weight: bold;
+                margin: 1px 0;
+            }
+
+            .header-center h2 {
+                font-size: 13pt;
+                font-weight: bold;
+                margin: 2px 0;
+            }
+
+            .header-center h1 {
+                font-size: 16pt;
+                font-weight: bold;
+                color: #8B0000;
+                margin: 4px 0;
+            }
+
+            .header-center .subtitle-en {
+                font-size: 8pt;
+                font-weight: bold;
+                margin: 2px 0;
+            }
+
+        .serial-number {
+            color: #8B0000;
+            font-weight: bold;
+            font-size: 10pt;
+            margin: 5px 0;
+        }
+
+        .info-row {
+            margin: 2px 0;
+            font-size: 9pt;
+            display: flex;
+            align-items: baseline;
+        }
+
+        .info-label {
+            white-space: nowrap;
+        }
+
+        .info-value {
+            flex: 1;
+            border-bottom: 1px dotted #333;
+            min-height: 14px;
+            margin-left: 3px;
+            padding-left: 2px;
+        }
+
+        .info-en {
+            font-style: italic;
+            font-size: 8pt;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .checkbox {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #000;
+            margin: 0 2px;
+            vertical-align: middle;
+        }
+
+            .checkbox.checked::after {
+                content: '✓';
+                display: block;
+                text-align: center;
+                line-height: 12px;
+                font-weight: bold;
+                font-size: 10pt;
+            }
+
+        /* Page 3 - Thông số kỹ thuật */
+        .page-3 h3 {
+            text-align: center;
+            font-size: 12pt;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .spec-row {
+            display: flex;
+            margin: 1px 0;
+            font-size: 9pt;
+        }
+
+        .spec-label {
+            min-width: 180px;
+        }
+
+        .spec-value {
+            flex: 1;
+            border-bottom: 1px dotted #333;
+            min-height: 13px;
+        }
+
+        .spec-label-en {
+            font-style: italic;
+            font-size: 8pt;
+        }
+
+        /* Page 4 - Cơ sở đăng kiểm */
+        .center-name {
+            text-align: center;
+            font-weight: bold;
+            margin: 8px 0;
+            font-size: 10pt;
+        }
+
+        .center-name-en {
+            text-align: center;
+            font-style: italic;
+            font-size: 8pt;
+            margin-bottom: 5px;
+        }
+
+        .image-box {
+            width: 80mm;
+            height: 60mm;
+            border: 2px dashed #999;
+            margin: 8px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 10px;
+        }
+
+        .image-box-text {
+            font-style: italic;
+            font-size: 8pt;
+            color: #666;
+        }
+
+        .date-issued {
+            text-align: right;
+            font-size: 9pt;
+            margin: 5px 0;
+        }
+
+        .validity-info {
+            margin-top: 15px;
+            padding: 10px;
+            border: 2px solid #8B0000;
+            text-align: center;
+            background: #fffef0;
+        }
+
+            .validity-info p {
+                margin: 3px 0;
+                font-size: 11pt;
+            }
+
+            .validity-info .highlight {
+                color: #8B0000;
+                font-weight: bold;
+                font-size: 12pt;
+            }
+
+        @@media print {
+            body {
+                background: white;
+            }
+
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align: center; padding: 10px; background: white;">
+        <button onclick="window.print()" style="padding: 10px 30px; font-size: 14pt; cursor: pointer;">
+            🖨️ In Chứng Nhận
+        </button>
+        <button onclick="window.close()" style="padding: 10px 30px; font-size: 14pt; cursor: pointer; margin-left: 10px;">
+            ❌ Đóng
+        </button>
+    </div>
+
+    <div class="certificate-wrapper">
+        <!-- Trang 1 - Chủ Xe, Lái Xe Cần Biết -->
+        <div class="page page-1">
+            <h3>CHỦ XE, LÁI XE CẦN BIẾT</h3>
+            <p class="subtitle"><em>Vehicle owners, drivers should be aware of the followings:</em></p>
+
+            <div class="note-section">
+                <div class="note-item">
+                    <strong>1.</strong> Khi tham gia giao thông phải mang theo Chứng nhận kiểm định. Nộp lại Chứng nhận kiểm định và Tem kiểm định khi có thông báo thu hồi của các Cơ sở đăng kiểm.
+                </div>
+                <p class="note-en">
+                    <em>Vehicle operators must carry the inspection certificate while in traffic. Return the inspection certificate and inspection sticker when receiving a withdrawal notice from the Inspection Centers.</em>
+                </p>
+
+                <div class="note-item">
+                    <strong>2.</strong> Không sử dụng Chứng nhận kiểm định, Tem kiểm định bị sửa chữa, tẩy xóa nội dung và làm giả.
+                </div>
+                <p class="note-en">
+                    <em>Do not use inspection certificates or inspection stickers that have been altered, erased, or forged.</em>
+                </p>
+
+                <div class="note-item">
+                    <strong>3.</strong> Phải bảo dưỡng, sửa chữa để bảo đảm duy trì tình trạng kỹ thuật của phương tiện; chịu trách nhiệm về nhiệm theo quy định của Luật An toàn giao thông đường bộ.
+                </div>
+                <p class="note-en">
+                    <em>Perform maintenance and repairs to maintain the vehicle's technical condition; legally liable for operating a vehicle that fails to meet technical safety and environmental protection requirements to participate in road traffic.</em>
+                </p>
+
+                <div class="note-item">
+                    <strong>4.</strong> Không cải tạo trái phép; cố ý can thiệp làm sai lệch chỉ số trên đồng hồ báo quãng đường đã chạy; cắt, hàn, tẩy xóa, đục sửa, đóng lại trái phép số khung, số động cơ.
+                </div>
+                <p class="note-en">
+                    <em>Do not conduct unauthorized vehicle modifications; intentionally alter the odometer; or illegally cut, weld, erase, tamper with, or re-stamp the chassis or engine number.</em>
+                </p>
+
+                <div class="note-item">
+                    <strong>5.</strong> Không tự ý can thiệp, thay đổi phần mềm điều khiển của xe, đồng cơ của xe được đăng ký với cơ quan quản lý nhằm mục đích gian lận kết quả kiểm định; Không thuê, mượn phụ tùng chỉ để thực hiện việc kiểm định.
+                </div>
+                <p class="note-en">
+                    <em>Do not independently interfere with or alter the vehicle's control software or engine registered with regulatory authorities to manipulate inspection results; do not rent or borrow parts solely for inspection purposes.</em>
+                </p>
+
+                <div class="note-item">
+                    <strong>6.</strong> Chứng nhận kiểm định, Tem kiểm định không còn hiệu lực khi xe bị tai nạn giao thông đến mức không đảm bảo an toàn kỹ thuật và bảo vệ môi trường.
+                </div>
+                <p class="note-en">
+                    <em>The inspection certificate and inspection sticker are no longer valid if the vehicle is involved in a traffic accident to the extent that it no longer meets technical safety and environmental protection requirements.</em>
+                </p>
+            </div>
+        </div>
+
+        <!-- Trang 2 - Chứng Nhận Kiểm Định -->
+        <div class="page page-2">
+            <div class="header-center">
+                <h3>BỘ GIAO THÔNG VẬN TẢI</h3>
+                <h2>CỤC ĐĂNG KIỂM VIỆT NAM</h2>
+                <h3>MOT – Vietnam Register</h3>
+
+                <div class="serial-number">No: (số seri)</div>
+
+                <h1>CHỨNG NHẬN KIỂM ĐỊNH</h1>
+                <div style="color: #8B0000; font-size: 10pt; font-weight: bold; margin: 3px 0;">
+                    AN TOÀN KỸ THUẬT VÀ BẢO VỆ MÔI TRƯỜNG<br />XE CƠ GIỚI
+                </div>
+                <div class="subtitle-en">
+                    PERIODICAL INSPECTION CERTIFICATE<br />
+                    OF MOTOR VEHICLE FOR COMPLIANCE WITH TECHNICAL SAFETY<br />
+                    AND ENVIRONMENTAL PROTECTION REQUIREMENTS
+                </div>
+            </div>
+
+            <div style="margin-top: 8px;">
+                <div class="info-row">
+                    <span class="info-label">Biển đăng ký:</span>
+                    <span class="info-value">@vehicle?.PlateNo</span>
+                    <span class="info-label" style="margin-left: 10px;">Số quản lý phương tiện:</span>
+                    <span class="info-value" style="max-width: 100px;">@vehicle?.InspectionNo</span>
+                </div>
+                <div class="info-en"><em>(Registration plate) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Vehicle inspection Nº)</em></div>
+
+                <div class="info-row">
+                    <span class="info-label">Nhóm phương tiện <span class="info-en"><em>(Vehicle's group)</em></span>:</span>
+                    <span class="info-value">@vehicle?.VehicleGroup</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Loại phương tiện <span class="info-en"><em>(Vehicle's type)</em></span>:</span>
+                    <span class="info-value">@vehicle?.VehicleType?.TypeName</span>
+                </div>
+
+                <div style="margin: 3px 0; font-size: 9pt;">
+                    Sử dụng năng lượng sạch, năng lượng xanh, thân thiện môi trường:
+                    <span class="checkbox @(vehicle?.IsCleanEnergy == true ? "checked" : "")"></span>
+                    <br /><em class="info-en">(Clean, green energy vehicle)</em>
+                </div>
+
+                <div style="margin: 3px 0; font-size: 9pt;">
+                    Cho phép tự động hóa <em>(Allows automation)</em>:
+                    <span class="checkbox"></span>Một phần <em>(Partially)</em>
+                    <span class="checkbox"></span>Toàn phần <em>(Fully)</em>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Nhãn hiệu, tên thương mại:</span>
+                    <span class="info-value">@vehicle?.Brand / @vehicle?.Model</span>
+                </div>
+                <div class="info-en"><em>(Trademark, Commercial name)</em></div>
+
+                <div class="info-row">
+                    <span class="info-label">Mã kiểu loại <span class="info-en"><em>(Model code)</em></span>:</span>
+                    <span class="info-value">@vehicle?.Model</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Số động cơ <span class="info-en"><em>(Engine Nº)</em></span>:</span>
+                    <span class="info-value">@vehicle?.EngineNo</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Số khung <span class="info-en"><em>(Chassis Nº)</em></span>:</span>
+                    <span class="info-value">@vehicle?.Chassis</span>
+                </div>
+
+                <div class="info-row">
+                    <span class="info-label">Năm / Nước sản xuất:</span>
+                    <span class="info-value" style="max-width: 60px;">@vehicle?.ManufactureYear</span>
+                    <span style="margin: 0 5px;">/</span>
+                    <span class="info-value" style="max-width: 80px;">@vehicle?.ManufactureCountry</span>
+                    <span class="info-label" style="margin-left: 10px;">Niên hạn sử dụng:</span>
+                    <span class="info-value" style="max-width: 60px;">@vehicle?.LifetimeLimitYear</span>
+                </div>
+                <div class="info-en"><em>(Production year / Country &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Lifetime Limit to)</em></div>
+
+                <div style="margin: 3px 0; font-size: 9pt;">
+                    Có kinh doanh vận tải <em>(Commercial use)</em>:
+                    <span class="checkbox @(vehicle?.HasCommercialModification == true ? "checked" : "")"></span>
+                    &nbsp;&nbsp; Có cải tạo <em>(Modification)</em>:
+                    <span class="checkbox @(vehicle?.HasModification == true ? "checked" : "")"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trang 3 & 4 -->
+    <div class="certificate-wrapper" style="page-break-before: always;">
+        <!-- Trang 3 - Thông Số Kỹ Thuật -->
+        <div class="page page-3">
+            <h3>THÔNG SỐ KỸ THUẬT <em style="font-size: 9pt;">(SPECIFICATIONS)</em></h3>
+
+            <div class="spec-row">
+                <span class="spec-label">Công thức bánh xe: <span class="spec-label-en"><em>(Wheel formula)</em></span></span>
+                <span class="spec-value">@spec?.WheelFormula</span>
+                <span style="margin: 0 5px;">Vết bánh xe: <span class="spec-label-en"><em>(Wheel tread)</em></span></span>
+                <span class="spec-value" style="max-width: 80px;">@spec?.WheelTread (mm)</span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Kích thước bao <span class="spec-label-en"><em>(Overall dimensions)</em></span>:</span>
+                <span class="spec-value">@spec?.OverallLength x @spec?.OverallWidth x @spec?.OverallHeight (mm)</span>
+            </div>
+
+            <div class="spec-row">
+                <span style="width: 100%;">Kích thước lòng/bao thùng xe/bao ngoài xi téc: <span class="spec-label-en"><em>(Inside/outside dimensions of cargo deck/ontside dimensions of tank)</em></span></span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-value">@spec?.CargoInsideLength x @spec?.CargoInsideWidth x @spec?.CargoInsideHeight (mm)</span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Khoảng cách trục (Wheel base):</span>
+                <span class="spec-value">@spec?.Wheelbase (mm)</span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Khối lượng bản thân (Kerb mass):</span>
+                <span class="spec-value">@spec?.KerbWeight (kg)</span>
+            </div>
+
+            <div class="spec-row">
+                <span style="width: 100%;">Khối lượng hàng CC theo TK/CP I.N: <span class="spec-label-en"><em>(Design/Authorized cargo pay mass)</em></span></span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-value">@spec?.AuthorizedCargoWeight (kg)</span>
+            </div>
+
+            <div class="spec-row">
+                <span style="width: 100%;">Khối lượng kéo theo TK/CP I.N: <span class="spec-label-en"><em>(Design/Authorized towed mass)</em></span></span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-value">@spec?.AuthorizedTowedWeight (kg)</span>
+            </div>
+
+            <div class="spec-row">
+                <span style="width: 100%;">Khối lượng toàn bộ theo TK/CP I.N: <span class="spec-label-en"><em>(Design/Authorized total mass)</em></span></span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-value">@spec?.AuthorizedTotalWeight (kg)</span>
+            </div>
+
+            <div style="font-size: 9pt; margin: 2px 0;">
+                Số người cho phép chở: chỗ ngồi: <strong>@spec?.SeatingCapacity</strong> chỗ đứng: <strong>@spec?.StandingCapacity</strong> chỗ nằm: <strong>@spec?.LyingCapacity</strong>
+                <br /><em class="spec-label-en">(Không bao gồm người lái) (Permissible No of pers carried, not include driver: seating, standing, lying)</em>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Loại động cơ đốt trong <span class="spec-label-en"><em>(Engine type)</em></span>:</span>
+                <span class="spec-value">@spec?.EngineType</span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Ký hiệu <span class="spec-label-en"><em>(Engine model)</em></span>:</span>
+                <span class="spec-value" style="max-width: 150px;">@spec?.EngineModel</span>
+                <span style="margin: 0 5px;">Thể tích làm việc: <span class="spec-label-en"><em>(Engine displacement)</em></span></span>
+                <span class="spec-value">@spec?.EngineDisplacement (cm³)</span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">- Công suất lớn nhất/tốc độ quay <span class="spec-label-en"><em>(Max.output/rpm)</em></span>:</span>
+                <span class="spec-value">@spec?.MaxPower kW / @spec?.MaxPowerRPM rpm</span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">- Loại nhiên liệu <span class="spec-label-en"><em>(Fuel)</em></span>:</span>
+                <span class="spec-value">@spec?.FuelType</span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Loại động cơ điện <span class="spec-label-en"><em>(Motor type)</em></span>:</span>
+                <span class="spec-value">@spec?.MotorType</span>
+            </div>
+
+            <div class="spec-row">
+                <span style="width: 100%;">- Số lượng, ký hiệu động cơ điện: <span class="spec-label-en"><em>(Number of motors, motor model)</em></span></span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-value">@spec?.NumberOfMotors - @spec?.MotorModel</span>
+            </div>
+
+            <div class="spec-row">
+                <span style="width: 100%;">- Điện áp/ Tổng công suất của động cơ điện: <span class="spec-label-en"><em>(Voltage/ Total rated power of motor)</em></span></span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-value">@spec?.MotorVoltage V / @spec?.TotalMotorPower kW</span>
+            </div>
+
+            <div class="spec-row">
+                <span style="width: 100%;">- Loại ắc quy/điện áp-dung lượng: <span class="spec-label-en"><em>(Type of battery/voltage-capacity)</em></span></span>
+            </div>
+            <div class="spec-row">
+                <span class="spec-value">@spec?.BatteryType / @spec?.BatteryVoltage V - @spec?.BatteryCapacity kWh</span>
+            </div>
+
+            <div style="margin-top: 8px; font-weight: bold;">
+                Ng: (số seri)
+            </div>
+        </div>
+
+        <!-- Trang 4 - Cơ Sở Đăng Kiểm -->
+        <div class="page page-4">
+            <div class="spec-row">
+                <span style="width: 100%;">Số lượng lốp/cỡ lốp/trục <span class="spec-label-en"><em>(The number of tires / tire size / axle)</em></span>:</span>
+            </div>
+            <div class="spec-value" style="margin: 3px 0; min-height: 16px;">
+                @spec?.TireCount - @spec?.TireSize - @spec?.TireAxleInfo
+            </div>
+
+            <div class="date-issued">
+                .......... ngày .......... tháng .......... năm............<br />
+                <em>(Issued on: Day/Month/Year)</em>
+            </div>
+
+            <div class="center-name">CƠ SỞ ĐĂNG KIỂM</div>
+            <div class="center-name-en"><em>(INSPECTION CENTER)</em></div>
+
+            <div class="spec-row">
+                <span class="spec-label">Số phiếu kiểm định <span class="spec-label-en"><em>(Inspection report Nº)</em></span></span>
+            </div>
+            <div class="spec-value" style="margin: 3px 0;">
+                @certificate?.InspectionReportNo
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Có hiệu lực đến hết ngày <span class="spec-label-en"><em>(Valid until)</em></span>:</span>
+            </div>
+
+            <div class="image-box">
+                <div class="image-box-text">
+                    Vị trí in ảnh tổng thể xe có giới hạn khi vào kiểm định (kích thước<br />
+                    80 mm x 60 mm); đối với xe miễn kiểm định lần đầu ghi rõ:<br />
+                    <strong>"Xe thuộc đối tượng miễn kiểm định lần đầu"</strong><br /><br />
+                    <em>(Image Position of Vehicle)</em>
+                </div>
+            </div>
+
+            <div style="font-size: 9pt; margin: 3px 0;">
+                Có lắp thiết bị giám sát hành trình <em>(Equipped with tachograph)</em>
+                <span class="checkbox @(spec?.HasTachograph == true ? "checked" : "")"></span>
+            </div>
+
+            <div style="font-size: 9pt; margin: 3px 0;">
+                Có lắp thiết bị ghi nhận hình ảnh người lái xe <em>(Equipped with camera)</em>
+                <span class="checkbox @(spec?.HasDriverCamera == true ? "checked" : "")"></span>
+            </div>
+
+            <div style="font-size: 9pt; margin: 3px 0;">
+                PT không được cấp Tem kiểm định <em>(Vehicle not issued with inspection stamp)</em>
+                <span class="checkbox @(spec?.NotIssuedStamp == true ? "checked" : "")"></span>
+            </div>
+
+            <div class="spec-row">
+                <span class="spec-label">Ghi chú <em>(Notes)</em>: <sup>(1)</sup></span>
+            </div>
+            <div class="spec-value" style="min-height: 30px; margin: 3px 0;">
+                @spec?.Notes
+            </div>
+
+            <div style="margin-top: 8px; font-size: 8pt;">
+                <em>xxxxxxxxxx <sup>(2)</sup></em>
+            </div>
+
+            <div class="validity-info">
+                <p><strong>CHU KỲ KIỂM ĐỊNH</strong></p>
+                <p class="highlight">@validityMonths tháng</p>
+                <p style="margin-top: 5px;"><strong>NGÀY HẾT HẠN</strong></p>
+                <p class="highlight">@expiryDate.ToString("dd/MM/yyyy")</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

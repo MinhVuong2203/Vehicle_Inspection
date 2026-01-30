@@ -1,16 +1,18 @@
 ﻿// ========================================
-// FILE: Approve.js - Auto Detection Logic
-// MỤC ĐÍCH: Tự động xác định loại kiểm định
+// FILE: Approve.js - Auto Detection with RE_INSPECTION Logic
+// MỤC ĐÍCH: Tự động xác định loại kiểm định và xử lý tái kiểm
 // ========================================
 
 // ========== GLOBAL VARIABLES ==========
 let ownerId = null;
 let vehicleId = null;
 let detectedInspectionType = null;
+let needCreateNew = false;
+let updatedInspectionId = null;
 
 // ========== KHỞI TẠO TRANG ==========
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log('🚀 Initializing Approve page with Auto Detection');
+    console.log('🚀 Initializing Approve page with RE_INSPECTION Logic');
 
     // Load data từ URL params
     await loadApprovalData();
@@ -78,7 +80,7 @@ async function loadApprovalData() {
     }
 }
 
-// ========== PHÁT HIỆN LOẠI KIỂM ĐỊNH TỰ ĐỘNG ==========
+// ========== PHÁT HIỆN LOẠI KIỂM ĐỊNH VÀ XỬ LÝ TÁI KIỂM ==========
 async function detectInspectionType() {
     try {
         console.log('🔍 ========== BẮT ĐẦU PHÂN TÍCH LỊCH SỬ ==========');
@@ -89,7 +91,7 @@ async function detectInspectionType() {
             historyInfo.innerHTML = '<div class="loading-indicator"><i class="bi bi-hourglass-split"></i> Đang phân tích lịch sử kiểm định...</div>';
         }
 
-        // Gọi API để lấy lịch sử kiểm định
+        // Gọi API để lấy lịch sử kiểm định và xử lý tái kiểm
         const response = await fetch(`/api/approve/detect-type?vehicleId=${vehicleId}`);
         const data = await response.json();
 
@@ -97,7 +99,13 @@ async function detectInspectionType() {
 
         if (data.success) {
             detectedInspectionType = data.data.inspectionType;
+            needCreateNew = data.data.needCreateNew;
+            updatedInspectionId = data.data.updatedInspectionId;
             const history = data.data.history;
+
+            console.log('✅ Inspection type detected:', detectedInspectionType);
+            console.log('🆕 Need create new:', needCreateNew);
+            console.log('🔄 Updated inspection ID:', updatedInspectionId);
 
             // Hiển thị kết quả phân tích
             displayInspectionTypeResult(data.data);
@@ -113,13 +121,22 @@ async function detectInspectionType() {
                 reasonElement.style.fontWeight = '600';
             }
 
-            // Enable submit button
+            // Cập nhật button text
             const submitBtn = document.getElementById('submit-btn');
             if (submitBtn) {
                 submitBtn.disabled = false;
+
+                if (needCreateNew) {
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận tạo hồ sơ mới';
+                } else {
+                    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Xác nhận tái kiểm';
+                }
             }
 
-            console.log('✅ Inspection type detected:', detectedInspectionType);
+            // Hiển thị thông báo nếu đã cập nhật hồ sơ cũ
+            if (updatedInspectionId) {
+                showNotification('info', `Đã cập nhật hồ sơ #${updatedInspectionId} để tái kiểm`);
+            }
         } else {
             showNotification('error', data.message || 'Không thể xác định loại kiểm định');
 
@@ -164,6 +181,9 @@ function displayInspectionTypeResult(data) {
                 <h4>Kết quả phân tích</h4>
                 <p class="result-type">${getInspectionTypeLabel(data.inspectionType)}</p>
                 <p class="result-reason">${data.reason}</p>
+                ${data.needCreateNew ?
+            '<span class="badge badge-info"><i class="bi bi-plus-circle"></i> Cần tạo hồ sơ mới</span>' :
+            '<span class="badge badge-warning"><i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ cũ</span>'}
             </div>
         </div>
     `;
@@ -177,20 +197,23 @@ function displayInspectionTypeResult(data) {
         data.history.forEach((item, index) => {
             const statusBadge = getStatusBadge(item.status);
             const date = new Date(item.createdAt).toLocaleDateString('vi-VN');
+            const isUpdated = item.inspectionId === data.updatedInspectionId;
 
             html += `
-                <div class="history-item">
+                <div class="history-item ${isUpdated ? 'item-updated' : ''}">
                     <div class="history-icon">
-                        <i class="bi bi-check-circle"></i>
+                        <i class="bi ${isUpdated ? 'bi-arrow-repeat text-warning' : 'bi-check-circle'}"></i>
                     </div>
                     <div class="history-content">
                         <div class="history-header">
                             <span class="history-code">${item.inspectionCode}</span>
                             ${statusBadge}
+                            ${isUpdated ? '<span class="badge badge-warning ml-2"><i class="bi bi-arrow-repeat"></i> Đã cập nhật</span>' : ''}
                         </div>
                         <div class="history-details">
                             <span><i class="bi bi-calendar"></i> ${date}</span>
                             <span><i class="bi bi-tag"></i> ${getInspectionTypeLabel(item.inspectionType)}</span>
+                            ${item.Count_Re > 0 ? `<span><i class="bi bi-arrow-repeat"></i> Tái kiểm: ${item.Count_Re} lần</span>` : ''}
                         </div>
                     </div>
                 </div>
@@ -280,8 +303,11 @@ function validateForm() {
     const inspectionCode = getFieldValue('inspection-code');
     const inspectionType = getFieldValue('inspection-type-value');
 
-    if (!inspectionCode) {
-        errors.push('Vui lòng tạo mã lượt kiểm định');
+    // Nếu là cập nhật hồ sơ cũ, không cần inspection code mới
+    if (needCreateNew) {
+        if (!inspectionCode) {
+            errors.push('Vui lòng tạo mã lượt kiểm định');
+        }
     }
 
     if (!inspectionType) {
@@ -313,10 +339,12 @@ async function submitApproval() {
             VehicleId: parseInt(vehicleId),
             OwnerId: ownerId,
             InspectionType: getFieldValue('inspection-type-value'),
-            Notes: getFieldValue('inspection-notes')
+            Notes: getFieldValue('inspection-notes'),
+            UpdatedInspectionId: updatedInspectionId // Truyền ID hồ sơ đã update (nếu có)
         };
 
         console.log('📤 Request data:', requestData);
+        console.log('🆕 Need create new:', needCreateNew);
 
         // Show loading
         const submitBtn = document.getElementById('submit-btn');
@@ -340,11 +368,19 @@ async function submitApproval() {
         // Reset button
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận xét duyệt';
+            if (needCreateNew) {
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận tạo hồ sơ mới';
+            } else {
+                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Xác nhận tái kiểm';
+            }
         }
 
         if (data.success) {
-            showNotification('success', data.message || 'Xét duyệt thành công');
+            const message = data.data.isUpdated ?
+                'Đã cập nhật hồ sơ để tái kiểm thành công' :
+                'Tạo hồ sơ kiểm định mới thành công';
+
+            showNotification('success', message);
 
             // Redirect về trang index sau 2 giây
             setTimeout(() => {
@@ -362,7 +398,11 @@ async function submitApproval() {
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận xét duyệt';
+            if (needCreateNew) {
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận tạo hồ sơ mới';
+            } else {
+                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Xác nhận tái kiểm';
+            }
         }
     }
 }
@@ -419,4 +459,4 @@ function showNotification(type, message) {
     }, 5000);
 }
 
-console.log('✅ Approve.js with Auto Detection loaded');
+console.log('Approve.js with RE_INSPECTION Logic loaded');

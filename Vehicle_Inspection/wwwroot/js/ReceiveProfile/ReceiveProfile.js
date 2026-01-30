@@ -1,20 +1,17 @@
-﻿
-
-// ========== GLOBAL VARIABLES ==========
+﻿// ========== GLOBAL VARIABLES ==========
 let currentOwner = null;
 let currentVehicle = null;
 let currentSpecification = null;
 let currentPageMode = 'view'; // 'view', 'edit', 'create'
+let currentSearchType = null; // ✅ 'cccd' hoặc 'plateNo'
 
 // ========== KHỞI TẠO TRANG ==========
 async function initializePage(mode) {
     currentPageMode = mode;
     console.log(`🚀 Initializing page in ${mode} mode`);
 
-    // Load provinces cho tất cả các trang
     loadProvinces();
 
-    // ✅ THÊM await ĐỂ ĐỢI LOAD XONG
     try {
         console.log('🔥 CALLING loadVehicleTypes...');
         await loadVehicleTypes();
@@ -22,19 +19,15 @@ async function initializePage(mode) {
         console.error('💥 Error calling loadVehicleTypes:', err);
     }
 
-    // Event listener cho province select
     setupProvinceListener();
 
-    // Event listener cho owner type
     const ownerTypeSelect = document.getElementById('owner-type');
     if (ownerTypeSelect) {
         ownerTypeSelect.addEventListener('change', toggleOwnerType);
     }
 
-    // Sync phone fields khi nhập
     setupPhoneSync();
 
-    // Nếu là trang Edit, load data từ URL params
     if (mode === 'edit') {
         await loadDataForEdit();
     }
@@ -57,7 +50,6 @@ function setupPhoneSync() {
 
 // ========== LOAD DATA CHO TRANG EDIT ==========
 async function loadDataForEdit() {
-    // Lấy tham số từ URL
     const urlParams = new URLSearchParams(window.location.search);
     const cccd = urlParams.get('cccd');
     const plateNo = urlParams.get('plateNo');
@@ -67,7 +59,6 @@ async function loadDataForEdit() {
         return;
     }
 
-    // Show loading
     const loadingState = document.getElementById('loading-state');
     const dataDisplay = document.getElementById('data-display');
 
@@ -75,7 +66,6 @@ async function loadDataForEdit() {
     if (dataDisplay) dataDisplay.style.display = 'none';
 
     try {
-        // GỌI API SEARCH THAY VÌ GET
         const url = `/api/receive-profile/search?cccd=${encodeURIComponent(cccd || '')}&plateNo=${encodeURIComponent(plateNo || '')}`;
         console.log('📡 Loading data from:', url);
 
@@ -88,6 +78,7 @@ async function loadDataForEdit() {
             currentOwner = data.data.owner;
             currentVehicle = data.data.vehicle;
             currentSpecification = data.data.specification;
+            currentSearchType = data.searchType;
 
             if (dataDisplay) dataDisplay.style.display = 'block';
             await populateForm(data.data);
@@ -114,7 +105,11 @@ async function searchProfile() {
         return;
     }
 
-    // Show loading state
+    // ✅ Cho phép nhập cả 2:
+    // - Chỉ CCCD: Hiển thị thông tin người đi đăng kiểm
+    // - Chỉ Biển số: Hiển thị thông tin xe + thông số kỹ thuật
+    // - Cả hai: Hiển thị cả 3 (người đi đăng kiểm có thể khác chủ xe)
+
     const noDataState = document.getElementById('no-data-state');
     const loadingState = document.getElementById('loading-state');
     const dataDisplay = document.getElementById('data-display');
@@ -138,8 +133,13 @@ async function searchProfile() {
             currentOwner = data.data.owner;
             currentVehicle = data.data.vehicle;
             currentSpecification = data.data.specification;
+            currentSearchType = data.searchType; // ✅ 'cccd' hoặc 'plateNo'
 
             if (dataDisplay) dataDisplay.style.display = 'block';
+
+            // ✅ Hiển thị theo loại tìm kiếm
+            displayDataBySearchType(data.searchType);
+
             await populateForm(data.data);
             showNotification('success', data.message);
         } else {
@@ -154,12 +154,48 @@ async function searchProfile() {
     }
 }
 
+// ✅ ========== HIỂN THỊ DATA THEO LOẠI TÌM KIẾM ==========
+function displayDataBySearchType(searchType) {
+    console.log('📋 Displaying data for search type:', searchType);
+
+    const ownerCard = document.querySelector('.owner-info-card');
+    const vehicleCards = document.querySelectorAll('.vehicle-info-card');
+    const actionButtons = document.querySelector('.action-buttons');
+
+    if (searchType === 'cccd') {
+        // ✅ CHỈ CCCD: Chỉ hiển thị thông tin người đi đăng kiểm
+        console.log('👤 Showing OWNER info only');
+        if (ownerCard) ownerCard.style.display = 'block';
+        vehicleCards.forEach(card => card.style.display = 'none');
+
+    } else if (searchType === 'plateNo') {
+        // ✅ CHỈ BIỂN SỐ: Hiển thị thông tin xe + thông số kỹ thuật
+        console.log('🚗 Showing VEHICLE and SPECIFICATION only');
+        if (ownerCard) ownerCard.style.display = 'none';
+        vehicleCards.forEach(card => card.style.display = 'block');
+
+    } else if (searchType === 'combined') {
+        // ✅ CẢ HAI: Hiển thị đầy đủ 3 sections
+        // Người đi đăng kiểm có thể khác chủ xe
+        console.log('📋 Showing ALL sections (Owner + Vehicle + Specification)');
+        if (ownerCard) ownerCard.style.display = 'block';
+        vehicleCards.forEach(card => card.style.display = 'block');
+    }
+
+    // Luôn hiển thị action buttons
+    if (actionButtons) actionButtons.style.display = 'flex';
+}
+
 // ========== POPULATE FORM ==========
 async function populateForm(data) {
     console.log('🔄 Populating form with data:', data);
+    console.log('🔍 Current search type:', currentSearchType);
 
-    // Owner fields
-    if (data.owner) {
+    // ✅ POPULATE DỮ LIỆU THEO LOẠI TÌM KIẾM
+
+    // Populate Owner data (nếu tìm theo CCCD hoặc combined)
+    if ((currentSearchType === 'cccd' || currentSearchType === 'combined') && data.owner) {
+        console.log('👤 Populating OWNER data...');
         setFieldValue('owner-id', data.owner.ownerId);
         setFieldValue('owner-fullname', data.owner.fullName);
         setFieldValue('owner-type', data.owner.ownerType === 'PERSON' ? 'Cá nhân' : 'Công ty');
@@ -181,14 +217,15 @@ async function populateForm(data) {
 
         toggleOwnerType(data.owner.ownerType);
 
-        // Display image
         if (data.owner.imageUrl) {
             displayOwnerImage(data.owner.imageUrl);
         }
+        console.log('✅ Owner data populated');
     }
 
-    // Vehicle fields
-    if (data.vehicle) {
+    // Populate Vehicle data (nếu tìm theo plateNo hoặc combined)
+    if ((currentSearchType === 'plateNo' || currentSearchType === 'combined') && data.vehicle) {
+        console.log('🚗 Populating VEHICLE data...');
         setFieldValue('vehicle-id', data.vehicle.vehicleId);
         setFieldValue('vehicle-plate', data.vehicle.plateNo);
         setFieldValue('vehicle-inspection', data.vehicle.inspectionNo);
@@ -216,10 +253,12 @@ async function populateForm(data) {
         const vehicleUpdated = data.vehicle.updatedAt ? new Date(data.vehicle.updatedAt).toLocaleString('vi-VN') : '';
         setFieldValue('vehicle-created', vehicleCreated);
         setFieldValue('vehicle-updated', vehicleUpdated);
+        console.log('✅ Vehicle data populated');
     }
 
-    // Specification fields
-    if (data.specification) {
+    // Populate Specification data (nếu tìm theo plateNo hoặc combined)
+    if ((currentSearchType === 'plateNo' || currentSearchType === 'combined') && data.specification) {
+        console.log('⚙️ Populating SPECIFICATION data...');
         setFieldValue('spec-id', data.specification.specificationId);
         setFieldValue('spec-wheel-formula', data.specification.wheelFormula);
         setFieldValue('spec-wheel-tread', data.specification.wheelTread);
@@ -260,12 +299,13 @@ async function populateForm(data) {
         setCheckboxValue('spec-camera', data.specification.hasDriverCamera);
         setCheckboxValue('spec-no-stamp', data.specification.notIssuedStamp);
         setFieldValue('spec-notes', data.specification.notes);
+        console.log('✅ Specification data populated');
     }
 
     console.log('✅ Form populated successfully');
 }
 
-// ========== HELPER: SET FIELD VALUE ==========
+// ========== HELPER FUNCTIONS ==========
 function setFieldValue(fieldId, value) {
     const field = document.getElementById(fieldId);
     if (field) {
@@ -273,7 +313,6 @@ function setFieldValue(fieldId, value) {
     }
 }
 
-// ========== HELPER: SET CHECKBOX VALUE ==========
 function setCheckboxValue(fieldId, value) {
     const field = document.getElementById(fieldId);
     if (field) {
@@ -281,19 +320,16 @@ function setCheckboxValue(fieldId, value) {
     }
 }
 
-// ========== HELPER: GET FIELD VALUE ==========
 function getFieldValue(fieldId, defaultValue = '') {
     const field = document.getElementById(fieldId);
     return field?.value?.trim() || defaultValue;
 }
 
-// ========== HELPER: GET CHECKBOX VALUE ==========
 function getCheckboxValue(fieldId, defaultValue = false) {
     const field = document.getElementById(fieldId);
     return field?.checked ?? defaultValue;
 }
 
-// ========== DISPLAY OWNER IMAGE ==========
 function displayOwnerImage(imageUrl) {
     const imgContainer = document.getElementById('owner-image-container');
     if (imgContainer && imageUrl) {
@@ -301,7 +337,6 @@ function displayOwnerImage(imageUrl) {
     }
 }
 
-// ========== PREVIEW OWNER IMAGE ==========
 function previewOwnerImage(event) {
     if (event.target.files && event.target.files[0]) {
         const reader = new FileReader();
@@ -319,7 +354,6 @@ function collectFormData() {
 
     const formData = {
         Owner: {
-            // ✅ FIX: Parse OwnerId - có thể là GUID nên giữ nguyên string
             OwnerId: getFieldValue('owner-id') || '00000000-0000-0000-0000-000000000000',
             OwnerType: ownerType || 'PERSON',
             FullName: getFieldValue('owner-fullname'),
@@ -335,7 +369,6 @@ function collectFormData() {
             CreatedAt: currentOwner?.createdAt
         },
         Vehicle: {
-            // ✅ FIX: Parse VehicleId thành int, nếu rỗng hoặc null thì để null
             VehicleId: (() => {
                 const val = getFieldValue('vehicle-id');
                 return val ? parseInt(val) : null;
@@ -360,7 +393,6 @@ function collectFormData() {
             UpdatedAt: currentVehicle?.updatedAt
         },
         Specification: {
-            // ✅ FIX: Parse SpecificationId thành int, nếu rỗng thì null
             SpecificationId: (() => {
                 const val = getFieldValue('spec-id');
                 return val ? parseInt(val) : null;
@@ -413,11 +445,9 @@ function collectFormData() {
     return formData;
 }
 
-// ========== VALIDATE FORM ==========
+// ========== VALIDATE, SAVE, CREATE FUNCTIONS ==========
 function validateForm(mode) {
     const errors = [];
-
-    // Owner validation
     const ownerType = getFieldValue('owner-type');
     const fullName = getFieldValue('owner-fullname');
 
@@ -441,7 +471,6 @@ function validateForm(mode) {
         }
     }
 
-    // Vehicle validation
     const plateNo = getFieldValue('vehicle-plate');
     if (!plateNo) {
         errors.push('Vui lòng nhập biển số xe');
@@ -450,7 +479,6 @@ function validateForm(mode) {
     return errors;
 }
 
-// ========== SAVE CHANGES (CHO EDIT) ==========
 async function saveChanges() {
     try {
         console.log('💾 ========== BẮT ĐẦU LƯU (EDIT) ==========');
@@ -460,7 +488,6 @@ async function saveChanges() {
             return;
         }
 
-        // Validate
         const errors = validateForm('edit');
         if (errors.length > 0) {
             showNotification('error', errors.join('<br>'));
@@ -474,7 +501,6 @@ async function saveChanges() {
 
         formData.append('jsonData', JSON.stringify(requestData));
 
-        // Append image if exists
         const fileInput = document.getElementById('owner-image-upload');
         if (fileInput && fileInput.files.length > 0) {
             formData.append('ProfilePicture', fileInput.files[0]);
@@ -495,7 +521,6 @@ async function saveChanges() {
                 displayOwnerImage(data.imageUrl + '?t=' + new Date().getTime());
             }
 
-            // Refresh data
             await refreshCurrentData();
         } else {
             showNotification('error', data.message);
@@ -507,12 +532,10 @@ async function saveChanges() {
     }
 }
 
-// ========== CREATE PROFILE (CHO CREATE) ==========
 async function createProfile() {
     try {
         console.log('💾 ========== BẮT ĐẦU TẠO MỚI ==========');
 
-        // Validate
         const errors = validateForm('create');
         if (errors.length > 0) {
             showNotification('error', errors.join('<br>'));
@@ -522,7 +545,6 @@ async function createProfile() {
         const formData = new FormData();
         const requestData = collectFormData();
 
-        // Remove IDs for create
         delete requestData.Owner.OwnerId;
         delete requestData.Vehicle.VehicleId;
         delete requestData.Specification.SpecificationId;
@@ -531,7 +553,6 @@ async function createProfile() {
 
         formData.append('jsonData', JSON.stringify(requestData));
 
-        // Append image
         const fileInput = document.getElementById('owner-image-upload');
         if (fileInput && fileInput.files.length > 0) {
             formData.append('ProfilePicture', fileInput.files[0]);
@@ -548,7 +569,6 @@ async function createProfile() {
         if (data.success) {
             showNotification('success', data.message);
 
-            // Redirect về trang index sau 2 giây
             setTimeout(() => {
                 window.location.href = '/receive-profile';
             }, 2000);
@@ -562,7 +582,6 @@ async function createProfile() {
     }
 }
 
-// ========== REFRESH CURRENT DATA ==========
 async function refreshCurrentData() {
     const searchCCCD = currentOwner?.cccd || '';
     const searchPlate = currentVehicle?.plateNo || '';
@@ -586,11 +605,8 @@ async function refreshCurrentData() {
     }
 }
 
-// ========== EDIT PROFILE (CHO INDEX) ==========
 function editProfile() {
     console.log('🔧 Edit Profile clicked');
-    console.log('Current Owner:', currentOwner);
-    console.log('Current Vehicle:', currentVehicle);
 
     if (!currentOwner || !currentVehicle) {
         showNotification('error', 'Vui lòng tìm kiếm thông tin trước');
@@ -600,16 +616,11 @@ function editProfile() {
     const cccd = currentOwner.cccd || '';
     const plateNo = currentVehicle.plateNo || '';
 
-    console.log('Navigating to edit with:', { cccd, plateNo });
-
     window.location.href = `/receive-profile/edit?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}`;
 }
 
-// ========== APPROVE PROFILE (CHO INDEX) ==========
 function approveProfile() {
     console.log('✅ Approve Profile clicked');
-    console.log('Current Owner:', currentOwner);
-    console.log('Current Vehicle:', currentVehicle);
 
     if (!currentOwner || !currentVehicle) {
         showNotification('error', 'Vui lòng tìm kiếm thông tin trước');
@@ -619,17 +630,13 @@ function approveProfile() {
     const cccd = currentOwner.cccd || currentOwner.taxCode || '';
     const plateNo = currentVehicle.plateNo || '';
 
-    console.log('Navigating to approve with:', { cccd, plateNo });
-
     window.location.href = `/receive-profile/approve?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}`;
 }
 
-// ========== CREATE NEW PROFILE (CHO INDEX) ==========
 function createNewProfile() {
     window.location.href = '/receive-profile/create';
 }
 
-// ========== CANCEL CHANGES ==========
 function cancelChanges() {
     if (confirm('Bạn có chắc muốn hủy các thay đổi?')) {
         if (currentOwner && currentVehicle) {
@@ -643,14 +650,12 @@ function cancelChanges() {
     }
 }
 
-// ========== CANCEL CREATE ==========
 function cancelCreate() {
     if (confirm('Bạn có chắc muốn hủy tạo mới?')) {
         window.location.href = '/receive-profile';
     }
 }
 
-// ========== CLEAR SEARCH ==========
 function clearSearch() {
     setFieldValue('search-cccd', '');
     setFieldValue('search-plate', '');
@@ -664,9 +669,10 @@ function clearSearch() {
     currentOwner = null;
     currentVehicle = null;
     currentSpecification = null;
+    currentSearchType = null;
 }
 
-// ========== LOAD PROVINCES ==========
+// ========== LOAD DATA FUNCTIONS ==========
 async function loadProvinces() {
     try {
         const response = await fetch('/api/receive-profile/provinces');
@@ -691,7 +697,6 @@ async function loadProvinces() {
     }
 }
 
-// ========== LOAD WARDS ==========
 async function loadWards(provinceName) {
     try {
         if (!provinceName) return;
@@ -719,71 +724,46 @@ async function loadWards(provinceName) {
         showNotification('error', 'Không thể tải danh sách phường/xã');
     }
 }
+
 async function loadVehicleTypes() {
     console.log('🚗 ========== BẮT ĐẦU LOAD VEHICLE TYPES ==========');
 
     try {
         const url = '/api/receive-profile/vehicle-types';
-        console.log('📡 Calling API:', url);
-
         const response = await fetch(url);
-        console.log('📊 Response status:', response.status);
 
         if (!response.ok) {
-            console.error('❌ Response not OK:', response.status, response.statusText);
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log('📦 Response data:', data);
 
         if (data.success && data.data) {
-            console.log(`✅ Received ${data.data.length} vehicle types`);
-            console.log('📋 Sample data:', data.data[0]);
-
             const vehicleTypeSelect = document.getElementById('vehicle-type');
-            console.log('🔍 Select element found:', vehicleTypeSelect ? 'YES' : 'NO');
 
             if (!vehicleTypeSelect) {
                 console.error('❌ Cannot find element with id="vehicle-type"');
                 return;
             }
 
-            // Clear existing options
             vehicleTypeSelect.innerHTML = '<option value="">-- Chọn loại phương tiện --</option>';
-            console.log('🗑️ Cleared existing options');
 
-            // Add new options
-            let optionsAdded = 0;
             data.data.forEach(type => {
                 const option = document.createElement('option');
                 option.value = type.typeName;
                 option.textContent = type.typeName;
                 option.setAttribute('data-id', type.vehicleTypeId);
                 vehicleTypeSelect.appendChild(option);
-                optionsAdded++;
             });
 
-            console.log(`✅ Added ${optionsAdded} options to dropdown`);
-            console.log('🎯 Final options count:', vehicleTypeSelect.options.length);
-
-        } else {
-            console.warn('⚠️ API returned success=false or no data');
-            console.log('Response:', data);
+            console.log(`✅ Added ${data.data.length} vehicle types`);
         }
-
     } catch (error) {
-        console.error('❌ ========== ERROR IN loadVehicleTypes ==========');
-        console.error('Error type:', error.name);
-        console.error('Error message:', error.message);
-        console.error('Stack trace:', error.stack);
+        console.error('❌ Load vehicle types error:', error);
         showNotification('error', 'Không thể tải danh sách loại phương tiện');
     }
-
-    console.log('🚗 ========== KẾT THÚC LOAD VEHICLE TYPES ==========');
 }
 
-// ========== SETUP PROVINCE LISTENER ==========
 function setupProvinceListener() {
     const provinceSelect = document.getElementById('owner-province');
     if (provinceSelect) {
@@ -799,9 +779,7 @@ function setupProvinceListener() {
     }
 }
 
-// ========== TOGGLE OWNER TYPE ==========
 function toggleOwnerType(ownerType) {
-    // Nếu không truyền tham số, lấy từ select
     if (!ownerType) {
         ownerType = getFieldValue('owner-type');
     }
@@ -818,7 +796,6 @@ function toggleOwnerType(ownerType) {
     }
 }
 
-// ========== SHOW NOTIFICATION ==========
 function showNotification(type, message) {
     const container = document.getElementById('notification-container');
     if (!container) {
@@ -851,9 +828,8 @@ function showNotification(type, message) {
     }, 5000);
 }
 
-// ========== AUTO INITIALIZE BASED ON PAGE ==========
+// ========== AUTO INITIALIZE ==========
 document.addEventListener('DOMContentLoaded', function () {
-    // Detect page mode based on URL path
     const path = window.location.pathname.toLowerCase();
 
     if (path.includes('/receive-profile/edit')) {
@@ -865,12 +841,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// ========== EXPOSE FUNCTIONS TO GLOBAL SCOPE ==========
+// ========== EXPOSE TO WINDOW ==========
 window.searchProfile = searchProfile;
 window.clearSearch = clearSearch;
 window.editProfile = editProfile;
 window.createNewProfile = createNewProfile;
-window.approveProfile = approveProfile;  // ✅ QUAN TRỌNG
+window.approveProfile = approveProfile;
 window.saveChanges = saveChanges;
 window.cancelChanges = cancelChanges;
 window.createProfile = createProfile;
@@ -878,6 +854,5 @@ window.cancelCreate = cancelCreate;
 window.previewOwnerImage = previewOwnerImage;
 window.toggleOwnerType = toggleOwnerType;
 window.loadVehicleTypes = loadVehicleTypes;
-
 
 console.log('✅ All functions exposed to window scope');

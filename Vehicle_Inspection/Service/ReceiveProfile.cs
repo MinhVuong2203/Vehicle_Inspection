@@ -149,66 +149,91 @@ namespace Vehicle_Inspection.Service
         {
             try
             {
-                if (!string.IsNullOrWhiteSpace(cccd))
+                Owner? owner = null;
+                Vehicle? vehicle = null;
+                Specification? specification = null;
+                string searchType = "";
+
+                // ✅ TH1: Có cả CCCD và Biển số (người đi đăng kiểm khác chủ xe)
+                if (!string.IsNullOrWhiteSpace(cccd) && !string.IsNullOrWhiteSpace(plateNo))
                 {
-                    var owner = await _context.Owners
+                    Console.WriteLine("🔍 Tìm kiếm kết hợp: CCCD + Biển số");
+
+                    // Tìm Owner theo CCCD
+                    owner = await _context.Owners
+                        .FirstOrDefaultAsync(o => o.CCCD == cccd);
+
+                    // Tìm Vehicle theo Biển số
+                    vehicle = await _context.Vehicles
+                        .Include(v => v.VehicleType)
+                        .FirstOrDefaultAsync(v => v.PlateNo == plateNo);
+
+                    // Tìm Specification theo Biển số
+                    if (vehicle != null)
+                    {
+                        specification = await _context.Specifications
+                            .FirstOrDefaultAsync(s => s.PlateNo == vehicle.PlateNo);
+                    }
+
+                    searchType = "combined"; // ✅ Loại tìm kiếm kết hợp
+                }
+                // ✅ TH2: Chỉ có CCCD
+                else if (!string.IsNullOrWhiteSpace(cccd))
+                {
+                    Console.WriteLine("🔍 Tìm kiếm theo CCCD");
+
+                    owner = await _context.Owners
                         .FirstOrDefaultAsync(o => o.CCCD == cccd);
 
                     if (owner != null)
                     {
-                        // ✅ Include VehicleType để lấy TypeName
-                        var vehicle = await _context.Vehicles
-                            .Include(v => v.VehicleType)  // ✅ QUAN TRỌNG
+                        vehicle = await _context.Vehicles
+                            .Include(v => v.VehicleType)
                             .FirstOrDefaultAsync(v => v.OwnerId == owner.OwnerId);
 
                         if (vehicle != null)
                         {
-                            var specification = await _context.Specifications
+                            specification = await _context.Specifications
                                 .FirstOrDefaultAsync(s => s.PlateNo == vehicle.PlateNo);
-
-                            return new SearchResponse
-                            {
-                                SearchType = "cccd",
-                                Data = new SearchResultDto
-                                {
-                                    Owner = MapToOwnerDto(owner),
-                                    Vehicle = MapToVehicleDto(vehicle),
-                                    Specification = specification != null ? MapToSpecificationDto(specification) : null
-                                }
-                            };
                         }
                     }
-                }
 
-                if (!string.IsNullOrWhiteSpace(plateNo))
+                    searchType = "cccd";
+                }
+                // ✅ TH3: Chỉ có Biển số
+                else if (!string.IsNullOrWhiteSpace(plateNo))
                 {
-                    // ✅ Include VehicleType để lấy TypeName
-                    var vehicle = await _context.Vehicles
-                        .Include(v => v.VehicleType)  // ✅ QUAN TRỌNG
+                    Console.WriteLine("🔍 Tìm kiếm theo Biển số");
+
+                    vehicle = await _context.Vehicles
+                        .Include(v => v.VehicleType)
                         .FirstOrDefaultAsync(v => v.PlateNo == plateNo);
 
                     if (vehicle != null)
                     {
-                        var owner = await _context.Owners
+                        owner = await _context.Owners
                             .FirstOrDefaultAsync(o => o.OwnerId == vehicle.OwnerId);
 
-                        if (owner != null)
-                        {
-                            var specification = await _context.Specifications
-                                .FirstOrDefaultAsync(s => s.PlateNo == vehicle.PlateNo);
-
-                            return new SearchResponse
-                            {
-                                SearchType = "plateNo",
-                                Data = new SearchResultDto
-                                {
-                                    Owner = MapToOwnerDto(owner),
-                                    Vehicle = MapToVehicleDto(vehicle),
-                                    Specification = specification != null ? MapToSpecificationDto(specification) : null
-                                }
-                            };
-                        }
+                        specification = await _context.Specifications
+                            .FirstOrDefaultAsync(s => s.PlateNo == vehicle.PlateNo);
                     }
+
+                    searchType = "plateNo";
+                }
+
+                // ✅ Trả về kết quả nếu tìm thấy ít nhất Owner HOẶC Vehicle
+                if (owner != null || vehicle != null)
+                {
+                    return new SearchResponse
+                    {
+                        SearchType = searchType,
+                        Data = new SearchResultDto
+                        {
+                            Owner = owner != null ? MapToOwnerDto(owner) : null,
+                            Vehicle = vehicle != null ? MapToVehicleDto(vehicle) : null,
+                            Specification = specification != null ? MapToSpecificationDto(specification) : null
+                        }
+                    };
                 }
 
                 return null;

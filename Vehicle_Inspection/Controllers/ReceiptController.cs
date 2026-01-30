@@ -19,7 +19,7 @@ namespace Vehicle_Inspection.Controllers
             var inspection = await _db.Inspections
                 .AsNoTracking()
                 .Include(i => i.Vehicle)
-                .Include(i => i.Owner)
+                //.Include(i => i.Owner)
                 .Include(i => i.Payment)
                 .FirstOrDefaultAsync(i => i.InspectionCode == inspectionCode && !i.IsDeleted);
 

@@ -8,7 +8,6 @@ namespace Vehicle_Inspection.Models;
 
 [Table("Owner")]
 [Index("Phone", Name = "UQ__Owner__5C7E359EF5AF1145", IsUnique = true)]
-[Index("CCCD", Name = "UQ__Owner__A955A0AA2271E273", IsUnique = true)]
 public partial class Owner
 {
     [Key]
@@ -48,9 +47,6 @@ public partial class Owner
 
     [StringLength(255)]
     public string? ImageUrl { get; set; }
-
-    [InverseProperty("Owner")]
-    public virtual ICollection<Inspection> Inspections { get; set; } = new List<Inspection>();
 
     [InverseProperty("Owner")]
     public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();

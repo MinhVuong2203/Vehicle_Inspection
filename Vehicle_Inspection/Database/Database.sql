@@ -61,15 +61,77 @@ CREATE TABLE Team(
 INSERT INTO dbo.Team (TeamCode, TeamName)
 VALUES
 	('AN',   N'Tổ an ninh'),
-	('DC1',  N'Dây chuyền 1'),
-	('DC2',  N'Dây chuyền 2'),
+	('DC1',  N'Dây chuyền 1 - Xe con & Bán tải'),
+	('DC2',  N'Dây chuyền 2 - Xe khách & Xe buýt'),
 	('HS',   N'Tổ hồ sơ - tiếp nhận'),
 	('TC',   N'Tổ thu ngân'),
 	('KT',   N'Tổ kế toán - tài chính'),
 	('TBHC', N'Tổ thiết bị - hiệu chuẩn'),
 	('IT',   N'Tổ CNTT'),
 	('BGD',  N'Ban giám đốc');
+INSERT INTO dbo.Team (TeamCode, TeamName)
+VALUES
+	('DC3',  N'Dây chuyền 3 - Xe tải'),
+	('DC4',  N'Dây chuyền 4 - Xe đầu kéo & Rơ moóc'),
+	('DC5',  N'Dây chuyền 5 - Xe mô tô & 3 bánh'),
+	('DC6',  N'Dây chuyền 6 - Xe chuyên dùng')
 	
+CREATE TABLE PositionTeam (
+    PositionId INT NOT NULL,
+    TeamId INT NOT NULL,
+    PRIMARY KEY (PositionId, TeamId),
+    CONSTRAINT FK_PT_Position FOREIGN KEY (PositionId) REFERENCES Position(PositionId),
+    CONSTRAINT FK_PT_Team FOREIGN KEY (TeamId) REFERENCES Team(TeamId)
+);
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode IN ('DC1','DC2','DC3','DC4','DC5','DC6')
+WHERE P.PoitionCode IN ('KTV','GSV','TTDC');
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'AN'
+WHERE P.PoitionCode = 'BV';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'HS'
+WHERE P.PoitionCode IN ('CSKH','HS');
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'TC'
+WHERE P.PoitionCode = 'TN';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'KT'
+WHERE P.PoitionCode = 'KT';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'TBHC'
+WHERE P.PoitionCode = 'TB';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'IT'
+WHERE P.PoitionCode = 'IT';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'BGD'
+WHERE P.PoitionCode IN ('GD','PGD');
+
 
 
 CREATE TABLE dbo.[User] (
@@ -2064,6 +2126,44 @@ INSERT INTO dbo.FeeSchedule
 (ServiceType, VehicleTypeId, BaseFee, CertificateFee, StickerFee, TotalFee, EffectiveFrom, EffectiveTo, IsActive, CreatedBy)
 SELECT N'RE_INSPECTION', VehicleTypeId, 55000, 90000, 49680, 0, @From, NULL, 1, @CreatedBy
 FROM @Id WHERE TypeCode IN ('THREE_WHEEL');
+
+
+CREATE TABLE LaneVehicleType (
+    LaneId INT NOT NULL,
+    VehicleTypeId INT NOT NULL,
+
+    CONSTRAINT PK_LaneVehicleType PRIMARY KEY (LaneId, VehicleTypeId),
+    CONSTRAINT FK_LVT_Lane FOREIGN KEY (LaneId) REFERENCES Lane(LaneId),
+    CONSTRAINT FK_LVT_VehicleType  FOREIGN KEY (VehicleTypeId) REFERENCES VehicleType(VehicleTypeId)
+);
+
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(1, 9),   -- PAX_LT_10
+(1, 11),  -- PAX_10_24
+(1, 13);  -- PAX_25_40
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(2, 13), -- PAX_25_40
+(2, 16); -- BUS
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(3, 12), -- TRUCK_LE_2T
+(3, 14), -- TRUCK_2_7T
+(3, 17); -- TRUCK_7_20T
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(4, 18), -- TRACTOR_LE_20T
+(4, 19), -- TRUCK_GT_20T
+(4, 24), -- TRAILER
+(4, 25); -- SEMI_TRAILER
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(5, 15), -- MOTOR_4W_CARGO
+(5, 16), -- MOTOR_4W_PAX
+(5, 26); -- THREE_WHEEL
+
+
 
 
 -- 5.2) Bảng Payment (Thanh toán)

@@ -20,4 +20,8 @@ public partial class Team
 
     [InverseProperty("Team")]
     public virtual ICollection<User> Users { get; set; } = new List<User>();
+
+    [ForeignKey("TeamId")]
+    [InverseProperty("Teams")]
+    public virtual ICollection<Position> Positions { get; set; } = new List<Position>();
 }

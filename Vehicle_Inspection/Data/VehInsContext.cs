@@ -173,6 +173,23 @@ public partial class VehInsContext : DbContext
             entity.HasKey(e => e.LaneId).HasName("PK__Lane__A5770E0C40EAA0BC");
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasMany(d => d.VehicleTypes).WithMany(p => p.Lanes)
+                .UsingEntity<Dictionary<string, object>>(
+                    "LaneVehicleType",
+                    r => r.HasOne<VehicleType>().WithMany()
+                        .HasForeignKey("VehicleTypeId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_LVT_VehicleType"),
+                    l => l.HasOne<Lane>().WithMany()
+                        .HasForeignKey("LaneId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_LVT_Lane"),
+                    j =>
+                    {
+                        j.HasKey("LaneId", "VehicleTypeId");
+                        j.ToTable("LaneVehicleType");
+                    });
         });
 
         modelBuilder.Entity<LaneStage>(entity =>
@@ -236,6 +253,23 @@ public partial class VehInsContext : DbContext
         modelBuilder.Entity<Position>(entity =>
         {
             entity.HasKey(e => e.PositionId).HasName("PK__Position__60BB9A7983227232");
+
+            entity.HasMany(d => d.Teams).WithMany(p => p.Positions)
+                .UsingEntity<Dictionary<string, object>>(
+                    "PositionTeam",
+                    r => r.HasOne<Team>().WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_PT_Team"),
+                    l => l.HasOne<Position>().WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_PT_Position"),
+                    j =>
+                    {
+                        j.HasKey("PositionId", "TeamId").HasName("PK__Position__E1983400E9F3B476");
+                        j.ToTable("PositionTeam");
+                    });
         });
 
         modelBuilder.Entity<Role>(entity =>

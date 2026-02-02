@@ -36,6 +36,9 @@ public partial class InspectionDetail
 
     public DateTime RecordedAt { get; set; }
 
+    [StringLength(100)]
+    public string? ActualText { get; set; }
+
     [ForeignKey("InspStageId")]
     [InverseProperty("InspectionDetails")]
     public virtual InspectionStage InspStage { get; set; } = null!;

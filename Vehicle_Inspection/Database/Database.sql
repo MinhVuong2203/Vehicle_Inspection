@@ -61,15 +61,77 @@ CREATE TABLE Team(
 INSERT INTO dbo.Team (TeamCode, TeamName)
 VALUES
 	('AN',   N'Tổ an ninh'),
-	('DC1',  N'Dây chuyền 1'),
-	('DC2',  N'Dây chuyền 2'),
+	('DC1',  N'Dây chuyền 1 - Xe con & Bán tải'),
+	('DC2',  N'Dây chuyền 2 - Xe khách & Xe buýt'),
 	('HS',   N'Tổ hồ sơ - tiếp nhận'),
 	('TC',   N'Tổ thu ngân'),
 	('KT',   N'Tổ kế toán - tài chính'),
 	('TBHC', N'Tổ thiết bị - hiệu chuẩn'),
 	('IT',   N'Tổ CNTT'),
 	('BGD',  N'Ban giám đốc');
+INSERT INTO dbo.Team (TeamCode, TeamName)
+VALUES
+	('DC3',  N'Dây chuyền 3 - Xe tải'),
+	('DC4',  N'Dây chuyền 4 - Xe đầu kéo & Rơ moóc'),
+	('DC5',  N'Dây chuyền 5 - Xe mô tô & 3 bánh'),
+	('DC6',  N'Dây chuyền 6 - Xe chuyên dùng')
 	
+CREATE TABLE PositionTeam (
+    PositionId INT NOT NULL,
+    TeamId INT NOT NULL,
+    PRIMARY KEY (PositionId, TeamId),
+    CONSTRAINT FK_PT_Position FOREIGN KEY (PositionId) REFERENCES Position(PositionId),
+    CONSTRAINT FK_PT_Team FOREIGN KEY (TeamId) REFERENCES Team(TeamId)
+);
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode IN ('DC1','DC2','DC3','DC4','DC5','DC6')
+WHERE P.PoitionCode IN ('KTV','GSV','TTDC');
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'AN'
+WHERE P.PoitionCode = 'BV';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'HS'
+WHERE P.PoitionCode IN ('CSKH','HS');
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'TC'
+WHERE P.PoitionCode = 'TN';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'KT'
+WHERE P.PoitionCode = 'KT';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'TBHC'
+WHERE P.PoitionCode = 'TB';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'IT'
+WHERE P.PoitionCode = 'IT';
+
+INSERT INTO PositionTeam (PositionId, TeamId)
+SELECT P.PositionId, T.TeamId
+FROM Position P
+JOIN Team T ON T.TeamCode = 'BGD'
+WHERE P.PoitionCode IN ('GD','PGD');
+
 
 
 CREATE TABLE dbo.[User] (

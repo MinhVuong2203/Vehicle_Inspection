@@ -84,6 +84,44 @@ namespace Vehicle_Inspection.Controllers
         }
 
         [HttpPost]
+        public async Task<IActionResult> ForgotPassword(string email, string cccd)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(cccd))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
+            }
+
+            var success = await _loginService.SendPasswordResetOtpAsync(email, cccd);
+
+            if (!success)
+            {
+                return Json(new { success = false, message = "Email hoặc CCCD không chính xác!" });
+            }
+
+            return Json(new { success = true, message = "Mã OTP đã được gửi đến email của bạn!" });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ResetPassword(string email, string otp, string newPassword)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(otp) || string.IsNullOrWhiteSpace(newPassword))
+            {
+                return Json(new { success = false, message = "Vui lòng nhập đầy đủ thông tin!" });
+            }
+
+            var success = await _loginService.VerifyOtpAndResetPasswordAsync(email, otp, newPassword);
+
+            if (!success)
+            {
+                return Json(new { success = false, message = "Mã OTP không chính xác hoặc đã hết hạn!" });
+            }
+
+            return Json(new { success = true, message = "Đặt lại mật khẩu thành công!" });
+        }
+
+    
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {

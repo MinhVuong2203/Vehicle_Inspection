@@ -236,6 +236,23 @@ public partial class VehInsContext : DbContext
         modelBuilder.Entity<Position>(entity =>
         {
             entity.HasKey(e => e.PositionId).HasName("PK__Position__60BB9A7983227232");
+
+            entity.HasMany(d => d.Teams).WithMany(p => p.Positions)
+                .UsingEntity<Dictionary<string, object>>(
+                    "PositionTeam",
+                    r => r.HasOne<Team>().WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_PT_Team"),
+                    l => l.HasOne<Position>().WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_PT_Position"),
+                    j =>
+                    {
+                        j.HasKey("PositionId", "TeamId").HasName("PK__Position__E1983400E9F3B476");
+                        j.ToTable("PositionTeam");
+                    });
         });
 
         modelBuilder.Entity<Role>(entity =>

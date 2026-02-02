@@ -1,0 +1,6 @@
+﻿namespace Vehicle_Inspection.wwwroot.fonts
+{
+    public class Arial
+    {
+    }
+}

@@ -27,6 +27,7 @@ namespace Vehicle_Inspection.Service
 
         bool AssignLane(AssignLaneRequest request);
 
+        //List<User> GetUsersStage(int stageId);
     }
 
     // DTO cho danh sách

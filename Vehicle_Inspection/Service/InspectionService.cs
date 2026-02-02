@@ -269,8 +269,24 @@ namespace Vehicle_Inspection.Service
                     .Include(ins => ins.AssignedUser)
                     .ToDictionary(ins => ins.StageId);
 
+                var user = _context.Users
+                    .Include(u => u.Stages);
+
                 // 4. Build DTO cho từng Stage
                 var result = new List<InspectionStageDto>();
+
+                var stageUserMapping = _context.Users
+                    .Where(u => u.IsActive) // Chỉ lấy user còn hoạt động
+                    .SelectMany(u => u.Stages.Select(s => new
+                    {
+                        StageId = s.StageId,
+                        UserName = u.FullName
+                    }))
+                    .GroupBy(x => x.StageId)
+                    .ToDictionary(
+                        g => g.Key,
+                        g => string.Join(", ", g.Select(x => x.UserName)) // ✅ Gộp nhiều user thành chuỗi
+                    );
 
                 foreach (var ls in laneStages)
                 {
@@ -283,19 +299,29 @@ namespace Vehicle_Inspection.Service
                         IsRequired = ls.IsRequired ?? true
                     };
 
-                    // Nếu đã có InspectionStage, map thông tin
+                    // Nếu đã có InspectionStage, map thông tin kèm tên và mã nhân viên được giao
                     if (existingStages.TryGetValue(ls.StageId, out var existingStage))
                     {
                         stageDto.InspStageId = existingStage.InspStageId;
                         stageDto.Status = existingStage.Status;
                         stageDto.StageResult = existingStage.StageResult;
-                        stageDto.AssignedUserId = existingStage.AssignedUserId;
-                        stageDto.AssignedUserName = existingStage.AssignedUser?.FullName;
                         stageDto.Notes = existingStage.Notes;
                     }
                     else
                     {
-                        stageDto.Status = 0; // Pending
+                        stageDto.Status = 0;
+                    }
+
+                    // ✅ LẤY TÊN NHÂN VIÊN TỪ UserStage (áp dụng chung cho tất cả hồ sơ)
+                    if (stageUserMapping.TryGetValue(ls.StageId, out var assignedUsers))
+                    {
+                        stageDto.AssignedUserName = assignedUsers; // ✅ Có thể là "User1, User2, User3"
+                        Console.WriteLine($"✅ Stage {ls.StageName}: AssignedUsers = {assignedUsers}");
+                    }
+                    else
+                    {
+                        stageDto.AssignedUserName = null;
+                        Console.WriteLine($"⚠️ Stage {ls.StageName}: No users assigned in UserStage");
                     }
 
                     // 5. Lấy danh sách StageItem
@@ -319,38 +345,20 @@ namespace Vehicle_Inspection.Service
                             SortOrder = item.SortOrder ?? 0
                         };
 
-                        // ✅ LOG CHI TIẾT CHO TỪNG ITEM
-                        Console.WriteLine($"   🔸 Item {item.ItemId}: {item.ItemName} (Code: {item.ItemCode})");
-
-                        // 6. Lấy tiêu chuẩn từ StageItemThreshold
+                        // 7. Lấy tiêu chuẩn từ StageItemThreshold
                         StageItemThreshold? threshold = null;
 
                         if (vehicleTypeId.HasValue)
                         {
-                            Console.WriteLine($"      🔍 Looking for threshold: ItemId={item.ItemId}, VehicleTypeId={vehicleTypeId.Value}");
-
                             threshold = _context.StageItemThresholds
                                 .Where(t => t.ItemId == item.ItemId
                                          && t.VehicleTypeId == vehicleTypeId.Value
                                          && t.IsActive == true)
                                 .OrderByDescending(t => t.EffectiveDate)
                                 .FirstOrDefault();
-
-                            if (threshold != null)
-                            {
-                                Console.WriteLine($"      ✅ Found threshold: Min={threshold.MinValue}, Max={threshold.MaxValue}, Pass={threshold.PassCondition}");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"      ⚠️ No threshold for VehicleTypeId={vehicleTypeId.Value}, trying default...");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"      ⚠️ VehicleTypeId is NULL, using default threshold...");
                         }
 
-                        // ✅ FALLBACK: Nếu không tìm thấy, lấy tiêu chuẩn chung (VehicleTypeId = NULL)
+                        // Fallback: Nếu không tìm thấy, lấy tiêu chuẩn chung
                         if (threshold == null)
                         {
                             threshold = _context.StageItemThresholds
@@ -359,15 +367,6 @@ namespace Vehicle_Inspection.Service
                                          && t.IsActive == true)
                                 .OrderByDescending(t => t.EffectiveDate)
                                 .FirstOrDefault();
-
-                            if (threshold != null)
-                            {
-                                Console.WriteLine($"      ✅ Using default threshold: Min={threshold.MinValue}, Max={threshold.MaxValue}, Pass={threshold.PassCondition}");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"      ❌ NO THRESHOLD FOUND (specific or default) for ItemId={item.ItemId}");
-                            }
                         }
 
                         if (threshold != null)
@@ -375,25 +374,10 @@ namespace Vehicle_Inspection.Service
                             itemDto.MinValue = threshold.MinValue;
                             itemDto.MaxValue = threshold.MaxValue;
                             itemDto.PassCondition = threshold.PassCondition;
-
-                            // ✅ CHỈ GÁN AllowedValues NẾU NÓ CÓ TRONG DATABASE
                             itemDto.AllowedValues = threshold.AllowedValues;
-
-                            if (!string.IsNullOrEmpty(threshold.AllowedValues))
-                            {
-                                Console.WriteLine($"      ✅ Has AllowedValues: {threshold.AllowedValues}");
-                            }
-                            else
-                            {
-                                Console.WriteLine($"      ℹ️ No AllowedValues - will use Min/Max validation: {threshold.MinValue} - {threshold.MaxValue}");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine($"      ⚠️ No threshold found for ItemId={item.ItemId}");
                         }
 
-                        // 7. Lấy giá trị đã đo (nếu có InspectionDetail)
+                        // 8. Lấy giá trị đã đo (nếu có InspectionDetail)
                         if (stageDto.InspStageId.HasValue)
                         {
                             var detail = _context.InspectionDetails
@@ -404,7 +388,6 @@ namespace Vehicle_Inspection.Service
                             {
                                 itemDto.ActualValue = detail.ActualValue;
                                 itemDto.IsPassed = detail.IsPassed;
-                                Console.WriteLine($"      📊 Actual value: {detail.ActualValue}, IsPassed: {detail.IsPassed}");
                             }
                         }
 

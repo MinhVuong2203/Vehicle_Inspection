@@ -20,7 +20,9 @@ namespace Vehicle_Inspection.Service
                 var records = _context.Inspections
                     .Where(i => !i.IsDeleted && (i.Status == 2 || i.Status == 3))
                     .Include(i => i.Vehicle)
-                     .ThenInclude(v => v.Owner)
+                    .ThenInclude(v => v.Owner)
+                    .Include(i => i.Vehicle)
+                    .ThenInclude(v => v.VehicleType)
                     .Include(i => i.Lane)
                     .OrderByDescending(i => i.CreatedAt)
                     .Select(i => new InspectionRecordDto
@@ -41,6 +43,7 @@ namespace Vehicle_Inspection.Service
                         InspectionNo = i.Vehicle.InspectionNo,
                         VehicleGroup = i.Vehicle.VehicleGroup,
                         VehicleType = i.Vehicle.VehicleType.TypeName,
+                        VehicleTypeId = i.Vehicle.VehicleTypeId,
                         Brand = i.Vehicle.Brand,
                         Model = i.Vehicle.Model,
                         EngineNo = i.Vehicle.EngineNo,
@@ -53,9 +56,6 @@ namespace Vehicle_Inspection.Service
                         OwnerPhone = i.Vehicle.Owner.Phone,
                         OwnerEmail = i.Vehicle.Owner.Email,
                         OwnerAddress = i.Vehicle.Owner.Address,
-
-                        // Thông tin loại xe lấy từ bảng VehicleType qua VehicleId
-                        //VehicleType = i.Vehicle.VehicleType != null ? i.Vehicle.VehicleType.TypeName : null,
 
                         // Thông tin dây chuyền
                         LaneId = i.LaneId,
@@ -858,6 +858,27 @@ namespace Vehicle_Inspection.Service
                 }
 
                 return false;
+            }
+        }
+
+
+        //Lấy dây chuyền phù hợp với loại xe
+        public List<Lane> GetSuitableLanes(int vehicleTypeId)
+        {
+            try
+            {
+                var lanes = _context.Lanes
+                    .Where(l => l.IsActive && l.VehicleTypes.Any(vt => vt.VehicleTypeId == vehicleTypeId))
+                    .OrderBy(l => l.LaneCode)
+                    .ToList();
+
+                Console.WriteLine($"Found {lanes.Count} suitable lanes for VehicleTypeId {vehicleTypeId}");
+                return lanes;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting suitable lanes: {ex.Message}");
+                return new List<Lane>();
             }
         }
     }

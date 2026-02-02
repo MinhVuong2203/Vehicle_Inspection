@@ -25,6 +25,10 @@ namespace Vehicle_Inspection.Service
         //lấy danh sách các luồng kiểm định
         List<Lane> GetInspectionLanes();
 
+        //Lấy dây chuyền phù hợp với loại xe
+        List<Lane> GetSuitableLanes(int vehicleTypeId);
+
+
         bool AssignLane(AssignLaneRequest request);
 
         //List<User> GetUsersStage(int stageId);
@@ -48,6 +52,7 @@ namespace Vehicle_Inspection.Service
         public string? InspectionNo { get; set; }
         public string? VehicleGroup { get; set; }
         public string? VehicleType { get; set; }
+        public int? VehicleTypeId { get; set; }
         public string? Brand { get; set; }
         public string? Model { get; set; }
         public string? EngineNo { get; set; }

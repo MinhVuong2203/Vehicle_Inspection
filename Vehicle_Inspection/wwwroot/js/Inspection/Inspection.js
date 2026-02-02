@@ -1,11 +1,36 @@
 ﻿// Biến lưu trữ dữ liệu
 let inspectionRecords = [];
 let filteredRecords = [];
+let allLanes = [];
 
 // Load dữ liệu từ server khi trang được tải
 document.addEventListener('DOMContentLoaded', function() {
     loadInspectionRecords();
+    loadAllLanes();
 });
+
+
+// ✅ THÊM: Load tất cả dây chuyền (fallback)
+async function loadAllLanes() {
+    try {
+        const response = await fetch('/Inspection/GetInspectionLanes', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            if (result.success && result.data) {
+                allLanes = result.data;
+                console.log(`Loaded ${allLanes.length} lanes`);
+            }
+        }
+    } catch (error) {
+        console.error('Error loading all lanes:', error);
+    }
+}
 
 // Hàm load dữ liệu từ database
 async function loadInspectionRecords() {
@@ -460,25 +485,24 @@ document.querySelectorAll('.modal input[type="checkbox"]').forEach(checkbox => {
 let assigningInspection = null;
 let assignedLaneId = null;
 let assignedLaneName = '';
+let suitableLanes = []; // ✅ THÊM
 
 // Wrapper function để mở modal phân công bằng ID
-function openAssignLaneById(inspectionId) {
-    //SHOW LOADING
+async function openAssignLaneById(inspectionId) {
     showFullScreenLoading('Đang tải thông tin phân công...');
 
     try {
         const record = findRecordById(inspectionId);
         if (record) {
-            openAssignLane(record);
+            await openAssignLane(record);
         }
     } finally {
-        //HIDE LOADING
         hideFullScreenLoading();
     }
 }
 
 // Mở modal phân công dây chuyền
-function openAssignLane(record) {
+async function openAssignLane(record) {
     assigningInspection = record;
     assignedLaneId = record.laneId;
     assignedLaneName = record.laneName;
@@ -492,25 +516,116 @@ function openAssignLane(record) {
     // Clear note
     document.getElementById('assignNote').value = '';
 
-    // Reset selected cards
-    document.querySelectorAll('.assign-lane-card').forEach(card => {
-        card.classList.remove('selected');
-    });
+    // ✅ LOAD DÂY CHUYỀN PHÙ HỢP TỪ DATABASE
+    if (record.vehicleTypeId) {
+        await loadSuitableLanes(record.vehicleTypeId);
+    } else {
+        console.warn('VehicleTypeId not found, showing all lanes');
+        suitableLanes = [];
+    }
+
+    // Render lại danh sách dây chuyền
+    renderLaneCards();
 
     // Nếu đã có dây chuyền, highlight card
     if (assignedLaneId) {
         setTimeout(() => {
-            const cards = document.querySelectorAll('.assign-lane-card');
-            cards.forEach((card, index) => {
-                if (index + 1 === assignedLaneId) {
-                    card.classList.add('selected');
-                }
-            });
+            highlightSelectedLane(assignedLaneId);
             document.getElementById('btnConfirmAssign').disabled = false;
         }, 100);
     }
 
     document.getElementById('assignLaneModal').style.display = 'block';
+}
+
+// ✅ THÊM: Load dây chuyền phù hợp từ database
+async function loadSuitableLanes(vehicleTypeId) {
+    try {
+        console.log(`Loading suitable lanes for VehicleTypeId: ${vehicleTypeId}`);
+
+        const response = await fetch(`/Inspection/GetSuitableLanes?vehicleTypeId=${vehicleTypeId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Không thể tải danh sách dây chuyền');
+        }
+
+        const result = await response.json();
+
+        if (result.success && result.data) {
+            suitableLanes = result.data;
+            console.log(`Loaded ${suitableLanes.length} suitable lanes:`, suitableLanes);
+        } else {
+            console.warn('No suitable lanes found');
+            suitableLanes = [];
+        }
+    } catch (error) {
+        console.error('Error loading suitable lanes:', error);
+        alert('Không thể tải danh sách dây chuyền phù hợp. Hiển thị tất cả dây chuyền.');
+        suitableLanes = [];
+    }
+}
+
+// ✅ THÊM: Render lại lane cards
+function renderLaneCards() {
+    const laneCardsContainer = document.querySelector('.lane-cards');
+    
+    if (!laneCardsContainer) {
+        console.error('Lane cards container not found');
+        return;
+    }
+
+    laneCardsContainer.innerHTML = '';
+
+    const lanesToShow = suitableLanes.length > 0 ? suitableLanes : allLanes;
+
+    if (lanesToShow.length === 0) {
+        laneCardsContainer.innerHTML = `
+            <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #dc3545;">
+                <i class="fa-solid fa-exclamation-triangle" style="font-size: 48px;"></i>
+                <p style="margin-top: 15px; font-size: 16px;">Không có dây chuyền phù hợp với loại xe này</p>
+            </div>
+        `;
+        return;
+    }
+
+    lanesToShow.forEach(lane => {
+        const isSuitable = suitableLanes.length === 0 || suitableLanes.some(l => l.laneId === lane.laneId);
+        
+        const card = document.createElement('div');
+        card.className = `assign-lane-card ${!isSuitable ? 'disabled' : ''}`;
+        card.setAttribute('data-lane-id', lane.laneId);
+        
+        if (isSuitable) {
+            card.onclick = () => selectAssignLane(lane.laneId, lane.laneName);
+        }
+
+        card.innerHTML = `
+            <div class="lane-number">${lane.laneId}</div>
+            <h4>${lane.laneCode}</h4>
+            <p class="lane-desc">${lane.laneName}</p>
+            <div class="lane-status ${isSuitable ? 'available' : 'unavailable'}">
+                <i class="fa-solid fa-${isSuitable ? 'circle-check' : 'circle-xmark'}"></i> 
+                ${isSuitable ? 'Phù hợp' : 'Không phù hợp'}
+            </div>
+        `;
+
+        laneCardsContainer.appendChild(card);
+    });
+}
+
+// ✅ CẬP NHẬT: Highlight lane đã chọn
+function highlightSelectedLane(laneId) {
+    document.querySelectorAll('.assign-lane-card').forEach(card => {
+        card.classList.remove('selected');
+        if (parseInt(card.getAttribute('data-lane-id')) === laneId) {
+            card.classList.add('selected');
+        }
+    });
 }
 
 // Chọn dây chuyền trong modal phân công
@@ -523,19 +638,7 @@ function selectAssignLane(laneId, laneName) {
     assignedLaneName = laneName;
 
     // Highlight card được chọn
-    document.querySelectorAll('.assign-lane-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-
-    // ✅ Tìm card được click và highlight
-    const cards = document.querySelectorAll('.assign-lane-card');
-    cards.forEach(card => {
-        // Lấy onclick attribute và parse ra laneId
-        const onclickAttr = card.getAttribute('onclick');
-        if (onclickAttr && onclickAttr.includes(`selectAssignLane(${laneId},`)) {
-            card.classList.add('selected');
-        }
-    });
+    highlightSelectedLane(laneId);
 
     // Enable nút xác nhận
     document.getElementById('btnConfirmAssign').disabled = false;
@@ -1106,11 +1209,12 @@ function renderDefects(stageId) {
         const defectItem = document.createElement('div');
         defectItem.className = 'defect-item';
         defectItem.innerHTML = `
-            <div class="defect-header">
+// Đại lý phân phối thiết bị điện tử
+<div class="defect-header">
                 <strong>${defect.category}</strong>
                 <div>
                     <span class="defect-severity ${defect.severity === 3 ? 'critical' : defect.severity === 2 ? 'major' : 'minor'}">
-                        ${defect.severity === 3 ? 'Nghiêm trọng' : defect.severity === 2 ? 'Hư hỏng' : 'Khuyết điểm'}
+                        ${defect.severity === 3 ? 'Nghiêm trọng' : defect.severity === 2 ? 'Hư hỏng' : 'Khuyết điểm' }
                     </span>
                     <button onclick="removeDefect(${stageId}, ${index})" style="margin-left: 10px; color: #dc3545; background: none; border: none; cursor: pointer;">
                         <i class="fa-solid fa-trash"></i>
@@ -1218,7 +1322,7 @@ function showConclusion() {
                 <div class="defect-header">
                     <strong>${stage.stageName} - ${defect.category}</strong>
                     <span class="defect-severity ${defect.severity === 3 ? 'critical' : defect.severity === 2 ? 'major' : 'minor'}">
-                        ${defect.severity === 3 ? 'Nghiêm trọng' : defect.severity === 2 ? 'Hư hỏng' : 'Khuyết điểm'}
+                        ${defect.severity === 3 ? 'Nghiêm trọng' : defect.severity === 2 ? 'Hư hỏng' : 'Khuyết điểm' }
                     </span>
                 </div>
                 <p>${defect.description}</p>
@@ -1229,7 +1333,7 @@ function showConclusion() {
 }
 
 function createFormField(item, existingValue) {
-    const value = existingValue || '';
+    const value = existingValue || '' ;
 
     if (item.type === 'select') {
         return `
@@ -1278,7 +1382,7 @@ function backToStages() {
 // Hoàn thành kiểm định
 async function submitConclusion() {
     const finalResult = document.getElementById('finalResultSelect').value;
-    const conclusionNote = document.getElementById('conclusionNote')?.value || '';
+    const conclusionNote = document.getElementById('conclusionNote')?.value || '' ;
 
     // ✅ KIỂM TRA finalResult có được chọn không
     if (!finalResult) {
@@ -1333,9 +1437,6 @@ async function submitConclusion() {
         hideFullScreenLoading();
     }
 }
-
-//phân công dây chuyền
-
 
 // Đóng modal quy trình kiểm định
 function closeInspectionProcess() {

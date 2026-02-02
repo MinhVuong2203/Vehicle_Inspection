@@ -1329,6 +1329,27 @@ h3 {
         line-height: 1.5;
     }
 
+    .assign-lane-card.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background: #f8f9fa;
+    }
+
+        .assign-lane-card.disabled:hover {
+            transform: none;
+            box-shadow: none;
+            border-color: #e9ecef;
+        }
+
+.lane-status.unavailable {
+    background: #dc3545;
+    color: white;
+}
+
+.lane-status.available {
+    background: #28a745;
+    color: white;
+}
 .lane-specs {
     display: flex;
     gap: 10px;

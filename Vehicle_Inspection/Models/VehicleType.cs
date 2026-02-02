@@ -32,4 +32,8 @@ public partial class VehicleType
 
     [InverseProperty("VehicleType")]
     public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
+
+    [ForeignKey("VehicleTypeId")]
+    [InverseProperty("VehicleTypes")]
+    public virtual ICollection<Lane> Lanes { get; set; } = new List<Lane>();
 }

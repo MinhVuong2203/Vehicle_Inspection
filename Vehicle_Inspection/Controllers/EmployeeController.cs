@@ -62,6 +62,26 @@ namespace Vehicle_Inspection.Controllers
 
         #region Actions
 
+        [HttpGet]
+        public async Task<IActionResult> GetTeamsByPosition(int positionId)
+        {
+            var teams = await _context.Positions
+                .Where(p => p.PositionId == positionId)
+                .SelectMany(p => p.Teams)
+                .Select(t => new
+                {
+                    teamId = t.TeamId,
+                    teamName = t.TeamName
+                })
+                .OrderBy(t => t.teamName)
+                .ToListAsync();
+
+            return Json(teams);
+        }
+
+
+
+
         public IActionResult Index(string? search, int? position, int? team, string? gender, bool? isActive, string? sort, int page = 1)
         {
             int pageSize = 11;

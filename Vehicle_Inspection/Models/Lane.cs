@@ -26,4 +26,8 @@ public partial class Lane
 
     [InverseProperty("Lane")]
     public virtual ICollection<LaneStage> LaneStages { get; set; } = new List<LaneStage>();
+
+    [ForeignKey("LaneId")]
+    [InverseProperty("Lanes")]
+    public virtual ICollection<VehicleType> VehicleTypes { get; set; } = new List<VehicleType>();
 }

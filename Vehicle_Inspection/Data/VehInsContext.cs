@@ -173,6 +173,23 @@ public partial class VehInsContext : DbContext
             entity.HasKey(e => e.LaneId).HasName("PK__Lane__A5770E0C40EAA0BC");
 
             entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            entity.HasMany(d => d.VehicleTypes).WithMany(p => p.Lanes)
+                .UsingEntity<Dictionary<string, object>>(
+                    "LaneVehicleType",
+                    r => r.HasOne<VehicleType>().WithMany()
+                        .HasForeignKey("VehicleTypeId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_LVT_VehicleType"),
+                    l => l.HasOne<Lane>().WithMany()
+                        .HasForeignKey("LaneId")
+                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .HasConstraintName("FK_LVT_Lane"),
+                    j =>
+                    {
+                        j.HasKey("LaneId", "VehicleTypeId");
+                        j.ToTable("LaneVehicleType");
+                    });
         });
 
         modelBuilder.Entity<LaneStage>(entity =>

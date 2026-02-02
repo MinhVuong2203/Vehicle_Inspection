@@ -2128,6 +2128,44 @@ SELECT N'RE_INSPECTION', VehicleTypeId, 55000, 90000, 49680, 0, @From, NULL, 1, 
 FROM @Id WHERE TypeCode IN ('THREE_WHEEL');
 
 
+CREATE TABLE LaneVehicleType (
+    LaneId INT NOT NULL,
+    VehicleTypeId INT NOT NULL,
+
+    CONSTRAINT PK_LaneVehicleType PRIMARY KEY (LaneId, VehicleTypeId),
+    CONSTRAINT FK_LVT_Lane FOREIGN KEY (LaneId) REFERENCES Lane(LaneId),
+    CONSTRAINT FK_LVT_VehicleType  FOREIGN KEY (VehicleTypeId) REFERENCES VehicleType(VehicleTypeId)
+);
+
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(1, 9),   -- PAX_LT_10
+(1, 11),  -- PAX_10_24
+(1, 13);  -- PAX_25_40
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(2, 13), -- PAX_25_40
+(2, 16); -- BUS
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(3, 12), -- TRUCK_LE_2T
+(3, 14), -- TRUCK_2_7T
+(3, 17); -- TRUCK_7_20T
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(4, 18), -- TRACTOR_LE_20T
+(4, 19), -- TRUCK_GT_20T
+(4, 24), -- TRAILER
+(4, 25); -- SEMI_TRAILER
+INSERT INTO LaneVehicleType (LaneId, VehicleTypeId)
+VALUES
+(5, 15), -- MOTOR_4W_CARGO
+(5, 16), -- MOTOR_4W_PAX
+(5, 26); -- THREE_WHEEL
+
+
+
+
 -- 5.2) Bảng Payment (Thanh toán)
 CREATE TABLE dbo.Payment (
     PaymentId INT IDENTITY(1,1) PRIMARY KEY,

@@ -387,7 +387,10 @@ namespace Vehicle_Inspection.Service
                             if (detail != null)
                             {
                                 itemDto.ActualValue = detail.ActualValue;
+                                itemDto.ActualText = detail.ActualText;  // ✅ LẤY TEXT ĐÃ LƯU
                                 itemDto.IsPassed = detail.IsPassed;
+
+                                Console.WriteLine($"✅ Item {item.ItemName}: ActualValue={detail.ActualValue}, ActualText={detail.ActualText}, IsPassed={detail.IsPassed}");
                             }
                         }
 
@@ -544,6 +547,8 @@ namespace Vehicle_Inspection.Service
                         StandardMin = measurement.StandardMin,
                         StandardMax = measurement.StandardMax,
                         ActualValue = measurement.ActualValue,
+                        ActualText = measurement.ActualText,
+
                         Unit = measurement.Unit,
                         IsPassed = measurement.IsPassed,
                         DataSource = "MANUAL",

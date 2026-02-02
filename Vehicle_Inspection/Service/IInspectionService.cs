@@ -225,23 +225,24 @@ namespace Vehicle_Inspection.Service
     public class StageItemDto
     {
         public int ItemId { get; set; }
-        public string ItemCode { get; set; }
-        public string ItemName { get; set; }
+        public string? ItemCode { get; set; }
+        public string? ItemName { get; set; }
         public string? Unit { get; set; }
-        public string DataType { get; set; } // NUMBER, TEXT, BOOL
+        public string? DataType { get; set; }
         public bool IsRequired { get; set; }
         public int SortOrder { get; set; }
 
-        // Tiêu chuẩn (từ StageItemThreshold)
+        // Tiêu chuẩn
         public decimal? MinValue { get; set; }
         public decimal? MaxValue { get; set; }
-        public string? AllowedValues { get; set; }
         public string? PassCondition { get; set; }
+        public string? AllowedValues { get; set; }
 
-        // Giá trị đã đo (từ InspectionDetail nếu có)
+        // Giá trị đã đo
         public decimal? ActualValue { get; set; }
-        public string? ActualText { get; set; }
+        public string? ActualText { get; set; }  // ✅ THÊM TRƯỜNG NÀY
         public bool? IsPassed { get; set; }
+
     }
 
     public class SaveStageResultRequest
@@ -257,27 +258,23 @@ namespace Vehicle_Inspection.Service
     public class StageItemMeasurement
     {
         public int ItemId { get; set; }
-        public string ItemCode { get; set; }
-        public string ItemName { get; set; }
-        public string? Unit { get; set; }
-        public string DataType { get; set; }
+        public string? ItemCode { get; set; }
+        public string? ItemName { get; set; }
 
-        // Tiêu chuẩn
         public decimal? StandardMin { get; set; }
         public decimal? StandardMax { get; set; }
-        public string? StandardText { get; set; }
 
-        // Giá trị đo
+        // ✅ THÊM TRƯỜNG ActualText
         public decimal? ActualValue { get; set; }
-        public string? ActualText { get; set; }
+        public string? ActualText { get; set; }  // ✅ CHO AllowedValues
 
-        // Đánh giá
+        public string? Unit { get; set; }
         public bool IsPassed { get; set; }
 
         // Defect info (nếu không đạt)
         public string? DefectCategory { get; set; }
         public string? DefectDescription { get; set; }
-        public int? DefectSeverity { get; set; } // 1: Minor, 2: Major, 3: Critical
+        public int? DefectSeverity { get; set; }
     }
 
     public class InspectionDefectDto

@@ -1228,6 +1228,42 @@ function showConclusion() {
     }
 }
 
+function createFormField(item, existingValue) {
+    const value = existingValue || '';
+
+    if (item.type === 'select') {
+        return `
+            <select class="form-control" 
+                    name="item_${item.id}" 
+                    data-item-id="${item.id}"
+                    data-item-code="${item.itemCode}"
+                    data-item-name="${item.name}"
+                    ${item.isRequired ? 'required' : ''}>
+                ${item.options.map(opt => `
+                    <option value="${opt}" 
+                            ${value === opt ? 'selected' : ''}>
+                        ${opt}
+                    </option>
+                `).join('')}
+            </select>
+        `;
+    } else if (item.type === 'number') {
+        return `
+            <input type="number" 
+                   class="form-control" 
+                   name="item_${item.id}" 
+                   data-item-id="${item.id}"
+                   data-item-code="${item.itemCode}"
+                   data-item-name="${item.name}"
+                   value="${value}"
+                   min="${item.min || 0}"
+                   max="${item.max || 999999}"
+                   step="0.01"
+                   ${item.isRequired ? 'required' : ''}>
+        `;
+    }
+}
+
 // Cập nhật kết luận cuối cùng
 function updateFinalConclusion() {
     const finalResult = document.getElementById('finalResultSelect').value;

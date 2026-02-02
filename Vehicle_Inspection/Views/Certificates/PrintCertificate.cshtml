@@ -49,9 +49,9 @@
 
         .page {
             flex: 1;
-            border: 2px solid #000;
+            border: 2px solid #fff;
             padding: 8mm 6mm;
-            background: white;
+            background: repeating-linear-gradient( 45deg, #f5f5dc, #f5f5dc 10px, #ede7d4 10px, #ede7d4 20px );
             position: relative;
         }
 
@@ -238,28 +238,9 @@
             margin: 5px 0;
         }
 
-        .validity-info {
-            margin-top: 15px;
-            padding: 10px;
-            border: 2px solid #8B0000;
-            text-align: center;
-            background: #fffef0;
-        }
-
-            .validity-info p {
-                margin: 3px 0;
-                font-size: 11pt;
-            }
-
-            .validity-info .highlight {
-                color: #8B0000;
-                font-weight: bold;
-                font-size: 12pt;
-            }
-
         @@media print {
             body {
-                background: white;
+                background: repeating-linear-gradient( 45deg, #f5f5dc, #f5f5dc 10px, #ede7d4 10px, #ede7d4 20px );
             }
 
             .no-print {
@@ -561,6 +542,7 @@
 
             <div class="spec-row">
                 <span class="spec-label">Có hiệu lực đến hết ngày <span class="spec-label-en"><em>(Valid until)</em></span>:</span>
+                <span class="spec-value" style="font-weight: bold; color: #8B0000;">@expiryDate.ToString("dd/MM/yyyy")</span>
             </div>
 
             <div class="image-box">
@@ -596,13 +578,6 @@
 
             <div style="margin-top: 8px; font-size: 8pt;">
                 <em>xxxxxxxxxx <sup>(2)</sup></em>
-            </div>
-
-            <div class="validity-info">
-                <p><strong>CHU KỲ KIỂM ĐỊNH</strong></p>
-                <p class="highlight">@validityMonths tháng</p>
-                <p style="margin-top: 5px;"><strong>NGÀY HẾT HẠN</strong></p>
-                <p class="highlight">@expiryDate.ToString("dd/MM/yyyy")</p>
             </div>
         </div>
     </div>

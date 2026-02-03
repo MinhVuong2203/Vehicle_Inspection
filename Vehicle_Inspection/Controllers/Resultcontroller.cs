@@ -188,7 +188,7 @@ namespace Vehicle_Inspection.Controllers
 
         /// <summary>
         /// API: Kết luận KHÔNG ĐẠT - Chuyển Status từ 4 → 6 và trả về download link
-        /// ✅ THÊM LOGIC TĂNG Count_Re
+        /// ✅ ĐÃ BỎ LOGIC TĂNG Count_Re (Count_Re chỉ được cập nhật ở ApproveController khi xét duyệt lại)
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> ConcludeFailed([FromBody] ConcludeRequest request)
@@ -217,17 +217,8 @@ namespace Vehicle_Inspection.Controllers
                     });
                 }
 
-                // ✅ LOGIC MỚI: TĂNG Count_Re
-                // Nếu Count_Re là NULL, khởi tạo = 1 (lần đầu tiên không đạt)
-                // Nếu Count_Re đã có giá trị, tăng lên 1
-                //if (inspection.Count_Re == null)
-                //{
-                //    inspection.Count_Re = 1;
-                //}
-                //else
-                //{
-                //    inspection.Count_Re += 1;
-                //}
+                // ✅ BỎ LOGIC TĂNG Count_Re
+                // Count_Re chỉ được cập nhật ở ApproveController khi xét duyệt lại hồ sơ không đạt
 
                 // Cập nhật Status = 6 (Không đạt)
                 inspection.Status = 6;
@@ -238,7 +229,7 @@ namespace Vehicle_Inspection.Controllers
 
                 await _context.SaveChangesAsync();
 
-                Console.WriteLine($"✅ Đã cập nhật Count_Re = {inspection.Count_Re} cho hồ sơ {inspection.InspectionCode}");
+                Console.WriteLine($"✅ Kết luận KHÔNG ĐẠT cho hồ sơ {inspection.InspectionCode}, Count_Re hiện tại = {inspection.Count_Re}");
 
                 // Tạo PDF báo cáo lỗi
                 var pdfResult = await GenerateFailedInspectionPDF(inspection);
@@ -265,7 +256,7 @@ namespace Vehicle_Inspection.Controllers
                         inspectionId = inspection.InspectionId,
                         inspectionCode = inspection.InspectionCode,
                         status = inspection.Status,
-                        countRe = inspection.Count_Re, // ✅ Trả về số lần tái kiểm
+                        countRe = inspection.Count_Re, // Trả về Count_Re hiện tại (không thay đổi)
                         pdfFileName = pdfResult.FileName,
                         downloadUrl = downloadUrl
                     }
@@ -377,7 +368,7 @@ namespace Vehicle_Inspection.Controllers
                 pdfDoc.Add(new Paragraph($"Loại xe: {inspection.Vehicle?.Brand ?? ""} {inspection.Vehicle?.Model ?? ""}", normalFont));
                 pdfDoc.Add(new Paragraph($"Ngày kết luận: {DateTime.Now:dd/MM/yyyy HH:mm}", normalFont));
 
-                // ✅ THÊM THÔNG TIN SỐ LẦN TÁI KIỂM
+                // ✅ THÊM THÔNG TIN SỐ LẦN TÁI KIỂM (nếu có)
                 if (inspection.Count_Re != null && inspection.Count_Re > 0)
                 {
                     pdfDoc.Add(new Paragraph($"Số lần tái kiểm: {inspection.Count_Re}", normalFont));

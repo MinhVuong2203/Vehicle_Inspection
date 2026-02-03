@@ -1,18 +1,15 @@
 ﻿// ========================================
-// FILE: Approve.js - Auto Detection with RE_INSPECTION Logic
-// MỤC ĐÍCH: Tự động xác định loại kiểm định và xử lý tái kiểm
+// FILE: Approve.js - Simplified Logic
+// MỤC ĐÍCH: Đơn giản hóa - chỉ hiển thị thông tin, backend tự xử lý
 // ========================================
 
 // ========== GLOBAL VARIABLES ==========
 let ownerId = null;
 let vehicleId = null;
-let detectedInspectionType = null;
-let detectedAction = null; // CREATE hoặc UPDATE
-let targetInspectionId = null;
 
 // ========== KHỞI TẠO TRANG ==========
 document.addEventListener('DOMContentLoaded', async function () {
-    console.log('🚀 Initializing Approve page with RE_INSPECTION Logic');
+    console.log('🚀 Initializing Approve page - Simplified Logic');
 
     // Load data từ URL params
     await loadApprovalData();
@@ -20,8 +17,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Auto-generate inspection code
     generateInspectionCode();
 
-    // Phân tích lịch sử và xác định loại kiểm định
-    await detectInspectionType();
+    // Lấy thông tin hồ sơ mới nhất (để hiển thị UI)
+    await loadLatestInspection();
 });
 
 // ========== LOAD DATA TỪ URL ==========
@@ -80,81 +77,41 @@ async function loadApprovalData() {
     }
 }
 
-// ========== PHÁT HIỆN LOẠI KIỂM ĐỊNH VÀ XỬ LÝ TÁI KIỂM ==========
-async function detectInspectionType() {
+// ========== LẤY THÔNG TIN HỒ SƠ MỚI NHẤT ==========
+async function loadLatestInspection() {
     try {
-        console.log('🔍 ========== BẮT ĐẦU PHÂN TÍCH LỊCH SỬ ==========');
-        console.log('📋 VehicleId:', vehicleId);
+        console.log('🔍 Loading latest inspection info...');
 
         const historyInfo = document.getElementById('history-info');
         if (historyInfo) {
-            historyInfo.innerHTML = '<div class="loading-indicator"><i class="bi bi-hourglass-split"></i> Đang phân tích lịch sử kiểm định...</div>';
+            historyInfo.innerHTML = '<div class="loading-indicator"><i class="bi bi-hourglass-split"></i> Đang tải thông tin...</div>';
         }
 
-        // Gọi API để lấy lịch sử kiểm định và xử lý tái kiểm
-        const response = await fetch(`/api/approve/detect-type?vehicleId=${vehicleId}`);
+        const response = await fetch(`/api/approve/latest?vehicleId=${vehicleId}`);
         const data = await response.json();
 
-        console.log('📊 Detection result:', data);
+        console.log('📊 Latest inspection:', data);
 
         if (data.success) {
-            detectedInspectionType = data.data.inspectionType;
-            detectedAction = data.data.action; // CREATE hoặc UPDATE
-            targetInspectionId = data.data.targetInspectionId; // ID hồ sơ cần update (nếu có)
-            const latestInspection = data.data.latestInspection;
+            displayInspectionInfo(data.data);
 
-            console.log('✅ Inspection type detected:', detectedInspectionType);
-            console.log('🎯 Action:', detectedAction);
-            console.log('🔄 Target inspection ID:', targetInspectionId);
-
-            // Hiển thị kết quả phân tích
-            displayInspectionTypeResult(data.data);
-
-            // Cập nhật form
-            setFieldValue('inspection-type-value', detectedInspectionType);
-            setFieldValue('inspection-type-display', getInspectionTypeLabel(detectedInspectionType));
-
-            const reasonElement = document.getElementById('inspection-type-reason');
-            if (reasonElement) {
-                reasonElement.textContent = data.data.reason;
-                reasonElement.style.color = '#28a745';
-                reasonElement.style.fontWeight = '600';
-            }
-
-            // ✅ CẬP NHẬT BUTTON TEXT DỰA VÀO ACTION
+            // Enable submit button
             const submitBtn = document.getElementById('submit-btn');
             if (submitBtn) {
                 submitBtn.disabled = false;
-
-                if (detectedAction === 'CREATE') {
-                    submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Tạo hồ sơ kiểm định mới';
-                } else if (detectedAction === 'UPDATE') {
-                    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ tái kiểm';
-                } else {
-                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
-                }
-            }
-
-            // Hiển thị thông báo nếu là UPDATE
-            if (detectedAction === 'UPDATE' && targetInspectionId) {
-                showNotification('info', `Sẽ cập nhật hồ sơ #${targetInspectionId} để tái kiểm`);
             }
         } else {
-            showNotification('error', data.message || 'Không thể xác định loại kiểm định');
-
+            showNotification('error', data.message || 'Không thể tải thông tin');
             if (historyInfo) {
                 historyInfo.innerHTML = `
                     <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle"></i>
-                        <strong>Lỗi:</strong> ${data.message || 'Không thể phân tích lịch sử'}
+                        <i class="bi bi-exclamation-triangle"></i> ${data.message || 'Lỗi tải dữ liệu'}
                     </div>
                 `;
             }
         }
     } catch (error) {
-        console.error('❌ Detect type error:', error);
-        showNotification('error', 'Có lỗi xảy ra khi phân tích lịch sử');
-
+        console.error('❌ Load latest error:', error);
         const historyInfo = document.getElementById('history-info');
         if (historyInfo) {
             historyInfo.innerHTML = `
@@ -166,121 +123,130 @@ async function detectInspectionType() {
     }
 }
 
-// ========== HIỂN THỊ KẾT QUẢ PHÂN TÍCH ==========
-function displayInspectionTypeResult(data) {
+// ========== HIỂN THỊ THÔNG TIN ==========
+function displayInspectionInfo(data) {
     const historyInfo = document.getElementById('history-info');
     if (!historyInfo) return;
 
-    let html = '<div class="inspection-analysis">';
+    let html = '<div class="inspection-info">';
 
-    // Hiển thị kết quả chính
-    html += `
-        <div class="analysis-result ${getResultClass(data.inspectionType)}">
-            <div class="result-icon">
-                <i class="bi ${getResultIcon(data.inspectionType)}"></i>
-            </div>
-            <div class="result-content">
-                <h4>Kết quả phân tích</h4>
-                <p class="result-type">${getInspectionTypeLabel(data.inspectionType)}</p>
-                <p class="result-reason">${data.reason}</p>
-                ${data.action === 'CREATE' ?
-            '<span class="badge badge-info"><i class="bi bi-plus-circle"></i> Tạo hồ sơ mới</span>' :
-            '<span class="badge badge-warning"><i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ hiện tại</span>'}
-            </div>
-        </div>
-    `;
-
-    // Hiển thị lịch sử (nếu có)
-    if (data.history && data.history.length > 0) {
-        html += '<div class="history-section">';
-        html += '<h5><i class="bi bi-clock-history"></i> Lịch sử kiểm định gần đây</h5>';
-        html += '<div class="history-list">';
-
-        data.history.forEach((item, index) => {
-            const statusBadge = getStatusBadge(item.status);
-            const date = new Date(item.createdAt).toLocaleDateString('vi-VN');
-            const isTarget = item.inspectionId === data.targetInspectionId;
-
-            html += `
-                <div class="history-item ${isTarget ? 'item-updated' : ''}">
-                    <div class="history-icon">
-                        <i class="bi ${isTarget ? 'bi-arrow-repeat text-warning' : 'bi-check-circle'}"></i>
-                    </div>
-                    <div class="history-content">
-                        <div class="history-header">
-                            <span class="history-code">${item.inspectionCode}</span>
-                            ${statusBadge}
-                            ${isTarget ? '<span class="badge badge-warning ml-2"><i class="bi bi-arrow-repeat"></i> Sẽ cập nhật</span>' : ''}
-                        </div>
-                        <div class="history-details">
-                            <span><i class="bi bi-calendar"></i> ${date}</span>
-                            <span><i class="bi bi-tag"></i> ${getInspectionTypeLabel(item.inspectionType)}</span>
-                            ${item.Count_Re > 0 ? `<span><i class="bi bi-arrow-repeat"></i> Tái kiểm: ${item.Count_Re} lần</span>` : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        html += '</div></div>';
-    } else {
+    // ========== TRƯỜNG HỢP 1: CHƯA CÓ HỒ SƠ ==========
+    if (!data.hasInspection) {
         html += `
-            <div class="no-history">
-                <i class="bi bi-info-circle"></i>
-                <p>Chưa có lịch sử kiểm định trước đó</p>
+            <div class="info-box info-first">
+                <div class="info-icon">
+                    <i class="bi bi-star"></i>
+                </div>
+                <div class="info-content">
+                    <h4>Đăng kiểm lần đầu</h4>
+                    <p>Xe chưa có hồ sơ kiểm định trước đó</p>
+                    <span class="badge badge-success">
+                        <i class="bi bi-plus-circle"></i> Tạo hồ sơ mới với FIRST
+                    </span>
+                </div>
             </div>
         `;
     }
+    // ========== TRƯỜNG HỢP 2: CÓ HỒ SƠ TRƯỚC ==========
+    else {
+        const latest = data.latestInspection;
+
+        if (data.action === 'UPDATE') {
+            // Hồ sơ không đạt → Cập nhật
+            html += `
+                <div class="info-box info-update">
+                    <div class="info-icon">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Cập nhật hồ sơ tái kiểm</h4>
+                        <p>${data.message}</p>
+                        <div class="inspection-details">
+                            <span class="detail-item"><strong>Mã:</strong> ${latest.inspectionCode}</span>
+                            <span class="detail-item"><strong>Loại:</strong> ${getInspectionTypeLabel(latest.inspectionType)}</span>
+                            <span class="detail-item"><strong>Số lần kiểm lại:</strong> ${latest.count_Re || 0}</span>
+                        </div>
+                        <span class="badge badge-warning">
+                            <i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ hiện tại
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else if (data.action === 'CREATE') {
+            // Đã cấp GCN → Tạo mới
+            html += `
+                <div class="info-box info-periodic">
+                    <div class="info-icon">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Kiểm định định kỳ</h4>
+                        <p>${data.message}</p>
+                        <div class="inspection-details">
+                            <span class="detail-item"><strong>Mã hồ sơ trước:</strong> ${latest.inspectionCode}</span>
+                            <span class="detail-item"><strong>Trạng thái:</strong> ${getStatusText(latest.status)}</span>
+                        </div>
+                        <span class="badge badge-info">
+                            <i class="bi bi-plus-circle"></i> Tạo hồ sơ mới với PERIODIC
+                        </span>
+                    </div>
+                </div>
+            `;
+        } else {
+            // Trạng thái không hợp lệ
+            html += `
+                <div class="info-box info-error">
+                    <div class="info-icon">
+                        <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                    <div class="info-content">
+                        <h4>Không thể xét duyệt</h4>
+                        <p>${data.message}</p>
+                        <div class="inspection-details">
+                            <span class="detail-item"><strong>Mã:</strong> ${latest.inspectionCode}</span>
+                            <span class="detail-item"><strong>Trạng thái:</strong> ${getStatusText(latest.status)}</span>
+                        </div>
+                        <span class="badge badge-danger">
+                            <i class="bi bi-x-circle"></i> Cần hoàn thành quy trình hiện tại
+                        </span>
+                    </div>
+                </div>
+            `;
+
+            // Disable submit button
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+        }
+    }
 
     html += '</div>';
-
     historyInfo.innerHTML = html;
 }
 
-// ========== HELPER: GET STATUS BADGE ==========
-function getStatusBadge(status) {
-    const badges = {
-        0: '<span class="badge badge-secondary">Nháp</span>',
-        1: '<span class="badge badge-info">Đã tiếp nhận</span>',
-        2: '<span class="badge badge-primary">Đã thu phí</span>',
-        3: '<span class="badge badge-warning">Đang kiểm định</span>',
-        4: '<span class="badge badge-info">Hoàn thành KĐ</span>',
-        5: '<span class="badge badge-success">Đạt</span>',
-        6: '<span class="badge badge-danger">Không đạt</span>',
-        7: '<span class="badge badge-success">Đã cấp GCN</span>',
-        8: '<span class="badge badge-secondary">Đã hủy</span>'
+// ========== HELPER: GET STATUS TEXT ==========
+function getStatusText(status) {
+    const statusMap = {
+        0: 'Pending',
+        1: 'Received',
+        2: 'Approved',
+        3: 'In Progress',
+        4: 'Completed',
+        5: 'Passed',
+        6: 'Failed',
+        7: 'Certified'
     };
-    return badges[status] || '<span class="badge badge-secondary">N/A</span>';
-}
-
-// ========== HELPER: GET RESULT CLASS ==========
-function getResultClass(type) {
-    const classes = {
-        'FIRST': 'result-first',
-        'PERIODIC': 'result-periodic',
-        'RE_INSPECTION': 'result-reinspection'
-    };
-    return classes[type] || '';
-}
-
-// ========== HELPER: GET RESULT ICON ==========
-function getResultIcon(type) {
-    const icons = {
-        'FIRST': 'bi-star',
-        'PERIODIC': 'bi-arrow-repeat',
-        'RE_INSPECTION': 'bi-tools'
-    };
-    return icons[type] || 'bi-question-circle';
+    return statusMap[status] || 'Unknown';
 }
 
 // ========== HELPER: GET INSPECTION TYPE LABEL ==========
 function getInspectionTypeLabel(type) {
     const labels = {
         'FIRST': 'Đăng kiểm lần đầu',
-        'PERIODIC': 'Kiểm định định kỳ',
-        'RE_INSPECTION': 'Tái kiểm'
+        'PERIODIC': 'Kiểm định định kỳ'
     };
-    return labels[type] || 'Không xác định';
+    return labels[type] || type;
 }
 
 // ========== GENERATE INSPECTION CODE ==========
@@ -301,20 +267,6 @@ function generateInspectionCode() {
 // ========== VALIDATE FORM ==========
 function validateForm() {
     const errors = [];
-
-    const inspectionCode = getFieldValue('inspection-code');
-    const inspectionType = getFieldValue('inspection-type-value');
-
-    // Nếu là tạo mới (CREATE), cần inspection code
-    if (detectedAction === 'CREATE') {
-        if (!inspectionCode) {
-            errors.push('Vui lòng tạo mã lượt kiểm định');
-        }
-    }
-
-    if (!inspectionType) {
-        errors.push('Chưa xác định được loại kiểm định');
-    }
 
     if (!ownerId || !vehicleId) {
         errors.push('Thiếu thông tin chủ xe hoặc phương tiện');
@@ -340,12 +292,10 @@ async function submitApproval() {
             InspectionCode: getFieldValue('inspection-code'),
             VehicleId: parseInt(vehicleId),
             OwnerId: ownerId,
-            InspectionType: getFieldValue('inspection-type-value'),
             Notes: getFieldValue('inspection-notes')
         };
 
         console.log('📤 Request data:', requestData);
-        console.log('🎯 Action:', detectedAction);
 
         // Show loading
         const submitBtn = document.getElementById('submit-btn');
@@ -369,21 +319,11 @@ async function submitApproval() {
         // Reset button
         if (submitBtn) {
             submitBtn.disabled = false;
-            if (detectedAction === 'CREATE') {
-                submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Tạo hồ sơ kiểm định mới';
-            } else if (detectedAction === 'UPDATE') {
-                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ tái kiểm';
-            } else {
-                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
-            }
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
         }
 
         if (data.success) {
-            const message = data.data.action === 'UPDATE' ?
-                'Đã cập nhật hồ sơ tái kiểm thành công' :
-                'Tạo hồ sơ kiểm định mới thành công';
-
-            showNotification('success', message);
+            showNotification('success', data.message);
 
             // Redirect về trang index sau 2 giây
             setTimeout(() => {
@@ -401,13 +341,7 @@ async function submitApproval() {
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = false;
-            if (detectedAction === 'CREATE') {
-                submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Tạo hồ sơ kiểm định mới';
-            } else if (detectedAction === 'UPDATE') {
-                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ tái kiểm';
-            } else {
-                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
-            }
+            submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
         }
     }
 }
@@ -464,4 +398,4 @@ function showNotification(type, message) {
     }, 5000);
 }
 
-console.log('Approve.js with RE_INSPECTION Logic loaded');
+console.log('Approve.js - Simplified Logic loaded');

@@ -1,0 +1,318 @@
+﻿@page {
+    size: A4 landscape;
+    margin: 0;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Times New Roman', Times, serif;
+    font-size: 10pt;
+    line-height: 1.35;
+    background: repeating-linear-gradient( 45deg, #f5f5dc, #f5f5dc 10px, #ede7d4 10px, #ede7d4 20px );
+    margin: 0;
+    padding: 0;
+}
+
+.certificate-wrapper {
+    width: 297mm;
+    height: 210mm;
+    margin: 0;
+    padding: 10mm;
+    display: flex;
+    gap: 3mm;
+    background: repeating-linear-gradient( 45deg, #f5f5dc, #f5f5dc 10px, #ede7d4 10px, #ede7d4 20px );
+}
+
+.page-break {
+    page-break-before: always;
+}
+
+.page {
+    flex: 1;
+    border: 2px solid #000;
+    padding: 9mm 7mm;
+    background: white;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Page 1 - Chủ xe lái xe cần biết */
+.page-1 h3 {
+    text-align: center;
+    font-size: 14pt;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.page-1 .subtitle {
+    text-align: center;
+    font-style: italic;
+    font-size: 9.5pt;
+    margin-bottom: 10px;
+}
+
+.note-section {
+    font-size: 10pt;
+    text-align: justify;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.note-item {
+    margin: 6px 0;
+}
+
+    .note-item strong {
+        font-weight: bold;
+    }
+
+.note-en {
+    font-style: italic;
+    font-size: 9pt;
+    margin: 3px 0 6px 0;
+    line-height: 1.25;
+}
+
+/* Page 2 - Chứng nhận */
+.header-center {
+    text-align: center;
+}
+
+    .header-center h3 {
+        font-size: 11pt;
+        font-weight: bold;
+        margin: 2px 0;
+    }
+
+    .header-center h2 {
+        font-size: 13pt;
+        font-weight: bold;
+        margin: 2px 0;
+    }
+
+    .header-center h1 {
+        font-size: 16pt;
+        font-weight: bold;
+        color: #8B0000;
+        margin: 5px 0;
+    }
+
+.subtitle-main {
+    color: #8B0000;
+    font-size: 10pt;
+    font-weight: bold;
+    margin: 3px 0;
+}
+
+.header-center .subtitle-en {
+    font-size: 9pt;
+    font-weight: bold;
+    margin: 2px 0;
+}
+
+.serial-number {
+    color: #8B0000;
+    font-weight: bold;
+    font-size: 10.5pt;
+    margin: 5px 0;
+}
+
+.info-content {
+    margin-top: 8px;
+    flex: 1;
+}
+
+.info-row {
+    margin: 3px 0;
+    font-size: 10pt;
+    display: flex;
+    align-items: baseline;
+}
+
+.info-label {
+    white-space: nowrap;
+}
+
+.info-value {
+    flex: 1;
+    border-bottom: 1px dotted #333;
+    min-height: 16px;
+    margin-left: 3px;
+    padding-left: 3px;
+}
+
+.info-en {
+    font-style: italic;
+    font-size: 9pt;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+.checkbox-row {
+    margin: 3px 0;
+    font-size: 10pt;
+}
+
+.checkbox {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid #000;
+    margin: 0 3px;
+    vertical-align: middle;
+    position: relative;
+}
+
+    .checkbox.checked::after {
+        content: '✓';
+        display: block;
+        text-align: center;
+        line-height: 14px;
+        font-weight: bold;
+        font-size: 11pt;
+    }
+
+/* Page 3 - Thông số kỹ thuật */
+.page-3 h3 {
+    text-align: center;
+    font-size: 13pt;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.spec-content {
+    flex: 1;
+}
+
+.spec-row {
+    display: flex;
+    margin: 2.5px 0;
+    font-size: 10pt;
+}
+
+.spec-label {
+    min-width: 185px;
+}
+
+.spec-value {
+    flex: 1;
+    border-bottom: 1px dotted #333;
+    min-height: 15px;
+}
+
+.spec-label-en {
+    font-style: italic;
+    font-size: 9pt;
+}
+
+.capacity-row {
+    font-size: 10pt;
+    margin: 3px 0;
+}
+
+.serial-footer {
+    margin-top: 10px;
+    font-weight: bold;
+    font-size: 10pt;
+}
+
+/* Page 4 - Cơ sở đăng kiểm */
+.tire-info {
+    margin: 3px 0;
+    min-height: 16px;
+}
+
+.date-issued {
+    text-align: right;
+    font-size: 10pt;
+    margin: 6px 0;
+}
+
+.center-name {
+    text-align: center;
+    font-weight: bold;
+    margin: 10px 0;
+    font-size: 11pt;
+}
+
+.center-name-en {
+    text-align: center;
+    font-style: italic;
+    font-size: 9pt;
+    margin-bottom: 6px;
+}
+
+.report-no {
+    margin: 3px 0;
+}
+
+.expiry-date {
+    font-weight: bold;
+    color: #8B0000;
+}
+
+.image-box {
+    width: 82mm;
+    height: 62mm;
+    border: 2px dashed #999;
+    margin: 10px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px;
+}
+
+.image-box-text {
+    font-style: italic;
+    font-size: 9pt;
+    color: #666;
+    line-height: 1.4;
+}
+
+.notes {
+    min-height: 30px;
+    margin: 3px 0;
+}
+
+.notes-footer {
+    margin-top: 8px;
+    font-size: 9.5pt;
+}
+
+.dotted-line {
+    border: none;
+    border-top: 1px dotted #333;
+    margin: 5px 0;
+}
+
+/* Print styles */
+@media print {
+    body {
+        background: repeating-linear-gradient( 45deg, #f5f5dc, #f5f5dc 10px, #ede7d4 10px, #ede7d4 20px ) !important;
+    }
+
+    .certificate-wrapper {
+        background: repeating-linear-gradient( 45deg, #f5f5dc, #f5f5dc 10px, #ede7d4 10px, #ede7d4 20px ) !important;
+    }
+
+    .page {
+        background: white !important;
+    }
+
+    .no-print {
+        display: none;
+    }
+
+    @page {
+        margin: 0;
+    }
+}

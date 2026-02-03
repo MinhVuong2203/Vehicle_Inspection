@@ -15,33 +15,23 @@ namespace Vehicle_Inspection.Service
 
 
 
-        public List<Inspection> GetInspections(string? search, short? status)
+        public List<Payment> GetPayments(string? search, short? status)
         {
-            var query = _context.Inspections
-            .Include(i => i.Vehicle)
-                .ThenInclude(v => v.Owner)
-            .Include(i => i.Payments)
-            .Where(i => !i.IsDeleted);
+            var query = _context.Payments
+                .Include(p => p.Inspection)
+                    .ThenInclude(i => i.Vehicle)
+                        .ThenInclude(v => v.Owner)
+                .Where(p => !p.Inspection.IsDeleted);
 
-            // Lọc theo trạng thái thanh toán (payment mới nhất)
             if (status.HasValue)
-            {
-                query = query.Where(i =>
-                    i.Payments
-                        .OrderByDescending(p => p.CreatedAt)
-                        .Select(p => p.PaymentStatus)
-                        .FirstOrDefault() == status.Value
-                );
-            }
-            // Tìm kiếm theo mã kiểm định hoặc loại kiểm định
-            if (!string.IsNullOrEmpty(search))
-            {
-                query = query.Where(i =>
-                    i.InspectionCode.Contains(search));
-            }
+                query = query.Where(p => p.PaymentStatus == status.Value);
 
-            return query.OrderByDescending(i => i.CreatedAt).ToList();
+            if (!string.IsNullOrEmpty(search))
+                query = query.Where(p => p.Inspection.InspectionCode.Contains(search));
+
+            return query.OrderByDescending(p => p.CreatedAt).ToList();
         }
+
 
         public Inspection? GetInspectionDetails(string inspectionCode)
         {

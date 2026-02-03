@@ -5,6 +5,7 @@ using Vehicle_Inspection.Models;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Vehicle_Inspection.Service;
 
 namespace Vehicle_Inspection.Controllers
 {
@@ -13,10 +14,12 @@ namespace Vehicle_Inspection.Controllers
     public class ApproveController : ControllerBase
     {
         private readonly VehInsContext _context;
+        private readonly ITollService _tollService;
 
-        public ApproveController(VehInsContext context)
+        public ApproveController(VehInsContext context, ITollService tollService)
         {
             _context = context;
+            _tollService = tollService;
         }
 
         /// <summary>
@@ -127,6 +130,7 @@ namespace Vehicle_Inspection.Controllers
                         latestInspection.Status = 1; // RECEIVED - Có phí
                         resultStatus = 1;
                         Console.WriteLine($"   → Count_Re = {newCountRe} (>= 3) → Status = 1 (Có phí)");
+                        await _tollService.CreateAdditionalPaymentAsync(latestInspection.InspectionId);
                     }
 
                     // Cập nhật Notes nếu có

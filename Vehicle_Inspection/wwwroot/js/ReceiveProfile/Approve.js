@@ -7,8 +7,8 @@
 let ownerId = null;
 let vehicleId = null;
 let detectedInspectionType = null;
-let needCreateNew = false;
-let updatedInspectionId = null;
+let detectedAction = null; // CREATE hoặc UPDATE
+let targetInspectionId = null;
 
 // ========== KHỞI TẠO TRANG ==========
 document.addEventListener('DOMContentLoaded', async function () {
@@ -99,13 +99,13 @@ async function detectInspectionType() {
 
         if (data.success) {
             detectedInspectionType = data.data.inspectionType;
-            needCreateNew = data.data.needCreateNew;
-            updatedInspectionId = data.data.updatedInspectionId;
-            const history = data.data.history;
+            detectedAction = data.data.action; // CREATE hoặc UPDATE
+            targetInspectionId = data.data.targetInspectionId; // ID hồ sơ cần update (nếu có)
+            const latestInspection = data.data.latestInspection;
 
             console.log('✅ Inspection type detected:', detectedInspectionType);
-            console.log('🆕 Need create new:', needCreateNew);
-            console.log('🔄 Updated inspection ID:', updatedInspectionId);
+            console.log('🎯 Action:', detectedAction);
+            console.log('🔄 Target inspection ID:', targetInspectionId);
 
             // Hiển thị kết quả phân tích
             displayInspectionTypeResult(data.data);
@@ -121,21 +121,23 @@ async function detectInspectionType() {
                 reasonElement.style.fontWeight = '600';
             }
 
-            // Cập nhật button text
+            // ✅ CẬP NHẬT BUTTON TEXT DỰA VÀO ACTION
             const submitBtn = document.getElementById('submit-btn');
             if (submitBtn) {
                 submitBtn.disabled = false;
 
-                if (needCreateNew) {
-                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận tạo hồ sơ mới';
+                if (detectedAction === 'CREATE') {
+                    submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Tạo hồ sơ kiểm định mới';
+                } else if (detectedAction === 'UPDATE') {
+                    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ tái kiểm';
                 } else {
-                    submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Xác nhận tái kiểm';
+                    submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
                 }
             }
 
-            // Hiển thị thông báo nếu đã cập nhật hồ sơ cũ
-            if (updatedInspectionId) {
-                showNotification('info', `Đã cập nhật hồ sơ #${updatedInspectionId} để tái kiểm`);
+            // Hiển thị thông báo nếu là UPDATE
+            if (detectedAction === 'UPDATE' && targetInspectionId) {
+                showNotification('info', `Sẽ cập nhật hồ sơ #${targetInspectionId} để tái kiểm`);
             }
         } else {
             showNotification('error', data.message || 'Không thể xác định loại kiểm định');
@@ -181,9 +183,9 @@ function displayInspectionTypeResult(data) {
                 <h4>Kết quả phân tích</h4>
                 <p class="result-type">${getInspectionTypeLabel(data.inspectionType)}</p>
                 <p class="result-reason">${data.reason}</p>
-                ${data.needCreateNew ?
-            '<span class="badge badge-info"><i class="bi bi-plus-circle"></i> Cần tạo hồ sơ mới</span>' :
-            '<span class="badge badge-warning"><i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ cũ</span>'}
+                ${data.action === 'CREATE' ?
+            '<span class="badge badge-info"><i class="bi bi-plus-circle"></i> Tạo hồ sơ mới</span>' :
+            '<span class="badge badge-warning"><i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ hiện tại</span>'}
             </div>
         </div>
     `;
@@ -197,18 +199,18 @@ function displayInspectionTypeResult(data) {
         data.history.forEach((item, index) => {
             const statusBadge = getStatusBadge(item.status);
             const date = new Date(item.createdAt).toLocaleDateString('vi-VN');
-            const isUpdated = item.inspectionId === data.updatedInspectionId;
+            const isTarget = item.inspectionId === data.targetInspectionId;
 
             html += `
-                <div class="history-item ${isUpdated ? 'item-updated' : ''}">
+                <div class="history-item ${isTarget ? 'item-updated' : ''}">
                     <div class="history-icon">
-                        <i class="bi ${isUpdated ? 'bi-arrow-repeat text-warning' : 'bi-check-circle'}"></i>
+                        <i class="bi ${isTarget ? 'bi-arrow-repeat text-warning' : 'bi-check-circle'}"></i>
                     </div>
                     <div class="history-content">
                         <div class="history-header">
                             <span class="history-code">${item.inspectionCode}</span>
                             ${statusBadge}
-                            ${isUpdated ? '<span class="badge badge-warning ml-2"><i class="bi bi-arrow-repeat"></i> Đã cập nhật</span>' : ''}
+                            ${isTarget ? '<span class="badge badge-warning ml-2"><i class="bi bi-arrow-repeat"></i> Sẽ cập nhật</span>' : ''}
                         </div>
                         <div class="history-details">
                             <span><i class="bi bi-calendar"></i> ${date}</span>
@@ -303,8 +305,8 @@ function validateForm() {
     const inspectionCode = getFieldValue('inspection-code');
     const inspectionType = getFieldValue('inspection-type-value');
 
-    // Nếu là cập nhật hồ sơ cũ, không cần inspection code mới
-    if (needCreateNew) {
+    // Nếu là tạo mới (CREATE), cần inspection code
+    if (detectedAction === 'CREATE') {
         if (!inspectionCode) {
             errors.push('Vui lòng tạo mã lượt kiểm định');
         }
@@ -339,12 +341,11 @@ async function submitApproval() {
             VehicleId: parseInt(vehicleId),
             OwnerId: ownerId,
             InspectionType: getFieldValue('inspection-type-value'),
-            Notes: getFieldValue('inspection-notes'),
-            UpdatedInspectionId: updatedInspectionId // Truyền ID hồ sơ đã update (nếu có)
+            Notes: getFieldValue('inspection-notes')
         };
 
         console.log('📤 Request data:', requestData);
-        console.log('🆕 Need create new:', needCreateNew);
+        console.log('🎯 Action:', detectedAction);
 
         // Show loading
         const submitBtn = document.getElementById('submit-btn');
@@ -368,16 +369,18 @@ async function submitApproval() {
         // Reset button
         if (submitBtn) {
             submitBtn.disabled = false;
-            if (needCreateNew) {
-                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận tạo hồ sơ mới';
+            if (detectedAction === 'CREATE') {
+                submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Tạo hồ sơ kiểm định mới';
+            } else if (detectedAction === 'UPDATE') {
+                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ tái kiểm';
             } else {
-                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Xác nhận tái kiểm';
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
             }
         }
 
         if (data.success) {
-            const message = data.data.isUpdated ?
-                'Đã cập nhật hồ sơ để tái kiểm thành công' :
+            const message = data.data.action === 'UPDATE' ?
+                'Đã cập nhật hồ sơ tái kiểm thành công' :
                 'Tạo hồ sơ kiểm định mới thành công';
 
             showNotification('success', message);
@@ -398,10 +401,12 @@ async function submitApproval() {
         const submitBtn = document.getElementById('submit-btn');
         if (submitBtn) {
             submitBtn.disabled = false;
-            if (needCreateNew) {
-                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận tạo hồ sơ mới';
+            if (detectedAction === 'CREATE') {
+                submitBtn.innerHTML = '<i class="bi bi-plus-circle"></i> Tạo hồ sơ kiểm định mới';
+            } else if (detectedAction === 'UPDATE') {
+                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Cập nhật hồ sơ tái kiểm';
             } else {
-                submitBtn.innerHTML = '<i class="bi bi-arrow-repeat"></i> Xác nhận tái kiểm';
+                submitBtn.innerHTML = '<i class="bi bi-check-circle"></i> Xác nhận duyệt';
             }
         }
     }

@@ -220,18 +220,18 @@ namespace Vehicle_Inspection.Controllers
                 // ✅ LOGIC MỚI: TĂNG Count_Re
                 // Nếu Count_Re là NULL, khởi tạo = 1 (lần đầu tiên không đạt)
                 // Nếu Count_Re đã có giá trị, tăng lên 1
-                if (inspection.Count_Re == null)
-                {
-                    inspection.Count_Re = 1;
-                }
-                else
-                {
-                    inspection.Count_Re += 1;
-                }
+                //if (inspection.Count_Re == null)
+                //{
+                //    inspection.Count_Re = 1;
+                //}
+                //else
+                //{
+                //    inspection.Count_Re += 1;
+                //}
 
                 // Cập nhật Status = 6 (Không đạt)
                 inspection.Status = 6;
-                inspection.FinalResult = 2; // 2 = Không đạt
+                inspection.FinalResult = null; // ✅ Đặt về NULL khi không đạt (để phân biệt với đạt = 1)
                 inspection.ConclusionNote = request.Notes;
                 inspection.ConcludedBy = request.UserId;
                 inspection.ConcludedAt = DateTime.Now;

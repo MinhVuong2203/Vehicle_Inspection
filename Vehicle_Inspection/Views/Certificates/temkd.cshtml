@@ -1,0 +1,260 @@
+﻿@model Vehicle_Inspection.Models.Inspection
+
+@{
+    Layout = null;
+    var vehicle = Model.Vehicle;
+    var certificate = Model.Certificate;
+    var validityMonths = ViewBag.ValidityMonths ?? 12;
+
+    var issueDate = certificate?.IssueDate ?? DateOnly.FromDateTime(DateTime.Now);
+    var expiryDate = issueDate.AddMonths(validityMonths);
+
+    var monthYear = expiryDate.ToString("MM/yyyy");
+    var plateNo = vehicle?.PlateNo ?? "";
+    var fullDate = expiryDate.ToString("dd/MM/yyyy");
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tem Kiểm Định - @plateNo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .stamp-container {
+            width: 360px;
+            height: 360px;
+            position: relative;
+        }
+
+        .stamp-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid #000;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        /* Inner circle border */
+        .inner-circle {
+            position: absolute;
+            width: 260px;
+            height: 260px;
+            border: 4px solid #000;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+
+        .star-left {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 38px;
+            color: #000;
+            z-index: 2;
+        }
+
+        .star-right {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 38px;
+            color: #000;
+            z-index: 2;
+        }
+
+        /* Outer circle text */
+        .curved-text-outer-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        .curved-text-outer-bottom {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+        }
+
+        /* Inner circle text */
+        .curved-text-inner-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+        }
+
+        .curved-text-inner-bottom {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+        }
+
+        .stamp-content {
+            text-align: center;
+            z-index: 10;
+            margin-top: 10px;
+        }
+
+        .no-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #000;
+            margin-bottom: 3px;
+        }
+
+        .month-year {
+            font-size: 46px;
+            font-weight: 900;
+            color: #000;
+            line-height: 1;
+            margin: 5px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+            .month-year sup {
+                font-size: 20px;
+                vertical-align: super;
+            }
+
+        .plate-no {
+            font-size: 30px;
+            font-weight: 900;
+            color: #000;
+            margin: 8px 0 5px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+            .plate-no sup {
+                font-size: 16px;
+                vertical-align: super;
+            }
+
+        .validity-text {
+            font-size: 10px;
+            font-weight: bold;
+            color: #000;
+            margin: 4px 0 3px 0;
+        }
+
+        .full-date {
+            font-size: 22px;
+            font-weight: 900;
+            color: #000;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+            .full-date sup {
+                font-size: 12px;
+                vertical-align: super;
+            }
+    </style>
+</head>
+<body>
+    <div class="stamp-container">
+        <div class="stamp-circle">
+            <!-- Inner circle border -->
+            <div class="inner-circle"></div>
+
+            <!-- Stars -->
+            <div class="star-left">★</div>
+            <div class="star-right">★</div>
+
+            <!-- OUTER CIRCLE - Top text -->
+            <svg class="curved-text-outer-top" viewBox="0 0 360 360">
+                <defs>
+                    <path id="curve-outer-top" d="M 60,75 A 150,150 0 0,1 300,75" fill="transparent" />
+                </defs>
+                <text font-family="Arial" font-size="17" font-weight="900" fill="#000" letter-spacing="2">
+                    <textPath href="#curve-outer-top" startOffset="50%" text-anchor="middle">
+                        BỘ GIAO THÔNG VẬN TẢI
+                    </textPath>
+                </text>
+            </svg>
+
+            <!-- OUTER CIRCLE - Bottom text -->
+            <svg class="curved-text-outer-bottom" viewBox="0 0 360 360">
+                <defs>
+                    <path id="curve-outer-bottom" d="M 60,285 A 150,150 0 0,0 300,285" fill="transparent" />
+                </defs>
+                <text font-family="Arial" font-size="14" font-weight="900" fill="#000" letter-spacing="1.5">
+                    <textPath href="#curve-outer-bottom" startOffset="50%" text-anchor="middle">
+                        CỤC ĐĂNG KIỂM VIỆT NAM
+                    </textPath>
+                </text>
+            </svg>
+
+            <!-- INNER CIRCLE - Top text -->
+            <svg class="curved-text-inner-top" viewBox="0 0 360 360">
+                <defs>
+                    <path id="curve-inner-top" d="M 105,145 A 75,75 0 0,1 255,145" fill="transparent" />
+                </defs>
+                <text font-family="Arial" font-size="9" font-weight="900" fill="#000" letter-spacing="0.5">
+                    <textPath href="#curve-inner-top" startOffset="50%" text-anchor="middle">
+                        AN TOÀN KỸ THUẬT
+                    </textPath>
+                </text>
+            </svg>
+
+            <!-- INNER CIRCLE - Bottom text -->
+            <svg class="curved-text-inner-bottom" viewBox="0 0 360 360">
+                <defs>
+                    <path id="curve-inner-bottom" d="M 105,215 A 75,75 0 0,0 255,215" fill="transparent" />
+                </defs>
+                <text font-family="Arial" font-size="9" font-weight="900" fill="#000" letter-spacing="0.5">
+                    <textPath href="#curve-inner-bottom" startOffset="50%" text-anchor="middle">
+                        BẢO VỆ MÔI TRƯỜNG
+                    </textPath>
+                </text>
+            </svg>
+
+            <!-- Content -->
+            <div class="stamp-content">
+                <div class="no-label">No: AA</div>
+                <div class="month-year">@monthYear<sup>(1)</sup></div>
+                <div class="plate-no">@plateNo<sup>(2)</sup></div>
+                <div class="validity-text">Có hiệu lực đến hết ngày:</div>
+                <div class="full-date">@fullDate<sup>(3)</sup></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

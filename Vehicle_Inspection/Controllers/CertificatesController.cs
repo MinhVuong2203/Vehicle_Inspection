@@ -45,6 +45,7 @@ namespace Vehicle_Inspection.Controllers
         }
 
         // Xuất PDF bằng PuppeteerSharp - Install-Package PuppeteerSharp
+        // Xuất PDF bằng PuppeteerSharp - In cả Chứng nhận và Tem
         public async Task<IActionResult> ExportCertificatePdf(int id)
         {
             var inspection = await _certificatesService.GetInspectionForCertificateAsync(id);
@@ -67,9 +68,6 @@ namespace Vehicle_Inspection.Controllers
                     _browserDownloaded = true;
                 }
 
-                // Render view thành HTML string
-                var htmlContent = await RenderViewToStringAsync("PrintCertificate", inspection);
-
                 // Launch Puppeteer browser
                 browser = await Puppeteer.LaunchAsync(new LaunchOptions
                 {
@@ -77,34 +75,120 @@ namespace Vehicle_Inspection.Controllers
                     Args = new[] { "--no-sandbox", "--disable-setuid-sandbox" }
                 });
 
-                var page = await browser.NewPageAsync();
-                await page.SetContentAsync(htmlContent);
+                var plateNo = inspection.Vehicle?.PlateNo?.Replace(" ", "").Replace("-", "") ?? "Unknown";
+                var ownerName = inspection.Vehicle?.Owner?.FullName?.Replace(" ", "_") ?? "Unknown";
 
-                // Export PDF - A4 landscape
-                byte[] pdfBytes = await page.PdfDataAsync(new PdfOptions
+                // Tạo thư mục lưu file
+                var savePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "downloads");
+                Directory.CreateDirectory(savePath);
+
+                // 1. Xuất PDF Chứng nhận
+                var certificateHtml = await RenderViewToStringAsync("PrintCertificate", inspection);
+                var certificatePage = await browser.NewPageAsync();
+                await certificatePage.SetContentAsync(certificateHtml);
+
+                byte[] certificatePdfBytes = await certificatePage.PdfDataAsync(new PdfOptions
                 {
                     Format = PaperFormat.A4,
                     Landscape = true,
                     PrintBackground = true
                 });
 
-                // Đóng browser ngay
+                var certificateFileName = $"{plateNo}_{ownerName}.pdf";
+                var certificateFullPath = Path.Combine(savePath, certificateFileName);
+                System.IO.File.WriteAllBytes(certificateFullPath, certificatePdfBytes);
+
+                await certificatePage.CloseAsync();
+
+                // 2. Xuất PDF Tem
+                var stampHtml = await RenderViewToStringAsync("temkd", inspection);
+                var stampPage = await browser.NewPageAsync();
+                await stampPage.SetContentAsync(stampHtml);
+
+                byte[] stampPdfBytes = await stampPage.PdfDataAsync(new PdfOptions
+                {
+                    Format = PaperFormat.A4,
+                    Landscape = false,
+                    PrintBackground = true
+                });
+
+                var stampFileName = $"Tem_{plateNo}.pdf";
+                var stampFullPath = Path.Combine(savePath, stampFileName);
+                System.IO.File.WriteAllBytes(stampFullPath, stampPdfBytes);
+
+                await stampPage.CloseAsync();
+
+                // Đóng browser
                 await browser.CloseAsync();
                 browser = null;
 
-                // Tạo tên file: BienSoXe_TenChuXe.pdf
-                var plateNo = inspection.Vehicle?.PlateNo?.Replace(" ", "").Replace("-", "") ?? "Unknown";
-                var ownerName = inspection.Vehicle?.Owner?.FullName?.Replace(" ", "_") ?? "Unknown";
-                var fileName = $"{plateNo}_{ownerName}.pdf";
+                // Tạo URL tương đối cho 2 file
+                var certificateUrl = $"/downloads/{certificateFileName}";
+                var stampUrl = $"/downloads/{stampFileName}";
 
-                // Lưu file vào wwwroot/downloads
-                var savePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "downloads");
-                Directory.CreateDirectory(savePath);
-                var fullPath = Path.Combine(savePath, fileName);
-                System.IO.File.WriteAllBytes(fullPath, pdfBytes);
+                // Trả về HTML để mở cả 2 file PDF cùng lúc
+                var html = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>Xem PDF</title>
+    <style>
+        body {{
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }}
+        .header {{
+            background: #333;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+        }}
+        .header a {{
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+        }}
+        .container {{
+            display: flex;
+            height: calc(100vh - 50px);
+        }}
+        .pdf-viewer {{
+            flex: 1;
+            border: none;
+        }}
+        .divider {{
+            width: 2px;
+            background: #ccc;
+        }}
+        @media (max-width: 768px) {{
+            .container {{
+                flex-direction: column;
+            }}
+            .divider {{
+                width: 100%;
+                height: 2px;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class='header'>
+        <strong>Xem Chứng Nhận & Tem Kiểm Định</strong>
+        <a href='{certificateUrl}' target='_blank'>📄 Mở Chứng Nhận</a>
+        <a href='{stampUrl}' target='_blank'>📋 Mở Tem</a>
+        <a href='/Certificates'>← Quay lại</a>
+    </div>
+    <div class='container'>
+        <iframe class='pdf-viewer' src='{certificateUrl}' title='Chứng Nhận Kiểm Định'></iframe>
+        <div class='divider'></div>
+        <iframe class='pdf-viewer' src='{stampUrl}' title='Tem Kiểm Định'></iframe>
+    </div>
+</body>
+</html>";
 
-                // Trả về file để tải xuống
-                return File(pdfBytes, "application/pdf", fileName);
+                return Content(html, "text/html");
             }
             catch (Exception ex)
             {

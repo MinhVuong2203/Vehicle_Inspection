@@ -173,8 +173,10 @@ namespace Vehicle_Inspection.Controllers
         }
 
         /// <summary>
-        /// XÉT DUYỆT HỒ SƠ
-        /// - Nếu Status = 6 (Không đạt) → CẬP NHẬT hồ sơ đó, tăng Count_Re
+        /// XÉT DUYỆT HỒ SƠ - LOGIC MỚI
+        /// Xét InspectionType của hồ sơ MỚI NHẤT trước khi cập nhật:
+        /// - Nếu hồ sơ mới nhất là PERIODIC → chuyển thành RE_INSPECTION, KHÔNG tăng Count_Re
+        /// - Nếu hồ sơ mới nhất là RE_INSPECTION → giữ nguyên RE_INSPECTION, CÓ tăng Count_Re
         /// - Nếu Status = 7 (Đã cấp GCN) hoặc 5 (Đạt) → TẠO HỒ SƠ MỚI
         /// </summary>
         [HttpPost("approve")]
@@ -185,7 +187,7 @@ namespace Vehicle_Inspection.Controllers
                 Console.WriteLine("💾 ========== BẮT ĐẦU XÉT DUYỆT HỒ SƠ ==========");
                 Console.WriteLine($"📋 VehicleId: {request.VehicleId}");
                 Console.WriteLine($"📋 OwnerId: {request.OwnerId}");
-                Console.WriteLine($"📋 InspectionType: {request.InspectionType}");
+                Console.WriteLine($"📋 InspectionType từ request: {request.InspectionType}");
 
                 // Validate dữ liệu
                 if (request.VehicleId <= 0)
@@ -273,15 +275,41 @@ namespace Vehicle_Inspection.Controllers
 
                     Console.WriteLine($"✅ Tạo hồ sơ mới thành công: ID={resultInspectionId}, Code={resultInspectionCode}");
                 }
-                // ========== TRƯỜNG HỢP 2: CẬP NHẬT ==========
+                // ========== TRƯỜNG HỢP 2: CẬP NHẬT (Status = 6 - Không đạt) ==========
                 else if (latestInspection.Status == 6)
                 {
                     action = "UPDATE";
                     Console.WriteLine($"🔄 CẬP NHẬT HỒ SƠ: ID={latestInspection.InspectionId}, Code={latestInspection.InspectionCode}");
+                    Console.WriteLine($"   InspectionType hiện tại của hồ sơ: {latestInspection.InspectionType}");
                     Console.WriteLine($"   Count_Re hiện tại: {latestInspection.Count_Re}");
 
-                    // Cập nhật thông tin
-                    latestInspection.InspectionType = request.InspectionType;
+                    // ✅ LOGIC MỚI: Xét InspectionType HIỆN TẠI của hồ sơ để quyết định
+                    if (latestInspection.InspectionType == "PERIODIC")
+                    {
+                        // Nếu hồ sơ hiện tại là PERIODIC → chuyển thành RE_INSPECTION, KHÔNG tăng Count_Re
+                        Console.WriteLine($"📌 Hồ sơ hiện tại là PERIODIC → Chuyển thành RE_INSPECTION, KHÔNG tăng Count_Re");
+                        latestInspection.InspectionType = "RE_INSPECTION";
+                        // Count_Re giữ nguyên (không thay đổi)
+                        Console.WriteLine($"   Count_Re giữ nguyên: {latestInspection.Count_Re}");
+                    }
+                    else if (latestInspection.InspectionType == "RE_INSPECTION")
+                    {
+                        // Nếu hồ sơ hiện tại là RE_INSPECTION → giữ nguyên RE_INSPECTION, CÓ tăng Count_Re
+                        Console.WriteLine($"📌 Hồ sơ hiện tại là RE_INSPECTION → Giữ nguyên RE_INSPECTION, CÓ tăng Count_Re");
+                        latestInspection.InspectionType = "RE_INSPECTION";
+                        latestInspection.Count_Re = (latestInspection.Count_Re ?? 0) + 1;
+                        Console.WriteLine($"   Count_Re tăng lên: {latestInspection.Count_Re}");
+                    }
+                    else
+                    {
+                        // Các trường hợp khác (FIRST, v.v.) → chuyển thành RE_INSPECTION, không tăng Count_Re
+                        Console.WriteLine($"📌 Hồ sơ hiện tại là {latestInspection.InspectionType} → Chuyển thành RE_INSPECTION, KHÔNG tăng Count_Re");
+                        latestInspection.InspectionType = "RE_INSPECTION";
+                        // Count_Re giữ nguyên
+                        Console.WriteLine($"   Count_Re giữ nguyên: {latestInspection.Count_Re}");
+                    }
+
+                    // Cập nhật Status
                     latestInspection.Status = 1; // RECEIVED - Quay về trạng thái tiếp nhận để kiểm định lại
 
                     // Cập nhật Notes (nếu có)
@@ -290,20 +318,13 @@ namespace Vehicle_Inspection.Controllers
                         latestInspection.Notes = request.Notes;
                     }
 
-                    // ✅ Tăng Count_Re
-                    if (request.InspectionType == "RE_INSPECTION")
-                    {
-                        latestInspection.Count_Re = (latestInspection.Count_Re ?? 0) + 1;
-                        Console.WriteLine($"✅ Tăng Count_Re lên: {latestInspection.Count_Re}");
-                    }
-
                     await _context.SaveChangesAsync();
 
                     resultInspectionId = latestInspection.InspectionId;
                     resultInspectionCode = latestInspection.InspectionCode;
                     resultCountRe = latestInspection.Count_Re;
 
-                    Console.WriteLine($"✅ Cập nhật hồ sơ thành công: ID={resultInspectionId}, Count_Re={resultCountRe}");
+                    Console.WriteLine($"✅ Cập nhật hồ sơ thành công: ID={resultInspectionId}, Type={latestInspection.InspectionType}, Count_Re={resultCountRe}");
                 }
                 // ========== TRƯỜNG HỢP 3: Status khác (0,1,2,3,4,8) ==========
                 else
@@ -319,7 +340,6 @@ namespace Vehicle_Inspection.Controllers
                 Console.WriteLine($"   - Action: {action}");
                 Console.WriteLine($"   - InspectionId: {resultInspectionId}");
                 Console.WriteLine($"   - InspectionCode: {resultInspectionCode}");
-                Console.WriteLine($"   - InspectionType: {request.InspectionType}");
                 Console.WriteLine($"   - Count_Re: {resultCountRe}");
 
                 return Ok(new
@@ -331,7 +351,7 @@ namespace Vehicle_Inspection.Controllers
                         action = action,
                         inspectionId = resultInspectionId,
                         inspectionCode = resultInspectionCode,
-                        inspectionType = request.InspectionType,
+                        inspectionType = latestInspection != null ? latestInspection.InspectionType : request.InspectionType,
                         status = 1, // RECEIVED
                         countRe = resultCountRe
                     }

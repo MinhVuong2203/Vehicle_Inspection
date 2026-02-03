@@ -354,7 +354,7 @@ async function submitApproval() {
         }
 
         // Send request
-        const response = await fetch('/api/approve/create', {
+        const response = await fetch('/api/approve/approve', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

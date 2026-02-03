@@ -69,8 +69,11 @@ function convertStagesToUIFormat(dbStages) {
 function convertItemsToMeasurements(items) {
     const measurements = {};
     items.forEach(item => {
-        if (item.actualValue !== null || item.actualText !== null) {
-            measurements[item.itemId] = item.actualText || item.actualValue;
+        // ✅ ƯU TIÊN actualText (cho AllowedValues), sau đó mới đến actualValue
+        if (item.actualText !== null && item.actualText !== undefined) {
+            measurements[item.itemId] = item.actualText;
+        } else if (item.actualValue !== null && item.actualValue !== undefined) {
+            measurements[item.itemId] = item.actualValue;
         }
     });
     return measurements;

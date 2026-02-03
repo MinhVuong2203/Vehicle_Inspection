@@ -250,5 +250,42 @@ namespace Vehicle_Inspection.Controllers
                 }, _jsonOptions);
             }
         }
+
+        //lấy dây chuyền phù hợp với loại xe
+        [HttpGet]
+        public IActionResult GetSuitableLanes(int vehicleTypeId)
+        {
+            try
+            {
+                System.Diagnostics.Debug.WriteLine($"Getting suitable lanes for VehicleTypeId: {vehicleTypeId}");
+
+                var lanes = _inspectionService.GetSuitableLanes(vehicleTypeId);
+
+                System.Diagnostics.Debug.WriteLine($"Found {lanes.Count} suitable lanes");
+
+                return Json(new { success = true, data = lanes }, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                return Json(new { success = false, message = ex.Message }, _jsonOptions);
+            }
+        }
+
+        //API lấy tất cả dây chuyền
+        [HttpGet]
+        public IActionResult GetInspectionLanes()
+        {
+            try
+            {
+                var lanes = _inspectionService.GetInspectionLanes();
+                return Json(new { success = true, data = lanes }, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
+                return Json(new { success = false, message = ex.Message }, _jsonOptions);
+            }
+        }
     }
 }

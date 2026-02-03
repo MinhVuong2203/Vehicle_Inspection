@@ -156,7 +156,7 @@ namespace Vehicle_Inspection.Service
                     return false;
                 }
 
-                if (user.Position?.PoitionCode != "KTV")
+                if ((user.Position?.PoitionCode != "KTV") && (user.Position?.PoitionCode != "TTDC"))
                 {
                     Console.WriteLine($"User {userId} is not KTV, cannot assign stages");
                     return false;

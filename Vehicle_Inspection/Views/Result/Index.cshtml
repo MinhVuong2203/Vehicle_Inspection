@@ -253,15 +253,29 @@
     {
         foreach (var inspection in Model)
         {
+            // ✅ Kiểm tra xem tất cả công đoạn có đạt không
+            var allStagesPassed = inspection.InspectionStages != null &&
+            inspection.InspectionStages.Any() &&
+            inspection.InspectionStages.All(s => s.StageResult == 1);
+
             <div class="inspection-card">
                 <div class="inspection-header">
                     <div class="inspection-code">
                         <i class="fa-solid fa-file-lines"></i> @inspection.InspectionCode
                     </div>
                     <div>
-                        <span class="badge bg-warning text-dark">
-                            <i class="fa-solid fa-clock"></i> Chờ kết luận
-                        </span>
+                        @if (allStagesPassed)
+                        {
+                            <span class="badge bg-success text-white">
+                                <i class="fa-solid fa-check-circle"></i> Tất cả công đoạn ĐẠT
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger text-white">
+                                <i class="fa-solid fa-exclamation-circle"></i> Có công đoạn KHÔNG ĐẠT
+                            </span>
+                        }
                     </div>
                 </div>
 
@@ -300,12 +314,20 @@
                     <button class="btn-view-detail" onclick="viewDetails(@inspection.InspectionId)">
                         <i class="fa-solid fa-eye"></i> Xem chi tiết
                     </button>
-                    <button class="btn-pass" onclick="concludePassed(@inspection.InspectionId)">
-                        <i class="fa-solid fa-check"></i> Kết luận ĐẠT
-                    </button>
-                    <button class="btn-fail" onclick="concludeFailed(@inspection.InspectionId)">
-                        <i class="fa-solid fa-times"></i> Kết luận KHÔNG ĐẠT
-                    </button>
+
+                    @* ✅ CHỈ HIỆN 1 NÚT DỰA VÀO KẾT QUẢ *@
+                    @if (allStagesPassed)
+                    {
+                        <button class="btn-pass" onclick="concludePassed(@inspection.InspectionId)">
+                            <i class="fa-solid fa-check"></i> Kết luận ĐẠT
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="btn-fail" onclick="concludeFailed(@inspection.InspectionId)">
+                            <i class="fa-solid fa-times"></i> Kết luận KHÔNG ĐẠT
+                        </button>
+                    }
                 </div>
             </div>
         }

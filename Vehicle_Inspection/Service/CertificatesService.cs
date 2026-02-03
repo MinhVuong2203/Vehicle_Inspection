@@ -87,5 +87,14 @@ namespace Vehicle_Inspection.Service
                 return 12; // Mặc định 12 tháng
             }
         }
+        public async Task UpdateInspectionStatusAsync(int inspectionId, int newStatus)
+        {
+            var inspection = await _context.Inspections.FindAsync(inspectionId);
+            if (inspection != null)
+            {
+                inspection.Status = (short)newStatus;
+                await _context.SaveChangesAsync();
+            }
+        }
     }
 }

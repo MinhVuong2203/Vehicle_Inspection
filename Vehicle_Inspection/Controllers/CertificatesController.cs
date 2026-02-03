@@ -122,6 +122,9 @@ namespace Vehicle_Inspection.Controllers
                 await browser.CloseAsync();
                 browser = null;
 
+                // Cập nhật status thành 7 sau khi xuất PDF thành công
+                await _certificatesService.UpdateInspectionStatusAsync(id, 7);
+
                 // Tạo URL tương đối cho 2 file
                 var certificateUrl = $"/downloads/{certificateFileName}";
                 var stampUrl = $"/downloads/{stampFileName}";

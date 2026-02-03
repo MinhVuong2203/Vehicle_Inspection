@@ -167,7 +167,7 @@
                 <tbody>
                     @foreach (var item in Model)
                     {
-                        var isKTV = item.User.Position?.PoitionCode == "KTV";
+                        var isKTV = item.User.Position?.PoitionCode == "KTV" || item.User.Position?.PoitionCode == "TTDC";
                         var rowClass = (modeVal == "stage" && !isKTV) ? "non-ktv-row" : "";
 
                         <tr class="@rowClass">

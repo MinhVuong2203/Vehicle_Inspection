@@ -906,32 +906,6 @@ function renderStagesList() {
     updateProgress();
 }
 
-// Hiển thị chi tiết một giai đoạn
-function showStage(index) {
-    currentStageIndex = index;
-    const stage = stagesData[index];
-
-    document.getElementById('stageDetail').style.display = 'block';
-    document.getElementById('inspectionConclusion').style.display = 'none';
-
-    document.getElementById('stageName').textContent = stage.stageName;
-    document.getElementById('stageDescription').textContent = `Công đoạn ${index + 1}/${stagesData.length}`;
-
-    renderStageForm(stage);
-
-    if (stage.result === 2) {
-        document.getElementById('defectsSection').style.display = 'block';
-        renderDefects(stage.stageId);
-    } else {
-        document.getElementById('defectsSection').style.display = 'none';
-    }
-
-    document.querySelector('.stage-actions button:first-child').style.display = index === 0 ? 'none' : 'inline-flex';
-    document.getElementById('btnNextStage').textContent = index === stagesData.length - 1 ? 'Kết Luận' : 'Tiếp Theo';
-
-    renderStagesList();
-}
-
 // Render form nhập liệu cho giai đoạn
 function renderStageForm(stage) {
     const form = document.getElementById('stageForm');
@@ -974,7 +948,16 @@ function renderStageForm(stage) {
             checkItemStandard(item.id);
         }
     });
+
+    // ✅ ENABLE NÚT LƯU
+    const saveButton = document.querySelector('.stage-actions button:nth-child(2)');
+    if (saveButton) {
+        saveButton.disabled = false;
+        saveButton.style.opacity = '1';
+        saveButton.style.cursor = 'pointer';
+    }
 }
+
 
 // Kiểm tra thông số có đạt chuẩn không
 function checkItemStandard(itemId) {
@@ -1008,38 +991,170 @@ function checkItemStandard(itemId) {
     }
 }
 
-// Lưu kết quả giai đoạn
+
+// Hiển thị chi tiết một giai đoạn
+// ✅ KIỂM TRA QUYỀN KHI HIỂN thị FORM
+async function showStage(index) {
+    currentStageIndex = index;
+    const stage = stagesData[index];
+
+    document.getElementById('stageDetail').style.display = 'block';
+    document.getElementById('inspectionConclusion').style.display = 'none';
+
+    document.getElementById('stageName').textContent = stage.stageName;
+    document.getElementById('stageDescription').textContent = `Công đoạn ${index + 1}/${stagesData.length}`;
+
+    // ✅ KIỂM TRA QUYỀN TRƯỚC KHI RENDER FORM
+    const hasPermission = await checkStagePermission(currentInspection.inspectionId, stage.stageId);
+
+    if (!hasPermission) {
+        // ✅ HIỂN THỊ THÔNG BÁO VÀ DISABLE FORM
+        renderStageFormDisabled(stage);
+        showPermissionWarning();
+    } else {
+        // ✅ RENDER FORM BÌNH THƯỜNG
+        renderStageForm(stage);
+    }
+
+    if (stage.result === 2) {
+        document.getElementById('defectsSection').style.display = 'block';
+        renderDefects(stage.stageId);
+    } else {
+        document.getElementById('defectsSection').style.display = 'none';
+    }
+
+    document.querySelector('.stage-actions button:first-child').style.display = index === 0 ? 'none' : 'inline-flex';
+    document.getElementById('btnNextStage').textContent = index === stagesData.length - 1 ? 'Kết Luận' : 'Tiếp Theo';
+
+    renderStagesList();
+}
+
+// ✅ KIỂM TRA QUYỀN QUA API
+async function checkStagePermission(inspectionId, stageId) {
+    try {
+        const response = await fetch(`/Inspection/CheckStagePermission?inspectionId=${inspectionId}&stageId=${stageId}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error('Cannot check permission');
+            return false;
+        }
+
+        const result = await response.json();
+        return result.success && result.hasPermission;
+    } catch (error) {
+        console.error('Error checking permission:', error);
+        return false;
+    }
+}
+
+// ✅ RENDER FORM Ở CHẾ ĐỘ DISABLED
+function renderStageFormDisabled(stage) {
+    const form = document.getElementById('stageForm');
+    form.innerHTML = '';
+
+    const items = stageItems[stage.stageId] || [];
+
+    items.forEach(item => {
+        const formGroup = document.createElement('div');
+        formGroup.className = 'form-group';
+
+        let inputHtml = '';
+        const savedValue = stage.measurements && stage.measurements[item.id] 
+            ? stage.measurements[item.id] 
+            : '';
+
+        if (item.type === 'select') {
+            inputHtml = `
+                <select id="item_${item.id}" disabled style="background-color: #f0f0f0; cursor: not-allowed;">
+                    <option value="">-- Chọn --</option>
+                    ${item.options.map(opt => `<option value="${opt}" ${savedValue === opt ? 'selected' : ''}>${opt}</option>`).join('')}
+                </select>
+            `;
+        } else if (item.type === 'number') {
+            inputHtml = `
+                <input type="number" id="item_${item.id}" 
+                       value="${savedValue}"
+                       disabled
+                       style="background-color: #f0f0f0; cursor: not-allowed;"
+                       placeholder="Bạn không có quyền nhập liệu">
+            `;
+        }
+
+        formGroup.innerHTML = `
+            <label>${item.name} <span style="color: #dc3545;">*</span></label>
+            ${inputHtml}
+            <div class="help-text">Tiêu chuẩn: ${item.standard}</div>
+            <div id="result_${item.id}" style="margin-top: 5px;"></div>
+        `;
+
+        form.appendChild(formGroup);
+    });
+
+    // ✅ DISABLE NÚT LƯU
+    const saveButton = document.querySelector('.stage-actions button:nth-child(2)');
+    if (saveButton) {
+        saveButton.disabled = true;
+        saveButton.style.opacity = '0.5';
+        saveButton.style.cursor = 'not-allowed';
+    }
+}
+
+// ✅ HIỂN THỊ CẢNH BÁO
+function showPermissionWarning() {
+    const form = document.getElementById('stageForm');
+    
+    const warningDiv = document.createElement('div');
+    warningDiv.style.cssText = `
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    `;
+    
+    warningDiv.innerHTML = `
+        <i class="fa-solid fa-lock" style="font-size: 24px; color: #856404;"></i>
+        <div>
+            <strong style="color: #856404;">Bạn không có quyền nhập liệu cho công đoạn này</strong>
+            <p style="margin: 5px 0 0 0; color: #856404;">
+                Chỉ nhân viên được phân công mới có thể nhập dữ liệu.
+            </p>
+        </div>
+    `;
+    
+    form.insertBefore(warningDiv, form.firstChild);
+}
+
+// ✅ CẬP NHẬT HÀM LƯU ĐỂ HIỂN THỊ THÔNG BÁO RÕ RÀNG
 async function saveStageResult() {
     const stage = stagesData[currentStageIndex];
     const items = stageItems[stage.stageId] || [];
 
-    console.log('=== Saving Stage Result ===');
-    console.log('Current stage:', stage);
-    console.log('InspStageId:', stage.inspStageId); // ✅ LOG KIỂM TRA
-
-    // ✅ KIỂM TRA inspStageId có tồn tại không
     if (!stage.inspStageId) {
         alert('❌ Lỗi: Không tìm thấy InspStageId. Vui lòng load lại trang.');
-        console.error('Missing inspStageId in stage:', stage);
         return;
     }
 
     let allFilled = true;
-    let allPassed = true;
     const measurements = [];
 
-    // Thu thập dữ liệu từ form
     for (const item of items) {
         const inputElement = document.getElementById(`item_${item.id}`);
         const value = inputElement?.value;
 
         if (!value) {
             allFilled = false;
-            console.warn(`Item ${item.id} (${item.name}) is not filled`);
             continue;
         }
 
-        // Xác định giá trị actual
         let actualValue = null;
         let actualText = null;
 
@@ -1049,21 +1164,15 @@ async function saveStageResult() {
             actualText = value;
         }
 
-        // Kiểm tra đạt/không đạt
         let isPassed = false;
 
         if (item.type === 'select') {
-            isPassed = value === item.standard;
+            isPassed = value === item.standard || value === item.options[0];
         } else if (item.type === 'number') {
             const numValue = parseFloat(value);
             isPassed = numValue >= (item.min || 0) && numValue <= (item.max || 999999);
         }
 
-        if (!isPassed) {
-            allPassed = false;
-        }
-
-        // Tạo measurement object
         const measurement = {
             itemId: item.id,
             itemCode: item.itemCode || `ITEM_${item.id}`,
@@ -1078,38 +1187,31 @@ async function saveStageResult() {
             isPassed: isPassed
         };
 
-        // Nếu không đạt, thêm thông tin defect
         if (!isPassed) {
             measurement.defectCategory = stage.stageName;
             measurement.defectDescription = `${item.name}: Giá trị đo ${value} ${item.unit || ''} không đạt tiêu chuẩn ${item.standard}`;
-            measurement.defectSeverity = 2; // Major (Hư hỏng)
+            measurement.defectSeverity = 2;
         }
 
         measurements.push(measurement);
     }
 
     if (!allFilled) {
-        alert('Vui lòng nhập đầy đủ tất cả các thông số!');
+        alert('⚠️ Vui lòng nhập đầy đủ tất cả các thông số!');
         return;
     }
 
-    console.log('Measurements to save:', measurements);
-
-    // Chuẩn bị request data
     const requestData = {
         inspectionId: currentInspection.inspectionId,
-        inspStageId: stage.inspStageId, // ✅ DÙNG inspStageId từ stage
+        inspStageId: stage.inspStageId,
         stageId: stage.stageId,
         measurements: measurements,
         notes: null
     };
 
-    console.log('Request data:', requestData);
-
     showFullScreenLoading('Đang lưu kết quả...');
 
     try {
-        // Gọi API để lưu
         const response = await fetch('/Inspection/SaveStageResult', {
             method: 'POST',
             headers: {
@@ -1119,21 +1221,15 @@ async function saveStageResult() {
             body: JSON.stringify(requestData)
         });
 
-        console.log('Save response status:', response.status);
-
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error('API Error:', errorText);
             throw new Error('Không thể lưu kết quả');
         }
 
         const result = await response.json();
-        console.log('Save result:', result);
 
         if (result.success) {
-            // Cập nhật stage trong stagesData
-            stage.status = 2; // COMPLETED
-            stage.result = allPassed ? 1 : 2; // PASSED : FAILED
+            stage.status = 2;
+            stage.result = measurements.every(m => m.isPassed) ? 1 : 2;
             stage.measurements = {};
             measurements.forEach(m => {
                 stage.measurements[m.itemId] = m.actualValue || m.actualText;
@@ -1141,17 +1237,23 @@ async function saveStageResult() {
 
             alert('✅ Đã lưu kết quả công đoạn thành công!');
 
-            // Hiển thị section defects nếu có lỗi
-            if (!allPassed) {
+            if (stage.result === 2) {
                 document.getElementById('defectsSection').style.display = 'block';
-                // Reload defects từ server
                 await loadStageDefects(stage.stageId);
             }
 
-            // Cập nhật UI
             renderStagesList();
         } else {
-            alert('❌ Lưu thất bại: ' + (result.message || 'Lỗi không xác định'));
+            // ✅ HIỂN THỊ THÔNG BÁO CHI TIẾT
+            if (result.message.includes('không có quyền')) {
+                alert('🚫 BẠN KHÔNG CÓ QUYỀN NHẬP LIỆU!\n\n' +
+                      '❌ Chỉ nhân viên được phân công cho công đoạn này mới có thể nhập dữ liệu.\n\n' +
+                      '📞 Vui lòng liên hệ quản lý để được phân quyền.');
+            } else if (result.message.includes('chưa đăng nhập')) {
+                alert('🔒 BẠN CHƯA ĐĂNG NHẬP!\n\nVui lòng đăng nhập để tiếp tục.');
+            } else {
+                alert('❌ Lưu thất bại: ' + (result.message || 'Lỗi không xác định'));
+            }
         }
     } catch (error) {
         console.error('Error saving stage result:', error);

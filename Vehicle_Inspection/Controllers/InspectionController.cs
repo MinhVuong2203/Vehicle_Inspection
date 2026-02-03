@@ -1,11 +1,13 @@
-﻿using System.Text.Json;
+﻿using System.Security.Claims;
+using System.Text.Json;
 using System.Text.Json.Serialization;
-using Microsoft.AspNetCore.Http.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Vehicle_Inspection.Service;
 
 namespace Vehicle_Inspection.Controllers
 {
+    [Authorize]
     public class InspectionController : Controller
     {
         private readonly IInspectionService _inspectionService;
@@ -15,7 +17,6 @@ namespace Vehicle_Inspection.Controllers
         {
             _inspectionService = inspectionService;
 
-            // Configure JSON để trả về camelCase
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -23,7 +24,28 @@ namespace Vehicle_Inspection.Controllers
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
         }
-    
+
+        //Helper method để lấy UserId từ Claims
+        private Guid? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (string.IsNullOrEmpty(userIdClaim))
+            {
+                System.Diagnostics.Debug.WriteLine("❌ UserId claim not found");
+                return null;
+            }
+            
+            if (Guid.TryParse(userIdClaim, out Guid userId))
+            {
+                System.Diagnostics.Debug.WriteLine($"✅ UserId from Claims: {userId}");
+                return userId;
+            }
+            
+            System.Diagnostics.Debug.WriteLine($"❌ Invalid UserId format: {userIdClaim}");
+            return null;
+        }
+
         public IActionResult Index()
         {
             var inspectionRecords = _inspectionService.GetInspectionRecords();
@@ -110,7 +132,21 @@ namespace Vehicle_Inspection.Controllers
         {
             try
             {
+                var userId = GetCurrentUserId();
+                
+                if (userId == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Bạn chưa đăng nhập. Vui lòng đăng nhập lại!"
+                    }, _jsonOptions);
+                }
+
+                request.UserId = userId.Value;
+
                 System.Diagnostics.Debug.WriteLine($"Saving stage result for InspStageId: {request.InspStageId}");
+                System.Diagnostics.Debug.WriteLine($"UserId: {userId}");
 
                 if (request.Measurements == null || request.Measurements.Count == 0)
                 {
@@ -132,7 +168,7 @@ namespace Vehicle_Inspection.Controllers
                     return Json(new
                     {
                         success = false,
-                        message = "Không thể lưu kết quả"
+                        message = "Bạn không có quyền nhập liệu cho công đoạn này"
                     }, _jsonOptions);
                 }
             }
@@ -285,6 +321,44 @@ namespace Vehicle_Inspection.Controllers
             {
                 System.Diagnostics.Debug.WriteLine($"Error: {ex.Message}");
                 return Json(new { success = false, message = ex.Message }, _jsonOptions);
+            }
+        }
+
+        // ✅ CẬP NHẬT: Lấy UserId từ Claims
+        [HttpGet]
+        public IActionResult CheckStagePermission(int inspectionId, int stageId)
+        {
+            try
+            {
+                var userId = GetCurrentUserId();
+
+                if (userId == null)
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        hasPermission = false,
+                        message = "Bạn chưa đăng nhập"
+                    }, _jsonOptions);
+                }
+
+                var hasPermission = _inspectionService.CheckUserStagePermission(userId.Value, stageId);
+
+                return Json(new
+                {
+                    success = true,
+                    hasPermission = hasPermission,
+                    message = hasPermission ? "Có quyền nhập liệu" : "Không có quyền nhập liệu"
+                }, _jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                return Json(new
+                {
+                    success = false,
+                    hasPermission = false,
+                    message = ex.Message
+                }, _jsonOptions);
             }
         }
     }

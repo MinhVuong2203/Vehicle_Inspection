@@ -20,18 +20,13 @@ namespace Vehicle_Inspection.Controllers
         // GET: Toll/Index
         public IActionResult Index(string? search, short? status, string? type)
         {
-            // Mặc định lấy các đơn chờ thu phí (status = 1) hoặc đã hoàn thành kiểm định
-            //if (!status.HasValue && string.IsNullOrEmpty(search) && string.IsNullOrEmpty(type))
-            //{
-            //    status = 1; // 1 = Chờ thu phí/tiếp nhận
-            //}
+            var payments = _tollService.GetPayments(search, status);
 
-            var inspections = _tollService.GetInspections(search, status);
-
-            // Lọc theo loại kiểm định nếu có
             if (!string.IsNullOrEmpty(type))
             {
-                inspections = inspections.Where(i => i.InspectionType == type).ToList();
+                payments = payments
+                    .Where(p => p.Inspection.InspectionType == type)
+                    .ToList();
             }
 
             // Truyền dữ liệu tìm kiếm vào ViewBag để giữ giá trị trong form
@@ -39,15 +34,13 @@ namespace Vehicle_Inspection.Controllers
             ViewBag.StatusValue = status;
             ViewBag.TypeValue = type;
 
-            // Tính toán thống kê
-            // Status = 1: Chờ thu phí
-            // Status = 2 trở lên: Đã thu phí hoặc các trạng thái khác
-            ViewBag.PendingCount = inspections.Count(i => i.Status == 1 && i.PaidAt == null);
-            ViewBag.CompletedCount = inspections.Count(i => i.PaidAt != null);
-            ViewBag.TotalCount = inspections.Count;
+            ViewBag.PendingCount = payments.Count(p => p.PaymentStatus == 0);
+            ViewBag.CompletedCount = payments.Count(p => p.PaymentStatus == 1);
+            ViewBag.TotalCount = payments.Count;
 
-            return View(inspections);
+            return View(payments);
         }
+
 
         // POST: Toll/CollectPayment
         // Form này submit cho thanh toán tiền mặt

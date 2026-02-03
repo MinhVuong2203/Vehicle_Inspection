@@ -4,7 +4,7 @@ namespace Vehicle_Inspection.Service
 {
     public interface ITollService
     {
-        List<Inspection> GetInspections(string? search, short? status);
+        public List<Payment> GetPayments(string? search, short? status);
         Inspection? GetInspectionDetails(string inspectionCode);
         public Payment? GetPaymentByOrderCode(long? orderCode);
         public string CollectPayment(int paymentId, string paymentMethod, string? note, Guid userId);

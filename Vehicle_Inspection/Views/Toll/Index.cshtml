@@ -1,4 +1,4 @@
-﻿@model List<Vehicle_Inspection.Models.Inspection>
+﻿@model List<Vehicle_Inspection.Models.Payment>
 
 @{
     ViewData["Title"] = "Thu phí kiểm định";
@@ -107,8 +107,7 @@
                                 </label>
                                 <select class="filter-select" name="type">
                                     <option value="">Tất cả loại</option>
-                                    <option value="PERIODIC" selected="@(ViewBag.TypeValue == "PERIODIC")">Định kỳ</option>
-                                    <option value="RE_INSPECTION" selected="@(ViewBag.TypeValue == "RE_INSPECTION")">Tái kiểm</option>
+                                    <option value="PERIODIC" selected="@(ViewBag.TypeValue == "PERIODIC")">Định kỳ</option>      
                                     <option value="FIRST" selected="@(ViewBag.TypeValue == "FIRST")">Lần đầu</option>
                                 </select>
                             </div>
@@ -161,122 +160,119 @@
             }
             else
             {
-                <!-- Card View -->
                 <div class="card-grid" id="cardView">
 
-                    @foreach (var inspection in Model)
+                    @foreach (var payment in Model ?? new List<Payment>())
                     {
-                        var payments = inspection.Payments ?? new List<Payment>();
+                        var inspection = payment.Inspection;
+                        var isPaid = payment.PaymentStatus == 1;
 
-                        foreach (var payment in payments.OrderBy(p => p.CreatedAt))
-                        {
-                            var isPaid = payment.PaymentStatus == 1;
+                        var plateNo = inspection?.Vehicle?.PlateNo ?? "";
+                        var ownerName = inspection?.Vehicle?.Owner?.FullName ?? "";
+                        var inspectionType = inspection?.InspectionType ?? "";
+                        var inspectionCode = inspection?.InspectionCode ?? "";
 
-                            var statusClass = isPaid ? "completed" : "pending";
-                            var statusText = isPaid ? "Đã thu phí" : "Chờ thu phí";
-                            var statusIcon = isPaid ? "fa-check-circle" : "fa-clock";
+                        var statusClass = isPaid ? "completed" : "pending";
+                        var statusText = isPaid ? "Đã thu phí" : "Chờ thu phí";
+                        var statusIcon = isPaid ? "fa-check-circle" : "fa-clock";
 
-                            <div class="inspection-card @statusClass">
+                        <div class="inspection-card @statusClass">
 
-                                <div class="card-header-section">
-                                    <div class="card-code">
-                                        <i class="fas fa-barcode"></i>
-                                        @inspection.InspectionCode
-                                    </div>
+                            <!-- HEADER -->
+                            <div class="card-header-section">
 
-                                    <span class="card-status status-@statusClass">
-                                        <i class="fas @statusIcon"></i>
-                                        @statusText
+                                <div class="card-code">
+                                    <i class="fas fa-barcode"></i>
+                                    @inspectionCode
+                                </div>
+
+                                <span class="card-status status-@statusClass">
+                                    <i class="fas @statusIcon"></i>
+                                    @statusText
+                                </span>
+
+                            </div>
+
+                            <!-- BODY -->
+                            <div class="card-body-section">
+
+                                <div class="card-detail">
+                                    <i class="fas fa-car"></i>
+                                    <span>Xe: <strong>@plateNo</strong></span>
+                                </div>
+
+                                <div class="card-detail">
+                                    <i class="fas fa-user"></i>
+                                    <span>Chủ xe: <strong>@ownerName</strong></span>
+                                </div>
+
+                                <div class="card-detail">
+                                    <i class="fas fa-layer-group"></i>
+                                    <span>Loại KĐ: <strong>@inspectionType</strong></span>
+                                </div>
+
+                                <div class="card-detail">
+                                    <i class="fas fa-calendar"></i>
+                                    <span>
+                                        Ngày tạo:
+                                        <strong>@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</strong>
                                     </span>
                                 </div>
 
-                                <div class="card-body-section">
-
-                                    <div class="card-detail">
-                                        <i class="fas fa-car"></i>
-                                        <span>Loại: <strong>@inspection.InspectionType</strong></span>
-                                    </div>
-
-                                    <div class="card-detail">
-                                        <i class="fas fa-id-card"></i>
-                                        <span>Xe: <strong>@inspection.Vehicle?.PlateNo</strong></span>
-                                    </div>
-
-                                    <div class="card-detail">
-                                        <i class="fas fa-user"></i>
-                                        <span>Chủ xe: <strong>@inspection.Vehicle?.Owner?.FullName</strong></span>
-                                    </div>
-
-                                    <div class="card-detail">
-                                        <i class="fas fa-calendar"></i>
-                                        <span>
-                                            Ngày tạo Payment:
-                                            <strong>@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</strong>
-                                        </span>
-                                    </div>
-
-                                    <div class="card-detail">
-                                        <i class="fas fa-money-bill-wave"></i>
-                                        <span>
-                                            Phí:
-                                            <strong class="amount">
-                                                @payment.TotalAmount.ToString("N0") VNĐ
-                                            </strong>
-                                        </span>
-                                    </div>
-
-                                    <div class="card-detail">
-                                        <i class="fas fa-credit-card"></i>
-                                        <span>
-                                            Phương thức:
-                                            <strong>@payment.PaymentMethod</strong>
-                                        </span>
-                                    </div>
-
+                                <div class="card-detail">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    <span>
+                                        Phí:
+                                        <strong class="amount">
+                                            @payment.TotalAmount.ToString("N0") VNĐ
+                                        </strong>
+                                    </span>
                                 </div>
+
+                            </div>
+
+                            <!-- FOOTER -->
+                            <div class="card-footer-section" style="display: flex">
 
                                 @if (!isPaid)
                                 {
-                                    <div class="card-footer-section">
-                                        <button class="btn-toll"
-                                                onclick="openTollModal(
+                                    <button class="btn-toll"
+                                            onclick="openTollModal(
                                     @payment.PaymentId,
-                                    '@inspection.InspectionCode',
-                                    '@inspection.InspectionType',
-                                    '@inspection.Vehicle?.PlateNo',
-                                    '@inspection.Vehicle?.Owner?.FullName',
+                                    '@inspectionCode',
+                                    '@inspectionType',
+                                    '@plateNo',
+                                    '@ownerName',
                                     @((double)payment.TotalAmount)
                                 )">
-                                            <i class="fas fa-cash-register"></i>
-                                            Thu phí
-                                        </button>
-                                    </div>
-                                }
 
+                                        <i class="fas fa-cash-register"></i>
+                                        Thu phí
+                                    </button>
+                                }
                                 else
                                 {
-                                    <div class="card-footer-section">
-                                        <div class="paid-info">
-                                            <i class="fas fa-check-circle"></i>
-                                            Đã thu phí lúc
-                                            @payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")
-                                        </div>
-
-                                        <button type="button"
-                                                class="btn-toll btn-print"
-                                                onclick="printReceipt('@payment.PaymentId')">
-
-                                            <i class="fas fa-print"></i>
-                                            In biên nhận
-                                        </button>
+                                    <div class="paid-info">
+                                        <i class="fas fa-check-circle"></i>
+                                        Đã thu phí lúc
+                                        @payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")
                                     </div>
+
+                                    <button class="btn-toll btn-print"
+                                            onclick="printReceipt(@payment.PaymentId)">
+
+                                        <i class="fas fa-print"></i>
+                                        In biên nhận
+                                    </button>
                                 }
 
                             </div>
-                        }
+
+                        </div>
                     }
 
                 </div>
+
 
 
                 <!-- Table View -->
@@ -315,101 +311,105 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var inspection in Model)
+                            @foreach (var payment in Model ?? new List<Payment>())
                             {
-                                var payments = inspection.Payments ?? new List<Payment>();
+                                var inspection = payment.Inspection;
 
-                                foreach (var payment in payments.OrderBy(p => p.CreatedAt))
-                                {
-                                    var isPaid = payment.PaymentStatus == 1;
+                                var isPaid = payment.PaymentStatus == 1;
 
-                                    var statusClass = isPaid ? "completed" : "pending";
-                                    var statusText = isPaid ? "Đã thu phí" : "Chờ thu phí";
-                                    var statusIcon = isPaid ? "fa-check-circle" : "fa-clock";
+                                var statusClass = isPaid ? "completed" : "pending";
+                                var statusText = isPaid ? "Đã thu phí" : "Chờ thu phí";
+                                var statusIcon = isPaid ? "fa-check-circle" : "fa-clock";
 
-                                    <tr>
-                                        <td>
-                                            <div class="table-code">
-                                                <i class="fas fa-barcode"></i>
-                                                @inspection.InspectionCode
-                                            </div>
-                                        </td>
+                                var plateNo = inspection?.Vehicle?.PlateNo ?? "";
+                                var ownerName = inspection?.Vehicle?.Owner?.FullName ?? "";
+                                var ownerPhone = inspection?.Vehicle?.Owner?.Phone ?? "";
+                                var inspectionType = inspection?.InspectionType ?? "";
+                                var inspectionCode = inspection?.InspectionCode ?? "";
 
-                                        <td><strong>@inspection.Vehicle?.PlateNo</strong></td>
+                                <tr>
+                                    <td>
+                                        <div class="table-code">
+                                            <i class="fas fa-barcode"></i>
+                                            @inspectionCode
+                                        </div>
+                                    </td>
 
-                                        <td>@inspection.InspectionType</td>
+                                    <td><strong>@plateNo</strong></td>
 
-                                        <td>@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>@inspectionType</td>
 
-                                        <td>
-                                            <strong class="amount">
-                                                @payment.TotalAmount.ToString("N0") VNĐ
-                                            </strong>
-                                        </td>
+                                    <td>@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
 
-                                        <td>
-                                            <span class="badge badge-@statusClass">
-                                                <i class="fas @statusIcon"></i>
-                                                @statusText
-                                            </span>
-                                        </td>
+                                    <td>
+                                        <strong class="amount">
+                                            @payment.TotalAmount.ToString("N0") VNĐ
+                                        </strong>
+                                    </td>
 
-                                        <td>
+                                    <td>
+                                        <span class="badge badge-@statusClass">
+                                            <i class="fas @statusIcon"></i>
+                                            @statusText
+                                        </span>
+                                    </td>
 
-                                            @if (!isPaid)
-                                            {
-                                                <button class="btn-action btn-collect"
-                                                        onclick="openTollModal(
-                                                                @payment.PaymentId,
-                                                                '@inspection.InspectionCode',
-                                                                '@inspection.InspectionType',
-                                                                '@inspection.Vehicle?.PlateNo',
-                                                                '@inspection.Vehicle?.Owner?.FullName',
-                                                                @((double)payment.TotalAmount)
-                                                            )">
+                                    <td>
+                                        @if (!isPaid)
+                                        {
+                                            <button class="btn-action btn-collect"
+                                                    onclick="openTollModal(
+                                    @payment.PaymentId,
+                                    '@inspectionCode',
+                                    '@inspectionType',
+                                    '@plateNo',
+                                    '@ownerName',
+                                    @((double)payment.TotalAmount)
+                                )">
 
-                                                    <i class="fas fa-cash-register"></i>
-                                                    Thu phí
+                                                <i class="fas fa-cash-register"></i>
+                                                Thu phí
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <div style="display:flex; gap:8px; align-items:center;">
+
+                                                <button type="button"
+                                                        class="btn-action btn-view"
+                                                        onclick="openDetailsModal(
+                                        '@inspectionCode',
+                                        '@inspectionType',
+                                        '@plateNo',
+                                        '@ownerName',
+                                        '@ownerPhone',
+                                        @((double)payment.TotalAmount),
+                                        '@payment.PaymentMethod',
+                                        '@payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")',
+                                        '@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")'
+                                    )">
+
+                                                    <i class="fas fa-eye"></i>
+                                                    Xem chi tiết
                                                 </button>
-                                            }
-                                            else
-                                            {
-                                                <div style="display:flex; gap:8px; align-items:center;">
 
-                                                    <button type="button"
-                                                            class="btn-action btn-view"
-                                                            onclick="openDetailsModal(
-                                                                    '@inspection.InspectionCode',
-                                                                    '@inspection.InspectionType',
-                                                                    '@inspection.Vehicle?.PlateNo',
-                                                                    '@inspection.Vehicle?.Owner?.FullName',
-                                                                    '@inspection.Vehicle?.Owner?.Phone',
-                                                                    @((double)payment.TotalAmount),
-                                                                    '@payment.PaymentMethod',
-                                                                    '@payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")',
-                                                                    '@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")'
-                                                                )">
+                                                <button type="button"
+                                                        class="btn-action btn-print"
+                                                        onclick="printReceipt(@payment.PaymentId)">
 
-                                                        <i class="fas fa-eye"></i>
-                                                        Xem chi tiết
-                                                    </button>
+                                                    <i class="fas fa-print"></i>
+                                                    In
+                                                </button>
 
-                                                    <button type="button"
-                                                            class="btn-action btn-print"
-                                                            onclick="printReceipt('@payment.PaymentId')">
-
-                                                        <i class="fas fa-print"></i>
-                                                        In
-                                                    </button>
-
-                                                </div>
-                                            }
-
-                                        </td>
-                                    </tr>
-                                }
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
                             }
                         </tbody>
+
+
+
 
                     </table>
                 </div>

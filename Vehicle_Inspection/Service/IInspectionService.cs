@@ -28,6 +28,7 @@ namespace Vehicle_Inspection.Service
         //Lấy dây chuyền phù hợp với loại xe
         List<Lane> GetSuitableLanes(int vehicleTypeId);
 
+        bool CheckUserStagePermission(Guid userId, int stageId);
 
         bool AssignLane(AssignLaneRequest request);
 
@@ -255,6 +256,7 @@ namespace Vehicle_Inspection.Service
         public int InspectionId { get; set; }
         public long InspStageId { get; set; }
         public int StageId { get; set; }
+        public Guid UserId { get; set; }
         public List<StageItemMeasurement> Measurements { get; set; } = new();
         public string? Notes { get; set; }
     }

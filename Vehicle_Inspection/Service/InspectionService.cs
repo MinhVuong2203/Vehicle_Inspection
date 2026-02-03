@@ -506,7 +506,7 @@ namespace Vehicle_Inspection.Service
                 Console.WriteLine($"=== SaveStageResult START ===");
                 Console.WriteLine($"InspectionId: {request.InspectionId}");
                 Console.WriteLine($"InspStageId: {request.InspStageId}");
-                Console.WriteLine($"Measurements count: {request.Measurements.Count}");
+                Console.WriteLine($"UserId: {request.UserId}");
 
                 // 1. Kiểm tra InspectionStage tồn tại
                 var inspStage = _context.InspectionStages
@@ -516,18 +516,28 @@ namespace Vehicle_Inspection.Service
 
                 if (inspStage == null)
                 {
-                    Console.WriteLine("InspectionStage not found");
+                    Console.WriteLine("❌ InspectionStage not found");
                     return false;
                 }
 
-                // 2. Lưu từng measurement vào InspectionDetail
+                // ✅ 2. KIỂM TRA QUYỀN
+                var hasPermission = CheckUserStagePermission(request.UserId, inspStage.StageId);
+
+                if (!hasPermission)
+                {
+                    Console.WriteLine($"❌ User {request.UserId} is NOT authorized for StageId {inspStage.StageId}");
+                    return false;
+                }
+
+                Console.WriteLine($"✅ User {request.UserId} is authorized");
+
+                // 3. Lưu measurements
                 int passedCount = 0;
                 int failedCount = 0;
                 var defectsToAdd = new List<InspectionDefect>();
 
                 foreach (var measurement in request.Measurements)
                 {
-                    // 2.1. Xóa InspectionDetail cũ nếu có (update)
                     var existingDetail = _context.InspectionDetails
                         .FirstOrDefault(d => d.InspStageId == request.InspStageId
                                           && d.ItemId == measurement.ItemId);
@@ -537,40 +547,22 @@ namespace Vehicle_Inspection.Service
                         _context.InspectionDetails.Remove(existingDetail);
                     }
 
-                    // 2.2. Tạo InspectionDetail mới - CHỈ CÁC CỘT CÒN TỒN TẠI
                     var detail = new InspectionDetail
                     {
                         InspStageId = request.InspStageId,
                         ItemId = measurement.ItemId,
-
-                        // ✅ Chỉ giữ các cột còn tồn tại
                         StandardMin = measurement.StandardMin,
                         StandardMax = measurement.StandardMax,
                         ActualValue = measurement.ActualValue,
                         ActualText = measurement.ActualText,
-
                         Unit = measurement.Unit,
                         IsPassed = measurement.IsPassed,
                         DataSource = "MANUAL",
                         RecordedAt = DateTime.Now
-
-                        // ❌ XÓA các cột sau (đã bị xóa khỏi database):
-                        // ActualText - đã xóa
-                        // StandardText - đã xóa
-                        // DeviationPercent - đã xóa
-                        // DeviceId - đã xóa
-                        // RecordedBy - đã xóa
-                        // ImageUrls - đã xóa
-                        // Notes - đã xóa
                     };
 
                     _context.InspectionDetails.Add(detail);
 
-                    Console.WriteLine($"  - Item {measurement.ItemName}: " +
-                                    $"Actual={measurement.ActualValue}, " +
-                                    $"IsPassed={measurement.IsPassed}");
-
-                    // 2.3. Đếm số lượng đạt/không đạt
                     if (measurement.IsPassed)
                     {
                         passedCount++;
@@ -579,7 +571,6 @@ namespace Vehicle_Inspection.Service
                     {
                         failedCount++;
 
-                        // 2.4. Tạo InspectionDefect nếu không đạt
                         if (!string.IsNullOrEmpty(measurement.DefectDescription))
                         {
                             var defect = new InspectionDefect
@@ -590,57 +581,44 @@ namespace Vehicle_Inspection.Service
                                 DefectCategory = measurement.DefectCategory ?? inspStage.Stage?.StageName ?? "Lỗi chung",
                                 DefectCode = measurement.ItemCode,
                                 DefectDescription = measurement.DefectDescription,
-                                Severity = measurement.DefectSeverity ?? 2, // Default: Major
+                                Severity = measurement.DefectSeverity ?? 2,
                                 ImageUrls = null,
                                 IsFixed = false
-
-                                // ❌ XÓA: CreatedBy - đã bị xóa
                             };
 
                             defectsToAdd.Add(defect);
-
-                            Console.WriteLine($"  - Created defect: {defect.DefectDescription}");
                         }
                     }
                 }
 
-                // 3. Lưu InspectionDetails
                 _context.SaveChanges();
-                Console.WriteLine($"✅ Saved {request.Measurements.Count} InspectionDetails");
 
-                // 4. Lưu InspectionDefects (nếu có)
                 if (defectsToAdd.Count > 0)
                 {
                     _context.InspectionDefects.AddRange(defectsToAdd);
                     _context.SaveChanges();
-                    Console.WriteLine($"✅ Saved {defectsToAdd.Count} InspectionDefects");
                 }
 
-                // 5. Cập nhật InspectionStage
-                inspStage.Status = 2; // COMPLETED
-                inspStage.StageResult = failedCount > 0 ? 2 : 1; // FAILED : PASSED
+                inspStage.Status = 2;
+                inspStage.StageResult = failedCount > 0 ? 2 : 1;
                 inspStage.Notes = request.Notes;
 
                 _context.SaveChanges();
-                Console.WriteLine($"✅ Updated InspectionStage: Status=2, Result={inspStage.StageResult}");
 
-                // 6. Kiểm tra xem tất cả stages đã hoàn thành chưa
                 var allStagesCompleted = _context.InspectionStages
                     .Where(ins => ins.InspectionId == request.InspectionId)
                     .All(ins => ins.Status == 2);
 
                 if (allStagesCompleted)
                 {
-                    // Cập nhật Inspection status
                     var inspection = _context.Inspections
                         .FirstOrDefault(i => i.InspectionId == request.InspectionId);
 
                     if (inspection != null)
                     {
-                        inspection.Status = 4; // COMPLETED
+                        inspection.Status = 4;
                         inspection.CompletedAt = DateTime.Now;
                         _context.SaveChanges();
-                        Console.WriteLine("✅ All stages completed. Updated Inspection status to COMPLETED");
                     }
                 }
 
@@ -652,14 +630,6 @@ namespace Vehicle_Inspection.Service
             {
                 transaction.Rollback();
                 Console.WriteLine($"❌ Error in SaveStageResult: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
-
-                // ✅ LOG CHI TIẾT LỖI DATABASE
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"❌ Inner Exception: {ex.InnerException.Message}");
-                }
-
                 return false;
             }
         }
@@ -879,6 +849,30 @@ namespace Vehicle_Inspection.Service
             {
                 Console.WriteLine($"Error getting suitable lanes: {ex.Message}");
                 return new List<Lane>();
+            }
+        }
+
+        public bool CheckUserStagePermission(Guid userId, int stageId)
+        {
+            try
+            {
+                Console.WriteLine($"=== CheckUserStagePermission ===");
+                Console.WriteLine($"UserId: {userId}");
+                Console.WriteLine($"StageId: {stageId}");
+
+                // Kiểm tra trong bảng trung gian User-Stage (Many-to-Many)
+                var hasPermission = _context.Users
+                    .Where(u => u.UserId == userId && u.IsActive)
+                    .SelectMany(u => u.Stages)
+                    .Any(s => s.StageId == stageId && s.IsActive == true);
+
+                Console.WriteLine($"HasPermission: {hasPermission}");
+                return hasPermission;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in CheckUserStagePermission: {ex.Message}");
+                return false;
             }
         }
     }

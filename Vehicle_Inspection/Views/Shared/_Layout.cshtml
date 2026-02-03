@@ -6,9 +6,8 @@
 @{
     var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
     Guid? userId = Guid.TryParse(userIdStr, out var g) ? g : (Guid?)null;
-    var username = User.Identity?.Name; // hoặc ClaimTypes.Name
+    var username = User.Identity?.Name;
 }
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -23,12 +22,10 @@
 </head>
 <body>
 
-    
-
     <header class="header-main">
         <!-- Primary green top bar -->
         <div class="admin-topbar px-3">
-            <div class=" d-flex align-items-center py-2">
+            <div class="d-flex align-items-center py-2">
                 <div class="d-flex align-items-center me-3">
                     <b class="brand text-white">TRUNG TÂM ĐĂNG KIỂM</b>
                 </div>
@@ -43,7 +40,7 @@
                     </form>
                 </div>
                 <div class="user-links d-flex align-items-center">
-                    <b class="me-2">Welcome</b>
+                    <b class="me-2">Welcome, @username</b>
                     <div hidden id="UserId">@userId</div>
                     <a href="#" class="m-0">
                         <div class="icon-top"><i class="fa-solid fa-circle-user fa-xl"></i></div>
@@ -59,32 +56,43 @@
             </div>
         </div>
 
-        <!-- Secondary navigation (tabs) with icons -->
+        <!-- Secondary navigation (tabs) with icons - FILTERED BY USER ROLES -->
         <div class="admin-subnav px-3">
             <div class="p">
-               @{
+                @{
                     var path = (Context.Request.Path.Value ?? "").ToLower();
-               }
+
+                    // ========================================
+                    // LẤY ROLES CỦA USER HIỆN TẠI
+                    // ========================================
+                    List<Role> userRoles = new List<Role>();
+
+                    if (userId.HasValue)
+                    {
+                        // Query roles của user thông qua bảng User_Role
+                        userRoles = _context.Users
+                        .Where(u => u.UserId == userId.Value)
+                        .SelectMany(u => u.Roles) // Many-to-Many relationship
+                        .Where(r => r.RoleCode != "LOGIN") // Loại bỏ role LOGIN
+                        .OrderBy(r => r.RoleId) // Sắp xếp theo thứ tự
+                        .ToList();
+                    }
+                }
 
                 <ul class="nav nav-pills align-items-center">
-                    @{
-                        var roles = _context.Roles.ToList();
-                    }
-
-                    @if (roles != null && roles.Any())
+                    @if (userRoles != null && userRoles.Any())
                     {
-                        foreach (var role in roles)
+                        foreach (var role in userRoles)
                         {
-                            if (role.RoleCode == "LOGIN") continue;
-                     
-                                // chuẩn hóa href: luôn bắt đầu bằng /
-                                var href = role.RoleHref?.StartsWith("/") == true ? role.RoleHref! : "/" + (role.RoleHref ?? "");
-                                var hrefLower = href.ToLower();
+                            // Chuẩn hóa href: luôn bắt đầu bằng /
+                            var href = role.RoleHref?.StartsWith("/") == true
+                            ? role.RoleHref!
+                            : "/" + (role.RoleHref ?? "");
+                            var hrefLower = href.ToLower();
 
-                                // Active nếu đúng path hoặc là trang con
-                                // Ví dụ: /employee/edit/... => active /employee
-                                var isActive = path == hrefLower || path.StartsWith(hrefLower + "/");
-
+                            // Active nếu đúng path hoặc là trang con
+                            // Ví dụ: /employee/edit/... => active /employee
+                            var isActive = path == hrefLower || path.StartsWith(hrefLower + "/");
 
                             <li class="nav-item">
                                 <a class="nav-link @(isActive ? "active" : "")" href="@href">
@@ -94,12 +102,20 @@
                             </li>
                         }
                     }
+                    else
+                    {
+                        <!-- Hiển thị thông báo nếu user chưa có role nào -->
+                        <li class="nav-item">
+                            <span class="nav-link text-muted">
+                                <i class="fa-solid fa-exclamation-triangle"></i>
+                                <div>Chưa có quyền</div>
+                            </span>
+                        </li>
+                    }
                 </ul>
-
             </div>
         </div>
     </header>
-
 
     <!-- Notification Area -->
     @if (TempData["SuccessMessage"] != null)
@@ -151,6 +167,7 @@
 
     <footer class="border-top footer text-muted">
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -164,7 +181,7 @@
             }
         });
 
-        // Auto close notification after 3 seconds
+        // Auto close notification
         function closeNotification() {
             const notification = document.getElementById('notification');
             if (notification) {
@@ -173,7 +190,7 @@
             }
         }
 
-        // Auto hide after 3 seconds
+        // Auto hide after 10 seconds
         window.addEventListener('DOMContentLoaded', function() {
             const notification = document.getElementById('notification');
             if (notification) {

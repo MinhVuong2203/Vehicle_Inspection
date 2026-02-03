@@ -249,11 +249,10 @@ namespace Vehicle_Inspection.Controllers
             }
         }
 
-
+        [HttpGet]
         public async Task<IActionResult> Edit(Guid id)
         {
             var employee = await _employeeService.GetEmployeeByIdAsync(id);
-
             if (employee == null)
             {
                 TempData["ErrorMessage"] = "Không tìm thấy nhân viên!";
@@ -265,6 +264,9 @@ namespace Vehicle_Inspection.Controllers
 
             LoadViewBagData();
 
+            // Truyền thông tin Giám đốc hiện tại để kiểm tra trong View
+            ViewBag.IsCurrentDirector = await IsDirector(employee.PositionId);
+
             return View(employee);
         }
 
@@ -273,7 +275,8 @@ namespace Vehicle_Inspection.Controllers
         public async Task<IActionResult> Edit(
             Guid id,
             [Bind("UserId,FullName,Phone,Email,BirthDate,CCCD,Gender,Address,Ward,Province,PositionId,TeamId,Level,IsActive,CreatedAt,ImageUrl,Account")]
-            User employee, IFormFile? ProfilePicture)
+    User employee,
+            IFormFile? ProfilePicture)
         {
             if (id != employee.UserId)
             {
@@ -281,11 +284,72 @@ namespace Vehicle_Inspection.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Upload ảnh (nếu có) - bạn thay path theo project của bạn
+            // =====================================================
+            // KIỂM TRA LOGIC GIÁM ĐỐC
+            // =====================================================
+            var currentEmployee = await _employeeService.GetEmployeeByIdAsync(id);
+            if (currentEmployee == null)
+            {
+                TempData["ErrorMessage"] = "Nhân viên không tồn tại!";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Lấy thông tin position hiện tại và position mới
+            var currentPosition = await _context.Positions
+                .FirstOrDefaultAsync(p => p.PositionId == currentEmployee.PositionId);
+
+            var newPosition = await _context.Positions
+                .FirstOrDefaultAsync(p => p.PositionId == employee.PositionId);
+
+            // CASE 1: Nhân viên hiện tại là Giám đốc và muốn đổi sang vị trí khác
+            if (currentPosition?.PoitionCode == "GD" && newPosition?.PoitionCode != "GD")
+            {
+                // Đếm số lượng Giám đốc hiện có trong hệ thống
+                var directorCount = await _context.Users
+                    .Include(u => u.Position)
+                    .Where(u =>
+                        u.Position!.PoitionCode == "GD" &&
+                        u.IsActive) // Nếu có soft delete
+                    .CountAsync();
+
+                // Chỉ chặn nếu là Giám đốc duy nhất
+                if (directorCount == 1)
+                {
+                    TempData["ErrorMessage"] = "Không thể thay đổi chức vụ Giám đốc! Hệ thống phải có ít nhất 1 Giám đốc. Hiện tại bạn là Giám đốc duy nhất.";
+                    LoadViewBagData();
+                    ViewBag.IsCurrentDirector = true;
+                    return View(employee);
+                }
+            }
+
+            // CASE 2: Nhân viên khác muốn lên làm Giám đốc
+            if (currentPosition?.PoitionCode != "GD" && newPosition?.PoitionCode == "GD")
+            {
+                // Kiểm tra xem đã có Giám đốc khác chưa
+                var existingDirector = await _context.Users
+                    .Include(u => u.Position)
+                    .FirstOrDefaultAsync(u =>
+                        u.Position!.PoitionCode == "GD" &&
+                        u.UserId != id &&
+                        u.IsActive);
+
+                if (existingDirector != null)
+                {
+                    TempData["ErrorMessage"] = $"Đã có Giám đốc trong hệ thống ({existingDirector.FullName}).";
+                    LoadViewBagData();
+                    ViewBag.IsCurrentDirector = false;
+                    return View(employee);
+                }
+            }
+
+            // =====================================================
+            // UPLOAD ẢNH (nếu có)
+            // =====================================================
             if (ProfilePicture != null && ProfilePicture.Length > 0)
             {
                 var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "employee");
-                if (!Directory.Exists(uploads)) Directory.CreateDirectory(uploads);
+                if (!Directory.Exists(uploads))
+                    Directory.CreateDirectory(uploads);
 
                 var fileName = $"{employee.UserId}{Path.GetExtension(ProfilePicture.FileName)}";
                 var filePath = Path.Combine(uploads, fileName);
@@ -294,18 +358,29 @@ namespace Vehicle_Inspection.Controllers
                 {
                     await ProfilePicture.CopyToAsync(stream);
                 }
+
                 employee.ImageUrl = $"/images/employee/{fileName}";
             }
+            else
+            {
+                // Giữ nguyên ImageUrl cũ nếu không upload ảnh mới
+                employee.ImageUrl = currentEmployee.ImageUrl;
+            }
 
-
-
+            // =====================================================
+            // VALIDATION
+            // =====================================================
             if (!ModelState.IsValid)
             {
                 TempData["ErrorMessage"] = "Form không hợp lệ.";
                 LoadViewBagData();
+                ViewBag.IsCurrentDirector = await IsDirector(employee.PositionId);
                 return View(employee);
             }
 
+            // =====================================================
+            // CẬP NHẬT
+            // =====================================================
             try
             {
                 await _employeeService.UpdateEmployeeAsync(employee);
@@ -325,9 +400,28 @@ namespace Vehicle_Inspection.Controllers
             {
                 TempData["ErrorMessage"] = $"Có lỗi xảy ra: {ex.Message}";
                 LoadViewBagData();
+                ViewBag.IsCurrentDirector = await IsDirector(employee.PositionId);
                 return View(employee);
             }
         }
+
+        // =====================================================
+        // HELPER METHODS
+        // =====================================================
+
+        /// <summary>
+        /// Kiểm tra xem PositionId có phải là Giám đốc không
+        /// </summary>
+        private async Task<bool> IsDirector(int? positionId)
+        {
+            if (positionId == null) return false;
+
+            var position = await _context.Positions
+                .FirstOrDefaultAsync(p => p.PositionId == positionId);
+
+            return position?.PoitionCode == "GD";
+        }
+
 
         private async Task<bool> EmployeeExists(Guid id)
         {

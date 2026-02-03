@@ -120,7 +120,7 @@ namespace Vehicle_Inspection.Controllers
                     {
                         latestInspection.Status = 2; // APPROVED - Miễn phí
                         resultStatus = 2;
-                        Console.WriteLine($"   → Count_Re = {newCountRe} (< 3) → Status = 2 (Miễn phí)");
+                        Console.WriteLine($"   → Count_Re = {newCountRe} (< 3) → Status = 2 (Miễn phí)"); 
                     }
                     else
                     {

@@ -1,12 +1,4 @@
 ﻿// 1. Grid View, Data View
-// 2. Chi tiết thanh toán
-// 3. after 5 seconds
-// 4. Chặn submit và điều hướng thanh toán
-// 5. Details
-// 6. Print
-
-// 1. Grid View, Data View
-// View toggle
 document.querySelectorAll('.view-btn').forEach(btn => {
     btn.addEventListener('click', function () {
         document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -23,49 +15,47 @@ document.querySelectorAll('.view-btn').forEach(btn => {
     });
 });
 
-// 2. Chi tiết thanh toán
-// Modal functions
-function openTollModal(inspectionId, code, type, licensePlate, owner, amount) {
-    document.getElementById('modalInspectionIdInput').value = inspectionId;
+// 2. Chi tiết thanh toán - Modal functions
+function openTollModal(paymentId, code, type, licensePlate, owner, amount) {
+    document.getElementById('modalInspectionIdInput').value = paymentId;
+    document.getElementById('modalPaymentIdInput').value = paymentId;
     document.getElementById('modalInspectionCode').textContent = code;
-    document.getElementById('modalInspectionType').textContent = type;
+    document.getElementById('modalInspectionType').textContent = type || 'N/A';
     document.getElementById('modalLicensePlate').textContent = licensePlate || 'N/A';
     document.getElementById('modalOwner').textContent = owner || 'N/A';
-    console.log(document.getElementById('modalAmount').textContent);
     document.getElementById('modalAmount').textContent = amount.toLocaleString('vi-VN') + ' VNĐ';
-    document.getElementById('modalInspectionCodeInput').value = code;
     document.getElementById('tollModal').classList.add('active');
-    }
+}
 
 function closeTollModal() {
     document.getElementById('tollModal').classList.remove('active');
 }
 
-// 3. after 5 seconds
-// Auto dismiss alerts after 5 seconds
-setTimeout(function() {
+// 3. Auto dismiss alerts after 5 seconds
+setTimeout(function () {
     const alerts = document.querySelectorAll('.alert');
     alerts.forEach(alert => {
         const closeBtn = alert.querySelector('.btn-close');
-    if (closeBtn) {
-        closeBtn.click();
-                }
-            });
-    }, 5000);
+        if (closeBtn) {
+            closeBtn.click();
+        }
+    });
+}, 5000);
 
-// 4. Chặn submit và điều hướng thanh toán
-async function payWithPayOS(inspectionId) { const res = await fetch(`/api/payos/create-link/${inspectionId}`, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json' }
-            });
+// 4. Chặn submit và điều hướng thanh toán PayOS
+async function payWithPayOS(paymentId) {
+    const res = await fetch(`/api/payos/create-link/${paymentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    });
 
     if (!res.ok) {
         const text = await res.text();
         alert("Không tạo được link PayOS: " + text);
         return;
-            }
+    }
 
-        const data = await res.json();
+    const data = await res.json();
     if (!data.checkoutUrl) {
         alert("Server không trả checkoutUrl.");
         return;
@@ -75,27 +65,26 @@ async function payWithPayOS(inspectionId) { const res = await fetch(`/api/payos/
 }
 
 document.getElementById('paymentForm').addEventListener('submit', async function (e) {
-        const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+    const method = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+
     if (method === "Chuyển khoản") {
         e.preventDefault(); // chặn submit CollectPayment
 
-    const inspectionId = document.getElementById('modalInspectionIdInput').value;
-    if (!inspectionId) {
-        alert("Thiếu inspectionId");
-    return;
-                }
+        const paymentId = document.getElementById('modalPaymentIdInput').value;
+        if (!paymentId) {
+            alert("Thiếu paymentId");
+            return;
+        }
 
-    await payWithPayOS(inspectionId);
-            }
-            // Nếu không phải "Chuyển khoản" thì để form submit bình thường (CollectPayment)
+        await payWithPayOS(paymentId);
+    }
+    // Nếu không phải "Chuyển khoản" thì để form submit bình thường (CollectPayment)
 });
 
-
-// 5. Details
-function openDetailsModal(code, type, plateNo, owner, phone, amount, paymentMethod, paidAt, createdAt, receivedAt, paidTime, status) {
+// 5. Details Modal
+function openDetailsModal(code, type, plateNo, owner, phone, amount, paymentMethod, paidAt, createdAt) {
     document.getElementById('detailInspectionCode').textContent = code;
     document.getElementById('detailInspectionType').textContent = type;
-    document.getElementById('detailStatus').textContent = status;
     document.getElementById('detailCreatedAt').textContent = createdAt || 'N/A';
     document.getElementById('detailPlateNo').textContent = plateNo || 'N/A';
     document.getElementById('detailOwner').textContent = owner || 'N/A';
@@ -107,51 +96,36 @@ function openDetailsModal(code, type, plateNo, owner, phone, amount, paymentMeth
     // Timeline
     document.getElementById('timelineCreatedAt').textContent = createdAt || 'N/A';
 
-    if (receivedAt && receivedAt !== '') {
-        document.getElementById('timelineReceived').style.display = 'flex';
-        document.getElementById('timelineReceivedAt').textContent = receivedAt;
-            } else {
-        document.getElementById('timelineReceived').style.display = 'none';
-            }
-
-    if (paidTime && paidTime !== '') {
+    if (paidAt && paidAt !== '') {
         document.getElementById('timelinePaid').style.display = 'flex';
-    document.getElementById('timelinePaidAt').textContent = paidTime;
-            } else {
+        document.getElementById('timelinePaidAt').textContent = paidAt;
+    } else {
         document.getElementById('timelinePaid').style.display = 'none';
-            }
+    }
 
     document.getElementById('detailsModal').classList.add('active');
-        }
+}
 
 function closeDetailsModal() {
     document.getElementById('detailsModal').classList.remove('active');
 }
 
-
-// 6. Print
-    function printReceipt(inspectionCode) {
-        if (!inspectionCode) {
-        alert("Thiếu mã kiểm định.");
+// 6. Print Receipt
+function printReceipt(paymentId) {
+    if (!paymentId) {
+        alert("Thiếu payment ID.");
         return;
-        }
-
-    // Endpoint trả về HTML in biên nhận (Layout=null)
-        const url = `/receipt/printbyinspectioncode?inspectionCode=${encodeURIComponent(inspectionCode)}`;
-
-
-        // Mở cửa sổ nhỏ để in (không điều hướng trang hiện tại)
-        const w = window.open(url, '_blank', 'width=1200,height=800');
-        if (!w) {
-            alert("Trình duyệt chặn popup. Hãy cho phép popup để in biên nhận.");
-            return;
-        }
-
-        // Optional: tự gọi print sau khi load
-        w.onload = () => {
-            try { w.print(); } catch { }
-        };
     }
 
+    const url = `/receipt/printbypaymentid?paymentId=${paymentId}`;
+    const w = window.open(url, '_blank', 'width=1200,height=800');
 
+    if (!w) {
+        alert("Trình duyệt chặn popup. Hãy cho phép popup để in biên nhận.");
+        return;
+    }
 
+    w.onload = () => {
+        try { w.print(); } catch { }
+    };
+}

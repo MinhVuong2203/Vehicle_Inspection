@@ -10,7 +10,6 @@ namespace Vehicle_Inspection.Models;
 [Index("PaidAt", Name = "IX_Payment_PaidAt")]
 [Index("ReceiptNo", Name = "IX_Payment_ReceiptNo")]
 [Index("PaymentStatus", Name = "IX_Payment_Status")]
-[Index("InspectionId", Name = "UQ_Payment_Inspection", IsUnique = true)]
 [Index("ReceiptNo", Name = "UQ__Payment__CC0B72A69C7A8D95", IsUnique = true)]
 public partial class Payment
 {
@@ -65,7 +64,7 @@ public partial class Payment
     public virtual FeeSchedule? FeeSchedule { get; set; }
 
     [ForeignKey("InspectionId")]
-    [InverseProperty("Payment")]
+    [InverseProperty("Payments")]
     public virtual Inspection Inspection { get; set; } = null!;
 
     [ForeignKey("PaidBy")]

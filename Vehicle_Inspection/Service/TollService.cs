@@ -4,7 +4,7 @@ using Vehicle_Inspection.Models;
 
 namespace Vehicle_Inspection.Service
 {
-    public class TollService : ITollService 
+    public class TollService : ITollService
     {
         private readonly VehInsContext _context;
 
@@ -16,19 +16,23 @@ namespace Vehicle_Inspection.Service
 
 
         public List<Inspection> GetInspections(string? search, short? status)
-            {
-                var query = _context.Inspections
-                .Include(i => i.Vehicle)   
-                    .ThenInclude(v => v.Owner)    
-                .Include(i => i.Payment)
-                .Where(i => !i.IsDeleted);
+        {
+            var query = _context.Inspections
+            .Include(i => i.Vehicle)
+                .ThenInclude(v => v.Owner)
+            .Include(i => i.Payments)
+            .Where(i => !i.IsDeleted);
 
-            // Lọc theo trạng thái
+            // Lọc theo trạng thái thanh toán (payment mới nhất)
             if (status.HasValue)
             {
-                query = query.Where(i => i.Payment.PaymentStatus == status.Value);
+                query = query.Where(i =>
+                    i.Payments
+                        .OrderByDescending(p => p.CreatedAt)
+                        .Select(p => p.PaymentStatus)
+                        .FirstOrDefault() == status.Value
+                );
             }
-
             // Tìm kiếm theo mã kiểm định hoặc loại kiểm định
             if (!string.IsNullOrEmpty(search))
             {
@@ -44,76 +48,267 @@ namespace Vehicle_Inspection.Service
             return _context.Inspections
                 .Include(i => i.Vehicle)
                  .ThenInclude(v => v.Owner)
-                .Include(i => i.Payment)
+                .Include(i => i.Payments)
                 .FirstOrDefault(i => i.InspectionCode == inspectionCode && !i.IsDeleted);
         }
 
+        public Payment? GetPaymentByOrderCode(long? orderCode)
+        {
+            return _context.Payments
+                .Include(p => p.Inspection)
+                .FirstOrDefault(p => p.OrderCode == orderCode);
+        }
+
+
         // Phục vụ cho thanh toán tiền mặt
-        public string CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId)
+        public string CollectPayment(int paymentId, string paymentMethod, string? note, Guid userId)
         {
             using var transaction = _context.Database.BeginTransaction();
 
             try
             {
-                var inspection = _context.Inspections
-                    .Include(i => i.Payment)
-                    .FirstOrDefault(i => i.InspectionCode == inspectionCode && !i.IsDeleted);
+                var payment = _context.Payments
+                    .Include(p => p.Inspection)
+                    .FirstOrDefault(p => p.PaymentId == paymentId);
 
-                if (inspection == null)
-                {
+                if (payment == null)
                     return "Not found";
-                }
 
-                //Kiểm tra trạng thái: chỉ thu phí cho đơn đang chờ(Status = 1)
-                // Hoặc đơn đã hoàn thành kiểm định nhưng chưa thanh toán
-                if (inspection.Payment != null && inspection.Payment.PaymentStatus == 1)
-                {                   
-                    // Đã thu phí rồi
+                if (payment.PaymentStatus == 1)
                     return "Successed";
-                }
 
-                if (inspection.Payment != null && inspection.Payment.PaymentStatus == 2)
-                {
-                    // Đơn này đã bị hủy
+                if (payment.PaymentStatus == 2)
                     return "Failed";
-                }
 
-                
-                inspection.Payment.PaymentMethod = paymentMethod;
-                inspection.Payment.PaymentStatus = 1;
-                inspection.Payment.ReceiptPrintCount++;
-                inspection.Payment.PaidAt = DateTime.Now;
-                inspection.Payment.PaidBy = userId;
-                inspection.Payment.Notes = note;
-          
+                payment.PaymentMethod = paymentMethod;
+                payment.PaymentStatus = 1;
+                payment.PaidAt = DateTime.Now;
+                payment.PaidBy = userId;
+                payment.Notes = note;
+                payment.ReceiptPrintCount = (payment.ReceiptPrintCount ?? 0) + 1;
 
-                // Cập nhật thông tin Inspection
+                // update inspection
+                var inspection = payment.Inspection;
                 inspection.PaidAt = DateTime.Now;
 
-                // Cập nhật Status nếu cần (tùy theo flow nghiệp vụ của bạn)
-                // Status = 2 có thể là "Đã thu phí" hoặc "Đã tiếp nhận"
                 if (inspection.Status == 1)
-                {
                     inspection.Status = 2;
-                }
 
                 _context.SaveChanges();
                 transaction.Commit();
 
                 return "Success";
             }
-            catch (Exception ex)
+            catch
             {
                 transaction.Rollback();
-                // Log error
-                Console.WriteLine($"Error collecting payment: {ex.Message}");
-                return "Errol";
+                return "Error";
             }
         }
-        
+
+
+        public async Task<(bool Success, string Message, Payment? NewPayment)> CreateAdditionalPaymentAsync(int inspectionId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Kiểm tra inspection có tồn tại không
+                var inspection = await _context.Inspections
+                    .Include(i => i.Payments)
+                    .FirstOrDefaultAsync(i => i.InspectionId == inspectionId && !i.IsDeleted);
+
+                if (inspection == null)
+                {
+                    return (false, "Không tìm thấy đơn kiểm định.", null);
+                }
+
+                // 2. Lấy payment gốc (payment đầu tiên hoặc payment gần nhất)
+                var originalPayment = inspection.Payments
+                    .OrderBy(p => p.CreatedAt)
+                    .FirstOrDefault();
+
+                if (originalPayment == null)
+                {
+                    return (false, "Đơn kiểm định chưa có payment nào.", null);
+                }
+
+                // 3. Tính phí dựa trên ngày tạo
+                decimal feePercentage = CalculateFeePercentage(originalPayment.CreatedAt);
+
+                decimal baseFee = originalPayment.BaseFee * feePercentage;
+                decimal certificateFee = (originalPayment.CertificateFee ?? 0) * feePercentage;
+                decimal stickerFee = (originalPayment.StickerFee ?? 0) * feePercentage;
+                decimal totalAmount = baseFee + certificateFee + stickerFee;
+
+                // 3. Tạo ReceiptNo mới
+                string datePrefix = DateTime.Now.ToString("yyyyMMddHHmmssfff");
+                string receiptNo = "RC-" + datePrefix + "-" + originalPayment.InspectionId;
+
+                // 5. Tạo payment mới
+                var newPayment = new Payment
+                {
+                    InspectionId = inspectionId,
+                    FeeScheduleId = originalPayment.FeeScheduleId,
+                    BaseFee = baseFee,
+                    CertificateFee = certificateFee,
+                    StickerFee = stickerFee,
+                    TotalAmount = totalAmount,
+                    PaymentMethod = "Chưa xác định",
+                    PaymentStatus = 0, // 0 = Chờ thanh toán
+                    ReceiptNo = receiptNo,
+                    ReceiptPrintCount = 0,
+                    CreatedAt = DateTime.Now,
+                    PaidAt = null,
+                    CreatedBy = originalPayment.CreatedBy,
+                    PaidBy = null,
+                    Notes = $"Payment bổ sung - Phí {(feePercentage == 0.5m ? "50%" : "100%")} của payment gốc #{originalPayment.PaymentId}",
+                    OrderCode = null
+                };
+
+                _context.Payments.Add(newPayment);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return (true, $"Tạo payment mới thành công với phí {feePercentage * 100}%", newPayment);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return (false, $"Lỗi: {ex.Message}", null);
+            }
+        }
+
+        /// <summary>
+        /// Tạo payment mới dựa trên paymentId cũ
+        /// </summary>
+        public async Task<(bool Success, string Message, Payment? NewPayment)> CreateAdditionalPaymentByPaymentIdAsync(int paymentId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Lấy payment gốc
+                var originalPayment = await _context.Payments
+                    .Include(p => p.Inspection)
+                    .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
+
+                if (originalPayment == null)
+                {
+                    return (false, "Không tìm thấy payment.", null);
+                }
+
+                if (originalPayment.Inspection.IsDeleted)
+                {
+                    return (false, "Đơn kiểm định đã bị xóa.", null);
+                }
+
+                // 2. Tính phí dựa trên ngày tạo của payment gốc
+                decimal feePercentage = CalculateFeePercentage(originalPayment.CreatedAt);
+
+                decimal baseFee = originalPayment.BaseFee * feePercentage;
+                decimal certificateFee = (originalPayment.CertificateFee ?? 0) * feePercentage;
+                decimal stickerFee = (originalPayment.StickerFee ?? 0) * feePercentage;
+                decimal totalAmount = baseFee + certificateFee + stickerFee;
+
+                // 3. Tạo ReceiptNo mới
+                string datePrefix = DateTime.Now.ToString("yyyyMMddHHmmssfff");                                                                               
+                string receiptNo = "RC-" + datePrefix + "-"  + originalPayment.InspectionId;
+
+                // 4. Tạo payment mới
+                var newPayment = new Payment
+                {
+                    InspectionId = originalPayment.InspectionId,
+                    FeeScheduleId = originalPayment.FeeScheduleId,
+                    BaseFee = baseFee,
+                    CertificateFee = certificateFee,
+                    StickerFee = stickerFee,
+                    TotalAmount = totalAmount,
+                    PaymentMethod = "Chưa xác định",
+                    PaymentStatus = 0, // 0 = Chờ thanh toán
+                    ReceiptNo = receiptNo,
+                    ReceiptPrintCount = 0,
+                    CreatedAt = DateTime.Now,
+                    PaidAt = null,
+                    CreatedBy = originalPayment.CreatedBy,
+                    PaidBy = null,
+                    Notes = $"Payment bổ sung - Phí {(feePercentage == 0.5m ? "50%" : "100%")} của payment #{originalPayment.PaymentId}",
+                    OrderCode = null
+                };
+
+                _context.Payments.Add(newPayment);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return (true, $"Tạo payment mới thành công với phí {feePercentage * 100}%", newPayment);
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return (false, $"Lỗi: {ex.Message}", null);
+            }
+        }
+
+        /// <summary>
+        /// Tính phần trăm phí dựa trên ngày tạo payment gốc
+        /// - Cùng ngày: 50%
+        /// - Qua ngày: 100%
+        /// </summary>
+        private decimal CalculateFeePercentage(DateTime originalCreatedAt)
+        {
+            DateTime today = DateTime.Now.Date;
+            DateTime originalDate = originalCreatedAt.Date;
+
+            // Nếu ngày tạo payment gốc = ngày hiện tại → 50%
+            if (originalDate == today)
+            {
+                return 0.5m;
+            }
+
+            // Nếu ngày tạo payment gốc < ngày hiện tại → 100%
+            if (originalDate < today)
+            {
+                return 1.0m;
+            }
+
+            // Trường hợp ngày tạo > ngày hiện tại (không nên xảy ra)
+            return 1.0m;
+        }
+
+        /// <summary>
+        /// Tạo ReceiptNo mới duy nhất
+        /// Format: RCP-YYYYMMDD-XXXX
+        /// </summary>
+        //private async Task<string> GenerateReceiptNoAsync()
+        //{
+        //    string datePrefix = DateTime.Now.ToString("yyyyMMddHHmmssfff"); // Sửa logic này
+        //    string prefix = $"RC-{datePrefix}-";
+
+        //    // Lấy số thứ tự lớn nhất trong ngày
+        //    var lastReceipt = await _context.Payments
+        //        .Where(p => p.ReceiptNo!.StartsWith(prefix))
+        //        .OrderByDescending(p => p.ReceiptNo)
+        //        .Select(p => p.ReceiptNo)
+        //        .FirstOrDefaultAsync();
+
+        //    int nextNumber = 1;
+        //    if (lastReceipt != null)
+        //    {
+        //        // Extract số cuối từ "RCP-20250203-0001" → 0001
+        //        string lastNumberStr = lastReceipt.Split('-').LastOrDefault() ?? "0000";
+        //        if (int.TryParse(lastNumberStr, out int lastNumber))
+        //        {
+        //            nextNumber = lastNumber + 1;
+        //        }
+        //    }
+
+        //    return $"{prefix}{nextNumber:D4}"; // RCP-20250203-0001
+        //}
+    
+
+
+
         public Inspection getInspectionByOrderCode(long? orderCode)
         {
-            return _context.Inspections.Include(i => i.Payment).FirstOrDefault(i => i.Payment.OrderCode == orderCode);
+            return _context.Inspections.Include(i => i.Payments).FirstOrDefault(i => i.Payments.Any(p => p.OrderCode == orderCode));
         }
 
 

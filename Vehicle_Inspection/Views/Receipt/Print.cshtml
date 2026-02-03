@@ -1,10 +1,12 @@
 ﻿@using Microsoft.EntityFrameworkCore
-@model Vehicle_Inspection.Models.Inspection
+@model Vehicle_Inspection.Models.Payment
 @inject Vehicle_Inspection.Data.VehInsContext _context
 @{
     Layout = null;
-    var p = Model.Payment!;
-    var user = _context.Users.Include(u => u.Position).FirstOrDefault(u => u.UserId == p.PaidBy);
+    var inspection = Model.Inspection!;
+    var vehicle = inspection.Vehicle!;
+    var owner = vehicle.Owner!;
+    var user = _context.Users.Include(u => u.Position).FirstOrDefault(u => u.UserId == Model.PaidBy);
 }
 
 <!DOCTYPE html>
@@ -62,16 +64,12 @@
             margin-top: 40px;
             display: flex;
             justify-content: space-between;
-            /* text-align: center; */
         }
 
         @@media print {
-            .no-print
-
-        {
-            display: none;
-        }
-
+            .no-print {
+                display: none;
+            }
         }
     </style>
 </head>
@@ -84,9 +82,9 @@
             <div>
                 <b>TRUNG TÂM ĐĂNG KIỂM RAD</b>
             </div>
-            
+
             <div>
-                Số Biên nhận: @p.ReceiptNo
+                Số Biên nhận: @Model.ReceiptNo
             </div>
         </div>
 
@@ -96,7 +94,7 @@
         <div class="center">
             <div class="title">GIẤY BIÊN NHẬN</div>
             <div class="subtitle">
-                Hồ sơ kiểm định phương tiện biển số: <b>@Model.Vehicle.PlateNo</b>
+                Hồ sơ kiểm định phương tiện biển số: <b>@vehicle.PlateNo</b>
             </div>
         </div>
 
@@ -114,12 +112,12 @@
                 Đã tiếp nhận hồ sơ của:
             </div>
             <br />
-            <div>1. Ông (Bà): <b>@Model.Vehicle.Owner.FullName</b></div>
+            <div>1. Ông (Bà): <b>@owner.FullName</b></div>
             <br />
-            <div>2. Số tiền đã nộp: <b>@p.TotalAmount.ToString("N0")</b> đồng, gồm: </div>
+            <div>2. Số tiền đã nộp: <b>@Model.TotalAmount.ToString("N0")</b> đồng, gồm: </div>
         </div>
 
-       
+
         <div class="checkbox">
             ☐ Phí kiểm định an toàn kỹ thuật & bảo vệ môi trường
         </div>
@@ -141,7 +139,6 @@
                 <li>Sau khi kiểm định xe xong, khách hàng nhận được tin nhắn vào đóng phí sử dụng đường bộ.</li>
                 <li>Giấy biên nhận này nộp lại phòng thủ tục (cửa số 3) làm cơ sở thu phí sử dụng đường bộ và xuất hóa đơn (đối với các phương tiện có kết quả đạt).</li>
                 <li>Tra cứu hóa đơn điện tử tại: https://localhost:7248/Toll</li>
-
             </ul>
         </div>
 
@@ -150,13 +147,13 @@
             <div>
                 <strong>Nơi nhận</strong>
                 <div>
-                    - Người nộp hồ sơ  
+                    - Người nộp hồ sơ
                 </div>
                 <div>- Lưu</div>
             </div>
             <div>
-               Tp. Hồ Chí Minh, ngày @DateTime.Now.Day tháng @DateTime.Now.Month năm @DateTime.Now.Year<br /><br />
-                <strong>NGƯỜI NHẬN HỒ SƠ</strong> 
+                Tp. Hồ Chí Minh, ngày @DateTime.Now.Day tháng @DateTime.Now.Month năm @DateTime.Now.Year<br /><br />
+                <strong>NGƯỜI NHẬN HỒ SƠ</strong>
             </div>
         </div>
 

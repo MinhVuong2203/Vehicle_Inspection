@@ -81,7 +81,7 @@ public partial class Inspection
     public virtual Lane? Lane { get; set; }
 
     [InverseProperty("Inspection")]
-    public virtual Payment? Payment { get; set; }
+    public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
     [ForeignKey("ReceivedBy")]
     [InverseProperty("InspectionReceivedByNavigations")]

@@ -156,27 +156,27 @@ namespace Vehicle_Inspection.Service
                 .ToListAsync();
         }
 
-        // Thống kê theo loại kiểm định
-        public async Task<dynamic> GetInspectionTypeStatsAsync(DateTime startDate, DateTime endDate)
-        {
-            var inspections = await _context.Inspections
-                .Where(i => i.CreatedAt >= startDate && i.CreatedAt <= endDate && !i.IsDeleted)
-                .Include(i => i.Payment)
-                .ToListAsync();
+        //// Thống kê theo loại kiểm định
+        //public async Task<dynamic> GetInspectionTypeStatsAsync(DateTime startDate, DateTime endDate)
+        //{
+        //    var inspections = await _context.Inspections
+        //        .Where(i => i.CreatedAt >= startDate && i.CreatedAt <= endDate && !i.IsDeleted)
+        //        .Include(i => i.Payment)
+        //        .ToListAsync();
 
-            return inspections
-                .GroupBy(i => i.InspectionType)
-                .Select(g => new
-                {
-                    Type = g.Key,
-                    TypeName = g.Key == "FIRST" ? "Lần đầu" : g.Key == "PERIODIC" ? "Định kỳ" : "Tái kiểm",
-                    Count = g.Count(),
-                    Revenue = g.Sum(i => i.Payment?.TotalAmount ?? 0),
-                    PassedCount = g.Count(i => i.FinalResult == 1),
-                    FailedCount = g.Count(i => i.FinalResult == 2)
-                })
-                .OrderByDescending(x => x.Count)
-                .ToList();
-        }
+        //    return inspections
+        //        .GroupBy(i => i.InspectionType)
+        //        .Select(g => new
+        //        {
+        //            Type = g.Key,
+        //            TypeName = g.Key == "FIRST" ? "Lần đầu" : g.Key == "PERIODIC" ? "Định kỳ" : "Tái kiểm",
+        //            Count = g.Count(),
+        //            Revenue = g.Sum(i => i.Payment?.TotalAmount ?? 0),
+        //            PassedCount = g.Count(i => i.FinalResult == 1),
+        //            FailedCount = g.Count(i => i.FinalResult == 2)
+        //        })
+        //        .OrderByDescending(x => x.Count)
+        //        .ToList();
+        //}
     }
 }

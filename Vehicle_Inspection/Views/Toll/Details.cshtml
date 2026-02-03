@@ -15,6 +15,9 @@
             _ => "Không xác định"
         };
     }
+
+    var payments = Model.Payments?.OrderBy(p => p.CreatedAt).ToList() ?? new List<Payment>();
+    var hasPaidPayment = payments.Any(p => p.PaymentStatus == 1);
 }
 
 @section Styles {
@@ -34,9 +37,9 @@
             </h2>
         </div>
         <div class="header-right">
-            <span class="status-badge status-@(Model.PaidAt != null ? "paid" : "unpaid")">
-                <i class="fas @(Model.PaidAt != null ? "fa-check-circle" : "fa-clock")"></i>
-                @(Model.PaidAt != null ? "Đã thu phí" : "Chưa thu phí")
+            <span class="status-badge status-@(hasPaidPayment ? "paid" : "unpaid")">
+                <i class="fas @(hasPaidPayment ? "fa-check-circle" : "fa-clock")"></i>
+                @(hasPaidPayment ? "Đã thu phí" : "Chưa thu phí")
             </span>
         </div>
     </div>
@@ -77,55 +80,119 @@
             <div class="info-grid">
                 <div class="info-item">
                     <span class="label">Biển số xe:</span>
-                    <span class="value"><strong>@Model.Vehicle?.EngineNo</strong></span>
+                    <span class="value"><strong>@Model.Vehicle?.PlateNo</strong></span>
+                </div>
+                <div class="info-item">
+                    <span class="label">Số khung:</span>
+                    @* <span class="value">@Model.Vehicle?.F</span> *@
+                </div>
+                <div class="info-item">
+                    <span class="label">Số máy:</span>
+                    <span class="value">@Model.Vehicle?.EngineNo</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Loại xe:</span>
-                    <span class="value">@Model.Vehicle?.VehicleType</span>
+                    <span class="value">@Model.Vehicle?.VehicleType?.TypeName</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Chủ xe:</span>
-                    <span class="value">@Model.Vehicle?.Owner.FullName</span>
+                    <span class="value">@Model.Vehicle?.Owner?.FullName</span>
                 </div>
                 <div class="info-item">
                     <span class="label">Số điện thoại:</span>
-                    <span class="value">@Model.Vehicle?.Owner.Phone</span>
+                    <span class="value">@Model.Vehicle?.Owner?.Phone</span>
                 </div>
             </div>
         </div>
 
-        <!-- Thông tin thanh toán -->
+        <!-- Danh sách thanh toán -->
         <div class="info-card payment-card">
             <div class="card-title">
                 <i class="fas fa-money-bill-wave"></i>
-                Thông tin thanh toán
+                Lịch sử thanh toán (@payments.Count)
             </div>
-            @if (Model.Payment != null)
+
+            @if (payments.Any())
             {
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="label">Số tiền:</span>
-                        <span class="value amount">@Model.Payment.TotalAmount.ToString("N0") VNĐ</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="label">Phương thức:</span>
-                        <span class="value">@Model.Payment.PaymentMethod</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="label">Ngày thanh toán:</span>
-                        <span class="value">@Model.Payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="label">Trạng thái:</span>
-                        <span class="value">
-                            @(Model.Payment.PaymentStatus == 1 ? "Đã thanh toán" : "Chưa thanh toán")
-                        </span>
-                    </div>
-                    @if (!string.IsNullOrEmpty(Model.Payment.Notes))
+                <div class="payments-list">
+                    @foreach (var payment in payments)
                     {
-                        <div class="info-item full-width">
-                            <span class="label">Ghi chú:</span>
-                            <span class="value">@Model.Payment.Notes</span>
+                        var isPaid = payment.PaymentStatus == 1;
+                        var statusClass = isPaid ? "paid" : "unpaid";
+
+                        <div class="payment-item status-@statusClass">
+                            <div class="payment-header">
+                                <div class="payment-number">
+                                    <i class="fas fa-file-invoice"></i>
+                                    <strong>Biên nhận #@payment.ReceiptNo</strong>
+                                </div>
+                                <span class="payment-status status-@statusClass">
+                                    <i class="fas @(isPaid ? "fa-check-circle" : "fa-clock")"></i>
+                                    @(isPaid ? "Đã thanh toán" : "Chờ thanh toán")
+                                </span>
+                            </div>
+
+                            <div class="payment-body">
+                                <div class="payment-details">
+                                    <div class="detail-row">
+                                        <span class="label">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                            Số tiền:
+                                        </span>
+                                        <span class="value amount">@payment.TotalAmount.ToString("N0") VNĐ</span>
+                                    </div>
+
+                                    <div class="detail-row">
+                                        <span class="label">
+                                            <i class="fas fa-credit-card"></i>
+                                            Phương thức:
+                                        </span>
+                                        <span class="value">@(payment.PaymentMethod ?? "Chưa xác định")</span>
+                                    </div>
+
+                                    <div class="detail-row">
+                                        <span class="label">
+                                            <i class="fas fa-calendar-plus"></i>
+                                            Ngày tạo:
+                                        </span>
+                                        <span class="value">@payment.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                    </div>
+
+                                    @if (isPaid && payment.PaidAt != null)
+                                    {
+                                        <div class="detail-row">
+                                            <span class="label">
+                                                <i class="fas fa-calendar-check"></i>
+                                                Ngày thanh toán:
+                                            </span>
+                                            <span class="value">@payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")</span>
+                                        </div>
+                                    }
+
+                                    @if (!string.IsNullOrEmpty(payment.Notes))
+                                    {
+                                        <div class="detail-row full-width">
+                                            <span class="label">
+                                                <i class="fas fa-sticky-note"></i>
+                                                Ghi chú:
+                                            </span>
+                                            <span class="value">@payment.Notes</span>
+                                        </div>
+                                    }
+                                </div>
+
+                                @if (isPaid)
+                                {
+                                    <div class="payment-actions">
+                                        <button type="button"
+                                                class="btn-action btn-print"
+                                                onclick="printReceipt('@payment.PaymentId')">
+                                            <i class="fas fa-print"></i>
+                                            In biên nhận
+                                        </button>
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
                 </div>
@@ -177,15 +244,18 @@
                     </div>
                 }
 
-                @if (Model.PaidAt != null)
+                @foreach (var payment in payments.Where(p => p.PaymentStatus == 1).OrderBy(p => p.PaidAt))
                 {
                     <div class="timeline-item active">
                         <div class="timeline-icon">
                             <i class="fas fa-money-bill-wave"></i>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title">Thu phí</div>
-                            <div class="timeline-time">@Model.PaidAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                            <div class="timeline-title">Thu phí - Biên nhận #@payment.ReceiptNo</div>
+                            <div class="timeline-time">@payment.PaidAt?.ToString("dd/MM/yyyy HH:mm")</div>
+                            <div class="timeline-note">
+                                Số tiền: @payment.TotalAmount.ToString("N0") VNĐ - @payment.PaymentMethod
+                            </div>
                         </div>
                     </div>
                 }
@@ -302,10 +372,10 @@
         transition: all 0.3s ease;
     }
 
-    .btn-back:hover {
-        background: var(--primary-color);
-        color: white;
-    }
+        .btn-back:hover {
+            background: var(--primary-color);
+            color: white;
+        }
 
     .details-title {
         font-size: 24px;
@@ -326,15 +396,15 @@
         gap: 8px;
     }
 
-    .status-badge.status-paid {
-        background: rgba(16, 185, 129, 0.1);
-        color: var(--success-color);
-    }
+        .status-badge.status-paid {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
 
-    .status-badge.status-unpaid {
-        background: rgba(245, 158, 11, 0.1);
-        color: var(--warning-color);
-    }
+        .status-badge.status-unpaid {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
 
     .details-content {
         display: grid;
@@ -360,9 +430,9 @@
         border-bottom: 2px solid var(--border-color);
     }
 
-    .card-title i {
-        color: var(--primary-color);
-    }
+        .card-title i {
+            color: var(--primary-color);
+        }
 
     .info-grid {
         display: grid;
@@ -376,26 +446,160 @@
         gap: 4px;
     }
 
-    .info-item.full-width {
-        grid-column: 1 / -1;
+        .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .info-item .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .info-item .value {
+            font-size: 15px;
+            color: var(--text-primary);
+        }
+
+            .info-item .value.amount {
+                color: var(--success-color);
+                font-weight: 700;
+                font-size: 18px;
+            }
+
+    /* Payment List Styles */
+    .payments-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
     }
 
-    .info-item .label {
+    .payment-item {
+        border: 2px solid var(--border-color);
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+        .payment-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .payment-item.status-paid {
+            border-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.02);
+        }
+
+        .payment-item.status-unpaid {
+            border-color: var(--warning-color);
+            background: rgba(245, 158, 11, 0.02);
+        }
+
+    .payment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .payment-number {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 16px;
+    }
+
+    .payment-status {
+        padding: 6px 12px;
+        border-radius: 16px;
         font-size: 13px;
-        color: var(--text-secondary);
-        font-weight: 500;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
-    .info-item .value {
-        font-size: 15px;
-        color: var(--text-primary);
+        .payment-status.status-paid {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .payment-status.status-unpaid {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+    .payment-body {
+        padding: 20px;
     }
 
-    .info-item .value.amount {
-        color: var(--success-color);
-        font-weight: 700;
-        font-size: 18px;
+    .payment-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
     }
+
+    .detail-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+        .detail-row.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .detail-row .label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-row .value {
+            font-size: 15px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+            .detail-row .value.amount {
+                color: var(--success-color);
+                font-weight: 700;
+                font-size: 20px;
+            }
+
+    .payment-actions {
+        display: flex;
+        gap: 12px;
+        padding-top: 16px;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-action {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-print {
+        background: var(--primary-color);
+        color: white;
+    }
+
+        .btn-print:hover {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
 
     .no-payment {
         text-align: center;
@@ -403,11 +607,11 @@
         color: var(--text-secondary);
     }
 
-    .no-payment i {
-        font-size: 48px;
-        margin-bottom: 12px;
-        opacity: 0.5;
-    }
+        .no-payment i {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
 
     .timeline {
         display: flex;
@@ -421,15 +625,15 @@
         position: relative;
     }
 
-    .timeline-item:not(:last-child)::before {
-        content: '';
-        position: absolute;
-        left: 20px;
-        top: 40px;
-        bottom: -20px;
-        width: 2px;
-        background: var(--border-color);
-    }
+        .timeline-item:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 40px;
+            bottom: -20px;
+            width: 2px;
+            background: var(--border-color);
+        }
 
     .timeline-icon {
         width: 40px;
@@ -498,8 +702,21 @@
             align-items: flex-start;
         }
 
-        .info-grid {
+        .info-grid,
+        .payment-details {
             grid-template-columns: 1fr;
+        }
+
+        .payment-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
         }
     }
 </style>
+
+@section scripts {
+    <script>
+       
+    </script>
+}

@@ -37,7 +37,7 @@ namespace Vehicle_Inspection.Controllers
             ViewBag.KtvProduction = await _reportService.GetKtvProductionAsync(start, end);
             ViewBag.TopDefects = await _reportService.GetTopDefectsAsync(start, end, 10);
             ViewBag.DefectsByVehicleType = await _reportService.GetDefectsByVehicleTypeAsync(start, end);
-            ViewBag.InspectionTypes = await _reportService.GetInspectionTypeStatsAsync(start, end);
+            //ViewBag.InspectionTypes = await _reportService.GetInspectionTypeStatsAsync(start, end);
 
             return View();
         }

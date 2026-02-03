@@ -6,7 +6,12 @@ namespace Vehicle_Inspection.Service
     {
         List<Inspection> GetInspections(string? search, short? status);
         Inspection? GetInspectionDetails(string inspectionCode);
-        string CollectPayment(string inspectionCode, string paymentMethod, string? note, Guid userId);
+        public Payment? GetPaymentByOrderCode(long? orderCode);
+        public string CollectPayment(int paymentId, string paymentMethod, string? note, Guid userId);
+
+        Task<(bool Success, string Message, Payment? NewPayment)> CreateAdditionalPaymentAsync(int inspectionId);
+        Task<(bool Success, string Message, Payment? NewPayment)> CreateAdditionalPaymentByPaymentIdAsync(int paymentId);
+
         Inspection getInspectionByOrderCode(long? orderCode);
     }
 }

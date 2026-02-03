@@ -245,7 +245,7 @@ public partial class VehInsContext : DbContext
 
             entity.HasOne(d => d.FeeSchedule).WithMany(p => p.Payments).HasConstraintName("FK__Payment__FeeSche__6F7F8B4B");
 
-            entity.HasOne(d => d.Inspection).WithOne(p => p.Payment).HasConstraintName("FK__Payment__Inspect__6E8B6712");
+            entity.HasOne(d => d.Inspection).WithMany(p => p.Payments).HasConstraintName("FK__Payment__Inspect__6E8B6712");
 
             entity.HasOne(d => d.PaidByNavigation).WithMany(p => p.PaymentPaidByNavigations).HasConstraintName("FK__Payment__PaidBy__7167D3BD");
         });

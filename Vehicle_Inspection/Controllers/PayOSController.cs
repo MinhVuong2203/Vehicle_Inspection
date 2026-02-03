@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using PayOS;
 using PayOS.Models.V2.PaymentRequests;
-using System;
 using System.Security.Claims;
 using Vehicle_Inspection.Data;
 
@@ -12,7 +11,6 @@ namespace Vehicle_Inspection.Controllers
     [Route("api/payos")]
     public class PayOSController : ControllerBase
     {
-
         private readonly PayOSClient _payos;
         private readonly VehInsContext _db;
         private readonly IConfiguration _cfg;
@@ -24,45 +22,76 @@ namespace Vehicle_Inspection.Controllers
             _cfg = cfg;
         }
 
-        // Phục vụ cho tạo link thanh toán PayOS và đẩy 1 số dữ liệu có liên quan xuống db
-        [HttpPost("create-link/{inspectionId:int}")]
-        public async Task<IActionResult> CreateLink(int inspectionId)
-        {          
+        /// <summary>
+        /// Tạo link thanh toán PayOS cho một Payment cụ thể
+        /// </summary>
+        [HttpPost("create-link/{paymentId:int}")]
+        public async Task<IActionResult> CreateLink(int paymentId)
+        {
             // 1) Lấy userId người đang đăng nhập
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrWhiteSpace(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+            {
                 return Unauthorized("Không xác định được user đăng nhập.");
+            }
 
+            // 2) Tìm Payment theo paymentId (kèm Inspection để lấy InspectionCode)
             var payment = await _db.Payments
-                .SingleAsync(p => p.InspectionId == inspectionId);
+                .Include(p => p.Inspection)
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId);
 
-            // orderCode: payOS yêu cầu số (long/int). lấy khoảng cách từ 1/1/1970 đến hiện tại tính bằng milliseconds
+            if (payment == null)
+            {
+                return NotFound($"Không tìm thấy payment với ID: {paymentId}");
+            }
+
+            // 3) Kiểm tra trạng thái payment
+            if (payment.PaymentStatus == 1)
+            {
+                return BadRequest("Payment này đã được thanh toán.");
+            }
+
+            if (payment.PaymentStatus == 2)
+            {
+                return BadRequest("Payment này đã bị hủy.");
+            }
+
+            // 4) Tạo OrderCode (số duy nhất cho PayOS)
             long orderCode = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
-            // Lưu xuống DB để map khi return gọi về
+            // 5) Cập nhật thông tin vào Payment để map khi return
             payment.OrderCode = orderCode;
             payment.PaidBy = userId;
-            payment.Notes = "CK-" + inspectionId; 
-            Console.WriteLine("------------- " + payment.OrderCode + "--------------------");
+            payment.Notes = $"CK-{payment.Inspection.InspectionCode}";
+
+            Console.WriteLine($"------------- OrderCode: {orderCode} | PaymentId: {paymentId} --------------------");
+
             await _db.SaveChangesAsync();
 
+            // 6) Tạo request cho PayOS
             var req = new CreatePaymentLinkRequest
             {
                 OrderCode = orderCode,
-                Amount = (long)payment.TotalAmount,              // VND nguyên
-                Description = "CK-" + inspectionId,
+                Amount = (long)payment.TotalAmount,  // VND nguyên
+                Description = $"CK-{payment.Inspection.InspectionCode}",
                 ReturnUrl = _cfg["PayOS:ReturnUrl"]!,
                 CancelUrl = _cfg["PayOS:CancelUrl"]!
             };
 
-            var link = await _payos.PaymentRequests.CreateAsync(req); // đúng theo README :contentReference[oaicite:4]{index=4}
+            // 7) Gọi PayOS API để tạo link
+            var link = await _payos.PaymentRequests.CreateAsync(req);
 
-            // Bạn nên lưu link.PaymentLinkId / link.CheckoutUrl vào DB (nếu model có)
-            // rồi return checkoutUrl để FE redirect
-            return Ok(new { checkoutUrl = link.CheckoutUrl, orderCode });
+            // 8) (Optional) Lưu PaymentLinkId nếu cần
+            // payment.PaymentLinkId = link.PaymentLinkId;
+            // await _db.SaveChangesAsync();
+
+            // 9) Trả về checkoutUrl để frontend redirect
+            return Ok(new 
+            { 
+                checkoutUrl = link.CheckoutUrl, 
+                orderCode = orderCode,
+                paymentId = paymentId
+            });
         }
-
-
-       
     }
 }

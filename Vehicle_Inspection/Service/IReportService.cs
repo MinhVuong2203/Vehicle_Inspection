@@ -21,6 +21,6 @@
         Task<dynamic> GetDefectsByVehicleTypeAsync(DateTime startDate, DateTime endDate);
 
         // Loại kiểm định
-        Task<dynamic> GetInspectionTypeStatsAsync(DateTime startDate, DateTime endDate);
+        //Task<dynamic> GetInspectionTypeStatsAsync(DateTime startDate, DateTime endDate);
     }
 }

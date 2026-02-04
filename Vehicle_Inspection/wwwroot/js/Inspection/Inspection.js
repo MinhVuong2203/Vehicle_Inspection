@@ -1244,7 +1244,7 @@ async function saveStageResult() {
 
         if (!isPassed) {
             measurement.defectCategory = stage.stageName;
-            measurement.defectDescription = `${item.name}: Giá trị đo ${value} ${item.unit || ''} không đạt tiêu chuẩn ${item.standard}`;
+            measurement.defectDescription = `${item.name}: Giá trị đo ${value} ${item.unit || ''}, không đạt tiêu chuẩn`;
             measurement.defectSeverity = 2;
         }
 

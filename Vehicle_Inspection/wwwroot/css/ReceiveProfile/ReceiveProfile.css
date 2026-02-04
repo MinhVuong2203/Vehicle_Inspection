@@ -373,27 +373,27 @@ body {
     flex-wrap: wrap !important;
 }
 
-.page-header > div:first-child {
-    flex: 1 !important;
-    min-width: 250px !important;
-}
+    .page-header > div:first-child {
+        flex: 1 !important;
+        min-width: 250px !important;
+    }
 
-.page-header h1 {
-    font-size: 28px !important;
-    font-weight: 600 !important;
-    margin-bottom: 8px !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 12px !important;
-    color: #ffffff !important;
-}
+    .page-header h1 {
+        font-size: 28px !important;
+        font-weight: 600 !important;
+        margin-bottom: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        color: #ffffff !important;
+    }
 
-.page-header p {
-    margin: 0 !important;
-    font-size: 16px !important;
-    opacity: 0.95 !important;
-    color: #ffffff !important;
-}
+    .page-header p {
+        margin: 0 !important;
+        font-size: 16px !important;
+        opacity: 0.95 !important;
+        color: #ffffff !important;
+    }
 
 /* Breadcrumb */
 .breadcrumb,
@@ -1401,15 +1401,16 @@ body {
 .alert i {
     margin-right: 8px;
 }
+
 .detail-row#person-info {
     display: grid;
-    grid-template-columns: 1fr; 
-    gap: 20px ;
+    grid-template-columns: 1fr;
+    gap: 20px;
 }
 /*#company-info {
     display: none !important;
 }*/
-.detail-row company-info owner-company{
+.detail-row company-info owner-company {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
     gap: 20px !important;
@@ -2013,3 +2014,43 @@ body {
         padding: 12px 16px;
     }
 }
+
+/* ============================================================
+   ACTION BUTTONS - XÉT DUYỆT (CĂN GIỮA)
+   ============================================================ */
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 32px;
+    padding: 24px 0;
+}
+
+.btn-approve {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 56px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%) !important;
+    color: white !important;
+    border: none;
+    border-radius: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 10px 25px rgba(76, 175, 80, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+    .btn-approve:hover {
+        transform: translateY(-5px) scale(1.05);
+        box-shadow: 0 15px 40px rgba(76, 175, 80, 0.6);
+    }
+
+    .btn-approve:active {
+        transform: translateY(-2px) scale(1.02);
+    }
+
+    .btn-approve i {
+        font-size: 20px;
+    }

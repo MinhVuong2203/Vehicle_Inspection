@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-// ✅ THÊM: Load tất cả dây chuyền (fallback)
+//THÊM: Load tất cả dây chuyền
 async function loadAllLanes() {
     try {
         const response = await fetch('/Inspection/GetInspectionLanes', {
@@ -263,7 +263,7 @@ function findRecordById(inspectionId) {
 // Load chi tiết hồ sơ từ server
 async function loadInspectionDetail(inspectionId) {
     try {
-        console.log('Loading detail for inspection:', inspectionId); // LOG 1
+        console.log('Loading detail for inspection:', inspectionId); 
 
         const response = await fetch(`/Inspection/GetInspectionRecord?id=${inspectionId}`, {
             method: 'GET',
@@ -272,7 +272,7 @@ async function loadInspectionDetail(inspectionId) {
             }
         });
 
-        console.log('Response status:', response.status); // LOG 2
+        console.log('Response status:', response.status); 
 
         if (!response.ok) {
             throw new Error('Không thể tải chi tiết hồ sơ');
@@ -280,10 +280,10 @@ async function loadInspectionDetail(inspectionId) {
 
         const result = await response.json();
 
-        console.log('API Response:', result); // LOG 3
+        console.log('API Response:', result); 
 
         if (result.success && result.data) {
-            console.log('Detail data:', result.data); // LOG 4
+            console.log('Detail data:', result.data); 
             return result.data;
         } else {
             throw new Error(result.message || 'Không tìm thấy hồ sơ');
@@ -485,7 +485,7 @@ document.querySelectorAll('.modal input[type="checkbox"]').forEach(checkbox => {
 let assigningInspection = null;
 let assignedLaneId = null;
 let assignedLaneName = '';
-let suitableLanes = []; // ✅ THÊM
+let suitableLanes = []; 
 
 // Wrapper function để mở modal phân công bằng ID
 async function openAssignLaneById(inspectionId) {
@@ -516,7 +516,7 @@ async function openAssignLane(record) {
     // Clear note
     document.getElementById('assignNote').value = '';
 
-    // ✅ LOAD DÂY CHUYỀN PHÙ HỢP TỪ DATABASE
+    //LOAD DÂY CHUYỀN PHÙ HỢP
     if (record.vehicleTypeId) {
         await loadSuitableLanes(record.vehicleTypeId);
     } else {
@@ -538,7 +538,7 @@ async function openAssignLane(record) {
     document.getElementById('assignLaneModal').style.display = 'block';
 }
 
-// ✅ THÊM: Load dây chuyền phù hợp từ database
+//Load dây chuyền phù hợp từ database
 async function loadSuitableLanes(vehicleTypeId) {
     try {
         console.log(`Loading suitable lanes for VehicleTypeId: ${vehicleTypeId}`);
@@ -570,7 +570,7 @@ async function loadSuitableLanes(vehicleTypeId) {
     }
 }
 
-// ✅ THÊM: Render lại lane cards
+//Render lại lane cards
 function renderLaneCards() {
     const laneCardsContainer = document.querySelector('.lane-cards');
     
@@ -618,7 +618,7 @@ function renderLaneCards() {
     });
 }
 
-// ✅ CẬP NHẬT: Highlight lane đã chọn
+//Highlight lane đã chọn
 function highlightSelectedLane(laneId) {
     document.querySelectorAll('.assign-lane-card').forEach(card => {
         card.classList.remove('selected');
@@ -736,36 +736,36 @@ let allDefects = [];
 
 // Định nghĩa các thông số cần đo cho mỗi giai đoạn
 const stageItems = {
-    1: [ // Kiểm tra ngoại thất
-        { id: 1, name: 'Tình trạng khung xe', type: 'select', options: ['Tốt', 'Khuyết điểm', 'Hư hỏng'], standard: 'Tốt' },
-        { id: 2, name: 'Tình trạng sơn', type: 'select', options: ['Tốt', 'Phai màu', 'Bong tróc'], standard: 'Tốt' },
-        { id: 3, name: 'Kính chắn gió', type: 'select', options: ['Tốt', 'Nứt nhỏ', 'Vỡ'], standard: 'Tốt' },
-        { id: 4, name: 'Gương chiếu hậu', type: 'select', options: ['Đầy đủ', 'Thiếu', 'Hư hỏng'], standard: 'Đầy đủ' }
-    ],
-    2: [ // Kiểm tra động cơ
-        { id: 5, name: 'Tiếng động cơ', type: 'select', options: ['Bình thường', 'Ồn bất thường', 'Kêu lạ'], standard: 'Bình thường' },
-        { id: 6, name: 'Rò rỉ dầu động cơ', type: 'select', options: ['Không', 'Nhẹ', 'Nghiêm trọng'], standard: 'Không' },
-        { id: 7, name: 'Nhiệt độ động cơ (°C)', type: 'number', min: 80, max: 95, standard: '80-95' },
-        { id: 8, name: 'Áp suất dầu (bar)', type: 'number', min: 2, max: 6, standard: '2-6' }
-    ],
-    3: [ // Kiểm tra hệ thống phanh
-        { id: 9, name: 'Lực phanh trục trước (%)', type: 'number', min: 50, max: 100, standard: '≥ 50' },
-        { id: 10, name: 'Lực phanh trục sau (%)', type: 'number', min: 50, max: 100, standard: '≥ 50' },
-        { id: 11, name: 'Độ chênh lệch phanh (%)', type: 'number', min: 0, max: 30, standard: '≤ 30' },
-        { id: 12, name: 'Phanh đỗ', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' }
-    ],
-    4: [ // Kiểm tra khí thải
-        { id: 13, name: 'Nồng độ CO (%)', type: 'number', min: 0, max: 4.5, standard: '≤ 4.5' },
-        { id: 14, name: 'Nồng độ HC (ppm)', type: 'number', min: 0, max: 1200, standard: '≤ 1200' },
-        { id: 15, name: 'Độ khói (HSU)', type: 'number', min: 0, max: 40, standard: '≤ 40' },
-        { id: 16, name: 'Độ ồn (dB)', type: 'number', min: 0, max: 95, standard: '≤ 95' }
-    ],
-    5: [ // Kiểm tra hệ thống đèn
-        { id: 17, name: 'Đèn pha', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' },
-        { id: 18, name: 'Đèn cos', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' },
-        { id: 19, name: 'Đèn xi nhan', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' },
-        { id: 20, name: 'Đèn phanh', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' }
-    ]
+    //1: [ // Kiểm tra ngoại thất
+    //    { id: 1, name: 'Tình trạng khung xe', type: 'select', options: ['Tốt', 'Khuyết điểm', 'Hư hỏng'], standard: 'Tốt' },
+    //    { id: 2, name: 'Tình trạng sơn', type: 'select', options: ['Tốt', 'Phai màu', 'Bong tróc'], standard: 'Tốt' },
+    //    { id: 3, name: 'Kính chắn gió', type: 'select', options: ['Tốt', 'Nứt nhỏ', 'Vỡ'], standard: 'Tốt' },
+    //    { id: 4, name: 'Gương chiếu hậu', type: 'select', options: ['Đầy đủ', 'Thiếu', 'Hư hỏng'], standard: 'Đầy đủ' }
+    //],
+    //2: [ // Kiểm tra động cơ
+    //    { id: 5, name: 'Tiếng động cơ', type: 'select', options: ['Bình thường', 'Ồn bất thường', 'Kêu lạ'], standard: 'Bình thường' },
+    //    { id: 6, name: 'Rò rỉ dầu động cơ', type: 'select', options: ['Không', 'Nhẹ', 'Nghiêm trọng'], standard: 'Không' },
+    //    { id: 7, name: 'Nhiệt độ động cơ (°C)', type: 'number', min: 80, max: 95, standard: '80-95' },
+    //    { id: 8, name: 'Áp suất dầu (bar)', type: 'number', min: 2, max: 6, standard: '2-6' }
+    //],
+    //3: [ // Kiểm tra hệ thống phanh
+    //    { id: 9, name: 'Lực phanh trục trước (%)', type: 'number', min: 50, max: 100, standard: '≥ 50' },
+    //    { id: 10, name: 'Lực phanh trục sau (%)', type: 'number', min: 50, max: 100, standard: '≥ 50' },
+    //    { id: 11, name: 'Độ chênh lệch phanh (%)', type: 'number', min: 0, max: 30, standard: '≤ 30' },
+    //    { id: 12, name: 'Phanh đỗ', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' }
+    //],
+    //4: [ // Kiểm tra khí thải
+    //    { id: 13, name: 'Nồng độ CO (%)', type: 'number', min: 0, max: 4.5, standard: '≤ 4.5' },
+    //    { id: 14, name: 'Nồng độ HC (ppm)', type: 'number', min: 0, max: 1200, standard: '≤ 1200' },
+    //    { id: 15, name: 'Độ khói (HSU)', type: 'number', min: 0, max: 40, standard: '≤ 40' },
+    //    { id: 16, name: 'Độ ồn (dB)', type: 'number', min: 0, max: 95, standard: '≤ 95' }
+    //],
+    //5: [ // Kiểm tra hệ thống đèn
+    //    { id: 17, name: 'Đèn pha', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' },
+    //    { id: 18, name: 'Đèn cos', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' },
+    //    { id: 19, name: 'Đèn xi nhan', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' },
+    //    { id: 20, name: 'Đèn phanh', type: 'select', options: ['Đạt', 'Không đạt'], standard: 'Đạt' }
+    //]
 };
 
 // Wrapper function để mở modal quy trình kiểm định bằng ID
@@ -803,8 +803,6 @@ async function openInspectionProcess(record) {
         return;
     }
 
-    // ✅ LOAD STAGES TỪ DATABASE
-    console.log('Loading stages from database...');
 
     const dbStages = await window.InspectionStageLoader.loadStages(record.inspectionId);
 
@@ -873,7 +871,7 @@ function renderStagesList() {
     stagesData.forEach((stage, index) => {
         const stageItem = document.createElement('div');
 
-        // ✅ KIỂM TRA STAGE CÓ ITEM APPLICABLE KHÔNG
+        // KIỂM TRA STAGE CÓ ITEM KHÔNG
         const isDisabled = !stage.hasApplicableItems;
 
         stageItem.className = 'stage-item';
@@ -882,7 +880,7 @@ function renderStagesList() {
         if (stage.result === 2) stageItem.classList.add('failed');
         if (index === currentStageIndex) stageItem.classList.add('active');
 
-        // ✅ THÊM CLASS DISABLED
+        // THÊM CLASS DISABLED
         if (isDisabled) stageItem.classList.add('stage-disabled');
 
         let statusText = 'Chờ thực hiện';
@@ -915,7 +913,7 @@ function renderStagesList() {
             <div class="stage-status ${statusClass}">${statusText}</div>
         `;
 
-        // ✅ DISABLE CLICK NẾU KHÔNG CÓ ITEM
+        // DISABLE CLICK NẾU KHÔNG CÓ ITEM
         if (!isDisabled) {
             stageItem.onclick = () => showStage(index);
         } else {
@@ -943,7 +941,7 @@ function renderStageForm(stage) {
         const formGroup = document.createElement('div');
         formGroup.className = 'form-group';
 
-        // ✅ KIỂM TRA DISABLED
+        // KIỂM TRA DISABLED
         const isDisabled = item.disabled === true;
         const disabledAttr = isDisabled ? 'disabled' : '';
         const disabledStyle = isDisabled ? 'background-color: #f0f0f0; cursor: not-allowed;' : '';
@@ -984,7 +982,7 @@ function renderStageForm(stage) {
 
         form.appendChild(formGroup);
 
-        // ✅ LOAD GIÁ TRỊ ĐÃ LƯU (nếu có)
+        // LOAD GIÁ TRỊ ĐÃ LƯU (nếu có)
         if (stage.measurements && stage.measurements[item.id]) {
             const input = document.getElementById(`item_${item.id}`);
             if (input && !isDisabled) {
@@ -994,7 +992,7 @@ function renderStageForm(stage) {
         }
     });
 
-    // ✅ ENABLE NÚT LƯU
+    // ENABLE NÚT LƯU
     const saveButton = document.querySelector('.stage-actions button:nth-child(2)');
     if (saveButton) {
         saveButton.disabled = false;
@@ -1042,7 +1040,7 @@ async function showStage(index) {
     currentStageIndex = index;
     const stage = stagesData[index];
 
-    // ✅ KIỂM TRA STAGE CÓ ITEM APPLICABLE KHÔNG
+    // KIỂM TRA STAGE CÓ ITEM KHÔNG
     if (!stage.hasApplicableItems) {
         //alert(`⚠️ Công đoạn "${stage.stageName}" không có mục kiểm tra nào áp dụng cho loại xe này.\n\nVui lòng chuyển sang công đoạn khác.`);
         return;
@@ -1054,7 +1052,7 @@ async function showStage(index) {
     document.getElementById('stageName').textContent = stage.stageName;
     document.getElementById('stageDescription').textContent = `Công đoạn ${index + 1}/${stagesData.length}`;
 
-    // ✅ KIỂM TRA QUYỀN TRƯỚC KHI RENDER FORM
+    // KIỂM TRA QUYỀN TRƯỚC KHI RENDER FORM
     const hasPermission = await checkStagePermission(currentInspection.inspectionId, stage.stageId);
 
     if (!hasPermission) {
@@ -1077,7 +1075,7 @@ async function showStage(index) {
     renderStagesList();
 }
 
-// ✅ KIỂM TRA QUYỀN QUA API
+// KIỂM TRA QUYỀN QUA 
 async function checkStagePermission(inspectionId, stageId) {
     try {
         const response = await fetch(`/Inspection/CheckStagePermission?inspectionId=${inspectionId}&stageId=${stageId}`, {
@@ -1100,7 +1098,7 @@ async function checkStagePermission(inspectionId, stageId) {
     }
 }
 
-// ✅ RENDER FORM Ở CHẾ ĐỘ DISABLED
+//RENDER FORM Ở CHẾ ĐỘ DISABLED
 function renderStageFormDisabled(stage) {
     const form = document.getElementById('stageForm');
     form.innerHTML = '';
@@ -1143,7 +1141,7 @@ function renderStageFormDisabled(stage) {
         form.appendChild(formGroup);
     });
 
-    // ✅ DISABLE NÚT LƯU
+    //DISABLE NÚT LƯU
     const saveButton = document.querySelector('.stage-actions button:nth-child(2)');
     if (saveButton) {
         saveButton.disabled = true;
@@ -1152,7 +1150,7 @@ function renderStageFormDisabled(stage) {
     }
 }
 
-// ✅ HIỂN THỊ CẢNH BÁO
+//HIỂN THỊ CẢNH BÁO
 function showPermissionWarning() {
     const form = document.getElementById('stageForm');
     
@@ -1181,13 +1179,13 @@ function showPermissionWarning() {
     form.insertBefore(warningDiv, form.firstChild);
 }
 
-// ✅ CẬP NHẬT HÀM LƯU ĐỂ HIỂN THỊ THÔNG BÁO RÕ RÀNG
+// CẬP NHẬT HÀM LƯU ĐỂ HIỂN THỊ THÔNG BÁO
 async function saveStageResult() {
     const stage = stagesData[currentStageIndex];
     const items = stageItems[stage.stageId] || [];
 
     if (!stage.inspStageId) {
-        alert('❌ Lỗi: Không tìm thấy InspStageId. Vui lòng load lại trang.');
+        alert('Lỗi: Không tìm thấy InspStageId. Vui lòng load lại trang.');
         return;
     }
 
@@ -1196,7 +1194,7 @@ async function saveStageResult() {
 
     for (const item of items) {
         if (item.disabled === true) {
-            console.log(`⏭️ Skipping disabled item: ${item.name}`);
+            console.log(`Skipping disabled item: ${item.name}`);
             continue;
         }
 
@@ -1205,7 +1203,7 @@ async function saveStageResult() {
 
         if (!value) {
             allFilled = false;
-            console.warn(`⚠️ Item ${item.name} is not filled`);
+            console.warn(`Item ${item.name} is not filled`);
             continue;
         }
 
@@ -1251,7 +1249,7 @@ async function saveStageResult() {
     }
 
     if (!allFilled) {
-        alert('⚠️ Vui lòng nhập đầy đủ tất cả các thông số bắt buộc!');
+        alert(' Vui lòng nhập đầy đủ tất cả các thông số bắt buộc!');
         return;
     }
 
@@ -1289,12 +1287,12 @@ async function saveStageResult() {
                 stage.measurements[m.itemId] = m.actualValue || m.actualText;
             });
 
-            alert('✅ Đã lưu kết quả công đoạn thành công!');
+            alert('Đã lưu kết quả công đoạn thành công!');
 
-            // ✅ RELOAD LẠI DEFECTS (CHỈ LẤY LỖI CHƯA SỬA)
+            // RELOAD LẠI DEFECTS (CHỈ LẤY LỖI CHƯA SỬA)
             await loadStageDefects(stage.stageId);
 
-            // ✅ NẾU KHÔNG CÒN LỖI NÀO → ẨN SECTION
+            // NẾU KHÔNG CÒN LỖI NÀO ẨN SECTION
             if (allDefects.filter(d => d.stageId === stage.stageId).length === 0) {
                 document.getElementById('defectsSection').style.display = 'none';
             } else {
@@ -1304,18 +1302,18 @@ async function saveStageResult() {
             renderStagesList();
         } else {
             if (result.message.includes('không có quyền')) {
-                alert('🚫 BẠN KHÔNG CÓ QUYỀN NHẬP LIỆU!\n\n' +
-                    '❌ Chỉ nhân viên được phân công cho công đoạn này mới có thể nhập dữ liệu.\n\n' +
-                    '📞 Vui lòng liên hệ quản lý để được phân quyền.');
+                alert('BẠN KHÔNG CÓ QUYỀN NHẬP LIỆU!\n\n' +
+                    'Chỉ nhân viên được phân công cho công đoạn này mới có thể nhập dữ liệu.\n\n' +
+                    'Vui lòng liên hệ quản lý để được phân quyền.');
             } else if (result.message.includes('chưa đăng nhập')) {
-                alert('🔒 BẠN CHƯA ĐĂNG NHẬP!\n\nVui lòng đăng nhập để tiếp tục.');
+                alert('BẠN CHƯA ĐĂNG NHẬP!\n\nVui lòng đăng nhập để tiếp tục.');
             } else {
-                alert('❌ Lưu thất bại: ' + (result.message || 'Lỗi không xác định'));
+                alert('Lưu thất bại: ' + (result.message || 'Lỗi không xác định'));
             }
         }
     } catch (error) {
         console.error('Error saving stage result:', error);
-        alert('❌ Không thể lưu kết quả. Vui lòng thử lại.\n\nLỗi: ' + error.message);
+        alert('Không thể lưu kết quả. Vui lòng thử lại.\n\nLỗi: ' + error.message);
     } finally {
         hideFullScreenLoading();
     }
@@ -1342,10 +1340,10 @@ async function loadStageDefects(stageId) {
         console.log('Defects result:', result);
 
         if (result.success && result.data) {
-            // ✅ Xóa defects cũ của stage này
+            //Xóa defects cũ của stage này
             allDefects = allDefects.filter(d => d.stageId !== stageId);
 
-            // ✅ Thêm defects mới từ database
+            // Thêm defects mới từ database
             result.data.forEach(defect => {
                 allDefects.push({
                     defectId: defect.defectId,
@@ -1357,9 +1355,9 @@ async function loadStageDefects(stageId) {
                 });
             });
 
-            console.log(`✅ Loaded ${result.data.length} defects for stage ${stageId}`);
+            console.log(`Loaded ${result.data.length} defects for stage ${stageId}`);
 
-            // ✅ Render lại danh sách lỗi
+            //Render lại danh sách lỗi
             renderDefects(stageId);
         }
     } catch (error) {
@@ -1447,7 +1445,7 @@ function removeDefect(stageId, index) {
 
 // Cập nhật progress bar
 function updateProgress() {
-    // ✅ CHỈ ĐẾM STAGE CÓ ITEM APPLICABLE
+    //CHỈ ĐẾM STAGE CÓ ITEM 
     const applicableStages = stagesData.filter(s => s.hasApplicableItems);
     const completedCount = applicableStages.filter(s => s.status === 2).length;
     const totalCount = applicableStages.length;
@@ -1461,7 +1459,7 @@ function updateProgress() {
 
 // Giai đoạn trước
 function previousStage() {
-    // ✅ TÌM STAGE TRƯỚC ĐÓ CÓ ITEM APPLICABLE
+    // TÌM STAGE TRƯỚC ĐÓ CÓ ITEM 
     let prevIndex = currentStageIndex - 1;
 
     while (prevIndex >= 0) {
@@ -1469,26 +1467,26 @@ function previousStage() {
             showStage(prevIndex);
             return;
         }
-        console.log(`⏮️ Skipping stage ${prevIndex} (${stagesData[prevIndex].stageName}) - No applicable items`);
+        console.log(`Skipping stage ${prevIndex} (${stagesData[prevIndex].stageName}) - No applicable items`);
         prevIndex--;
     }
 
-    // ✅ NẾU KHÔNG CÓ STAGE NÀO TRƯỚC ĐÓ
-    alert('⚠️ Đây là công đoạn đầu tiên có thể thực hiện.');
+    //NẾU KHÔNG CÓ STAGE NÀO TRƯỚC ĐÓ
+    alert('Đây là công đoạn đầu tiên có thể thực hiện.');
 }
 
 // Giai đoạn tiếp theo
 function nextStage() {
     const stage = stagesData[currentStageIndex];
 
-    // ✅ NẾU STAGE HIỆN TẠI CÓ ITEM VÀ CHƯA LƯU → CẢNH BÁO
+    // NẾU STAGE HIỆN TẠI CÓ ITEM VÀ CHƯA LƯU CẢNH BÁO
     if (stage.hasApplicableItems && stage.status !== 2) {
         if (!confirm('Bạn chưa lưu kết quả công đoạn này. Tiếp tục?')) {
             return;
         }
     }
 
-    // ✅ TÌM STAGE TIẾP THEO CÓ ITEM APPLICABLE
+    //TÌM STAGE TIẾP THEO CÓ ITEM
     let nextIndex = currentStageIndex + 1;
 
     while (nextIndex < stagesData.length) {
@@ -1496,11 +1494,11 @@ function nextStage() {
             showStage(nextIndex);
             return;
         }
-        console.log(`⏭️ Skipping stage ${nextIndex} (${stagesData[nextIndex].stageName}) - No applicable items`);
+        console.log(`Skipping stage ${nextIndex} (${stagesData[nextIndex].stageName}) - No applicable items`);
         nextIndex++;
     }
 
-    // ✅ NẾU KHÔNG CÒN STAGE NÀO → HIỂN THỊ KẾT LUẬN
+    // NẾU KHÔNG CÒN STAGE NÀO HIỂN THỊ KẾT LUẬN
     showConclusion();
 }
 
@@ -1521,7 +1519,7 @@ function showConclusion() {
         document.getElementById('allDefectsSection').style.display = 'block';
         const allDefectsList = document.getElementById('allDefectsList');
         allDefectsList.innerHTML = '';
-
+         
         allDefects.forEach(defect => {
             const stage = stagesData.find(s => s.stageId === defect.stageId);
             const defectItem = document.createElement('div');
@@ -1587,12 +1585,10 @@ function backToStages() {
     showStage(stagesData.length - 1);
 }
 
-// Hoàn thành kiểm định - KHÔNG YÊU CẦU CHỌN KẾT LUẬN
+// Hoàn thành kiểm định 
 async function submitConclusion() {
-    // ✅ BỎ PHẦN KIỂM TRA finalResultSelect
     const conclusionNote = document.getElementById('conclusionNote')?.value || '';
 
-    // ✅ XÁC NHẬN ĐƠN GIẢN
     if (!confirm('Xác nhận hoàn thành kiểm định?\n\nTất cả các công đoạn đã được lưu kết quả.')) {
         return;
     }
@@ -1612,7 +1608,7 @@ async function submitConclusion() {
             },
             body: JSON.stringify({
                 inspectionId: currentInspection.inspectionId,
-                finalResult: null,  // ✅ KHÔNG GỬI KẾT LUẬN
+                finalResult: null, 
                 conclusionNote: conclusionNote
             })
         });
@@ -1629,11 +1625,11 @@ async function submitConclusion() {
         console.log('Submit result:', result);
 
         if (result.success) {
-            alert('✅ Đã hoàn thành kiểm định thành công!');
+            alert('Đã hoàn thành kiểm định thành công!');
             closeInspectionProcess();
             await loadInspectionRecords();
         } else {
-            alert('❌ ' + (result.message || 'Có lỗi xảy ra khi hoàn thành kiểm định'));
+            alert((result.message || 'Có lỗi xảy ra khi hoàn thành kiểm định'));
         }
     } catch (error) {
         console.error('Error submitting inspection:', error);

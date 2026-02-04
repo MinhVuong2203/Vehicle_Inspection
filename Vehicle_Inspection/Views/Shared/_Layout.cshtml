@@ -82,6 +82,19 @@
                 }
 
                 <ul class="nav nav-pills align-items-center">
+                    @{
+                        // Kiểm tra active cho Trang chủ
+                        var isHomeActive = path == "/" || path == "/home" || path.StartsWith("/home/");
+                    }
+
+                    <!-- Trang chủ -->
+                    <li class="nav-item">
+                        <a class="nav-link @(isHomeActive ? "active" : "")" href="/">
+                            <i class="fa-solid fa-home"></i>
+                            <div>Trang chủ</div>
+                        </a>
+                    </li>
+
                     @if (userRoles != null && userRoles.Any())
                     {
                         foreach (var role in userRoles)

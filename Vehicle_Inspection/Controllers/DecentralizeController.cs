@@ -1,25 +1,54 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Vehicle_Inspection.Service;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Vehicle_Inspection.Data;
+using Vehicle_Inspection.Service;
 
 namespace Vehicle_Inspection.Controllers
 {
     public class DecentralizeController : Controller
     {
         private readonly IDecentralizeService _decentralizeService;
+        private readonly VehInsContext _context;
 
-        public DecentralizeController(IDecentralizeService decentralizeService)
+        public DecentralizeController(IDecentralizeService decentralizeService, VehInsContext context)
         {
             _decentralizeService = decentralizeService;
+            _context = context;
         }
 
         public async Task<IActionResult> Index(string search, int? position, int? team, string gender, bool? isActive, string sort, string mode = "role", int page = 1)
         {
+
+            Guid userId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var currentUser = _context.Users
+                .Include(u => u.Position)
+                .FirstOrDefault(u => u.UserId == userId);
+
+            var positionCode = currentUser?.Position?.PoitionCode;
+            var currentTeamId = currentUser?.TeamId;
+            ViewBag.PositionCode = positionCode;
+            if (positionCode == "TTDC")
+            {
+                mode = "stage";
+            }
+
             int pageSize = 10; // Số nhân viên mỗi trang
 
             var employees = await _decentralizeService.GetFilteredUsersAsync(search, position, team, gender, sort);
+
+            if (positionCode == "TTDC")
+            {
+                employees = employees
+                    .Where(u => u.TeamId == currentTeamId)
+                    .ToList();
+            }
+
+
+
             var roles = await _decentralizeService.GetAllRolesAsync();
             var stages = await _decentralizeService.GetAllStagesAsync();
 
@@ -45,16 +74,35 @@ namespace Vehicle_Inspection.Controllers
                 .Take(pageSize)
                 .ToList();
 
+
+
+
+           
+
+
             // Truyền thông tin phân trang
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
             ViewBag.TotalItems = totalItems;
 
             ViewBag.Positions = await _decentralizeService.GetAllPositionsAsync();
-            ViewBag.Teams = await _decentralizeService.GetAllTeamsAsync();
+         
             ViewBag.Roles = roles;
             ViewBag.Stages = stages;
             ViewBag.Mode = mode;
+
+
+            var teams = await _decentralizeService.GetAllTeamsAsync();
+
+            if (positionCode == "TTDC")
+            {
+                teams = teams
+                    .Where(t => t.TeamId == currentTeamId)
+                    .ToList();
+            }
+
+            ViewBag.Teams = teams;
+
 
             return View(paginatedViewModel);
         }

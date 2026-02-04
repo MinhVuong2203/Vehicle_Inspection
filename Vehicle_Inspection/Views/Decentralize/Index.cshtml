@@ -9,6 +9,11 @@
     string teamVal = q["team"];
     string genderVal = q["gender"];
     string modeVal = ViewBag.Mode ?? "role";
+  
+    string positionCode = ViewBag.PositionCode as string;
+    bool canSeeAll = positionCode == "IT" || positionCode == "GD";
+    bool isTTDC = positionCode == "TTDC";
+
 }
 
 
@@ -124,16 +129,25 @@
 
         <div class="col-md-10">
             <!-- Mode Switch Buttons -->
-            <div class="mode-switch">
-                <button class="mode-btn @(modeVal == "role" ? "active" : "")" onclick="switchMode('role')" title="Phân quyền thao tác">
-                    <i class="fa-solid fa-scroll-torah"></i>
-                </button>
-                <button class="mode-btn @(modeVal == "stage" ? "active" : "")" onclick="switchMode('stage')" title="Phân quyền công đoạn (KTV)">
-                    <i class="fa-solid fa-gears"></i>
-                </button>
-            </div>
 
-            @if (modeVal == "stage")
+            @if (canSeeAll)
+            {
+                <div class="mode-switch">
+                    <button class="mode-btn @(modeVal == "role" ? "active" : "")"
+                            onclick="switchMode('role')"
+                            title="Phân quyền thao tác">
+                        <i class="fa-solid fa-scroll-torah"></i>
+                    </button>
+
+                    <button class="mode-btn @(modeVal == "stage" ? "active" : "")"
+                            onclick="switchMode('stage')"
+                            title="Phân quyền công đoạn">
+                        <i class="fa-solid fa-gears"></i>
+                    </button>
+                </div>
+            }
+
+            @if (modeVal == "stage" && canSeeAll)
             {
                 <div class="ktv-only-notice">
                     <i class="bi bi-info-circle"></i>
@@ -148,20 +162,21 @@
                     <tr>
                         <th>Nhân sự</th>
                         <th>Chức vụ</th>
-                        @if (modeVal == "role")
+                       @if (modeVal == "role" && canSeeAll)
                         {
-                            @foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
+                            foreach (var role in (List<Vehicle_Inspection.Models.Role>)ViewBag.Roles)
                             {
                                 <th>@role.RoleAcronym</th>
                             }
                         }
                         else
                         {
-                            @foreach (var stage in (List<Vehicle_Inspection.Models.Stage>)ViewBag.Stages)
+                            foreach (var stage in (List<Vehicle_Inspection.Models.Stage>)ViewBag.Stages)
                             {
                                 <th>@stage.StageName</th>
                             }
                         }
+
                     </tr>
                 </thead>
                 <tbody>

@@ -123,7 +123,7 @@ namespace Vehicle_Inspection.Controllers
                     {
                         latestInspection.Status = 2; // APPROVED - Miễn phí
                         resultStatus = 2;
-                        Console.WriteLine($"   → Count_Re = {newCountRe} (< 3) → Status = 2 (Miễn phí)"); 
+                        Console.WriteLine($"   → Count_Re = {newCountRe} (< 3) → Status = 2 (Miễn phí)");
                     }
                     else
                     {
@@ -201,10 +201,32 @@ namespace Vehicle_Inspection.Controllers
                 Console.WriteLine($"   - Status: {resultStatus}");
                 Console.WriteLine($"   - Count_Re: {resultCountRe}");
 
+                // Xác định thông báo phù hợp
+                string successMessage;
+                bool showInspectionRedirect = false;
+
+                if (action == "UPDATE" && resultStatus == 2)
+                {
+                    // Tái kiểm miễn phí
+                    successMessage = "Hồ sơ đã được duyệt tái kiểm (miễn phí). Vui lòng chuyển sang mục Kiểm định để tiếp tục!";
+                    showInspectionRedirect = true;
+                }
+                else if (action == "UPDATE" && resultStatus == 1)
+                {
+                    // Tái kiểm có phí
+                    successMessage = "Cập nhật hồ sơ tái kiểm thành công (có phí). Vui lòng thanh toán trước khi kiểm định!";
+                }
+                else
+                {
+                    // Tạo mới
+                    successMessage = "Tạo hồ sơ kiểm định mới thành công";
+                }
+
                 return Ok(new
                 {
                     success = true,
-                    message = action == "CREATE" ? "Tạo hồ sơ kiểm định mới thành công" : "Cập nhật hồ sơ tái kiểm thành công",
+                    message = successMessage,
+                    showInspectionRedirect = showInspectionRedirect,
                     data = new
                     {
                         action = action,

@@ -1195,7 +1195,6 @@ async function saveStageResult() {
     const measurements = [];
 
     for (const item of items) {
-        // ✅ BỎ QUA ITEM DISABLED
         if (item.disabled === true) {
             console.log(`⏭️ Skipping disabled item: ${item.name}`);
             continue;
@@ -1244,7 +1243,7 @@ async function saveStageResult() {
 
         if (!isPassed) {
             measurement.defectCategory = stage.stageName;
-            measurement.defectDescription = `${item.name}: Giá trị đo ${value} ${item.unit || ''} không đạt tiêu chuẩn ${item.standard}`;
+            measurement.defectDescription = `${item.name}: Giá trị đo ${value} ${item.unit || ''}, không đạt tiêu chuẩn`;
             measurement.defectSeverity = 2;
         }
 
@@ -1292,18 +1291,22 @@ async function saveStageResult() {
 
             alert('✅ Đã lưu kết quả công đoạn thành công!');
 
-            if (stage.result === 2) {
+            // ✅ RELOAD LẠI DEFECTS (CHỈ LẤY LỖI CHƯA SỬA)
+            await loadStageDefects(stage.stageId);
+
+            // ✅ NẾU KHÔNG CÒN LỖI NÀO → ẨN SECTION
+            if (allDefects.filter(d => d.stageId === stage.stageId).length === 0) {
+                document.getElementById('defectsSection').style.display = 'none';
+            } else {
                 document.getElementById('defectsSection').style.display = 'block';
-                await loadStageDefects(stage.stageId);
             }
 
             renderStagesList();
         } else {
-            // ✅ HIỂN THỊ THÔNG BÁO CHI TIẾT
             if (result.message.includes('không có quyền')) {
                 alert('🚫 BẠN KHÔNG CÓ QUYỀN NHẬP LIỆU!\n\n' +
-                      '❌ Chỉ nhân viên được phân công cho công đoạn này mới có thể nhập dữ liệu.\n\n' +
-                      '📞 Vui lòng liên hệ quản lý để được phân quyền.');
+                    '❌ Chỉ nhân viên được phân công cho công đoạn này mới có thể nhập dữ liệu.\n\n' +
+                    '📞 Vui lòng liên hệ quản lý để được phân quyền.');
             } else if (result.message.includes('chưa đăng nhập')) {
                 alert('🔒 BẠN CHƯA ĐĂNG NHẬP!\n\nVui lòng đăng nhập để tiếp tục.');
             } else {

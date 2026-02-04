@@ -508,6 +508,11 @@ namespace Vehicle_Inspection.Service
                 int failedCount = 0;
                 var defectsToAdd = new List<InspectionDefect>();
 
+                // ✅ LẤY DANH SÁCH DEFECT CŨ (để kiểm tra xem có lỗi nào được sửa không)
+                var existingDefects = _context.InspectionDefects
+                    .Where(d => d.InspStageId == request.InspStageId && !d.IsFixed)
+                    .ToList();
+
                 foreach (var measurement in request.Measurements)
                 {
                     var existingDetail = _context.InspectionDetails
@@ -538,6 +543,16 @@ namespace Vehicle_Inspection.Service
                     if (measurement.IsPassed)
                     {
                         passedCount++;
+
+                        // ✅ NẾU ITEM NÀY ĐẠT → TÌM VÀ ĐÁNH DẤU LỖI CŨ LÀ ĐÃ SỬA
+                        var fixedDefects = existingDefects
+                            .Where(d => d.ItemId == measurement.ItemId)
+                            .ToList();
+                        foreach (var defect in fixedDefects)
+                        {
+                            defect.IsFixed = true;
+                            Console.WriteLine($"✅ Marked defect {defect.DefectId} as FIXED (ItemId: {measurement.ItemId})");
+                        }
                     }
                     else
                     {
@@ -612,7 +627,7 @@ namespace Vehicle_Inspection.Service
             try
             {
                 var defects = _context.InspectionDefects
-                    .Where(d => d.InspectionId == inspectionId)
+                    .Where(d => d.InspectionId == inspectionId && !d.IsFixed)
                     .Include(d => d.InspStage)
                     .Where(d => d.InspStage.StageId == stageId)
                     .Select(d => new InspectionDefectDto
@@ -627,6 +642,7 @@ namespace Vehicle_Inspection.Service
                     })
                     .ToList();
 
+                Console.WriteLine($"✅ Found {defects.Count} ACTIVE defects (IsFixed = false)");
                 return defects;
             }
             catch (Exception ex)

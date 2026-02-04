@@ -89,11 +89,11 @@
                                         <input asp-for="Owner.CCCD" type="text" class="detail-input" placeholder="Nhập số CCCD/CMND" maxlength="12">
                                         <span asp-validation-for="Owner.CCCD" class="text-danger"></span>
                                     </div>
-                                    <div class="detail-item">
+                                    @* <div class="detail-item">
                                         <label asp-for="Owner.Phone" class="detail-label"></label>
                                         <input asp-for="Owner.Phone" type="text" class="detail-input" placeholder="Nhập số điện thoại" maxlength="20">
                                         <span asp-validation-for="Owner.Phone" class="text-danger"></span>
-                                    </div>
+                                    </div> *@
                                 </div>
 
                                 <!-- Company Info -->
@@ -265,7 +265,10 @@
                                     <label asp-for="Vehicle.IsCleanEnergy"></label>
                                 </div>
                                 <label class="checkbox-container">
-                                    <input asp-for="Vehicle.IsCleanEnergy" type="checkbox" />
+                                    <input type="checkbox"
+                                           name="Vehicle.IsCleanEnergy"
+                                           value="true"
+                                           @(Model?.Vehicle?.IsCleanEnergy == true ? "checked" : "") />
                                     <span class="checkmark"></span>
                                 </label>
                             </div>
@@ -292,7 +295,10 @@
                                     <label asp-for="Vehicle.HasModification"></label>
                                 </div>
                                 <label class="checkbox-container">
-                                    <input asp-for="Vehicle.HasModification" type="checkbox" />
+                                    <input type="checkbox"
+                                           name="Vehicle.HasModification"
+                                           value="true"
+                                           @(Model?.Vehicle?.HasModification == true ? "checked" : "") />
                                     <span class="checkmark"></span>
                                 </label>
                             </div>
@@ -303,7 +309,10 @@
                                     <label asp-for="Vehicle.HasCommercialModification"></label>
                                 </div>
                                 <label class="checkbox-container">
-                                    <input asp-for="Vehicle.HasCommercialModification" type="checkbox" />
+                                    <input type="checkbox"
+                                           name="Vehicle.HasCommercialModification"
+                                           value="true"
+                                           @(Model?.Vehicle?.HasCommercialModification == true ? "checked" : "") />
                                     <span class="checkmark"></span>
                                 </label>
                             </div>
@@ -622,7 +631,10 @@
                                     <label asp-for="Specification.HasTachograph"></label>
                                 </div>
                                 <label class="checkbox-container">
-                                    <input asp-for="Specification.HasTachograph" type="checkbox" />
+                                    <input type="checkbox"
+                                           name="Specification.HasTachograph"
+                                           value="true"
+                                           @(Model?.Specification?.HasTachograph == true ? "checked" : "") />
                                     <span class="checkmark"></span>
                                 </label>
                             </div>
@@ -631,7 +643,10 @@
                                     <label asp-for="Specification.HasDriverCamera"></label>
                                 </div>
                                 <label class="checkbox-container">
-                                    <input asp-for="Specification.HasDriverCamera" type="checkbox" />
+                                    <input type="checkbox"
+                                           name="Specification.HasDriverCamera"
+                                           value="true"
+                                           @(Model?.Specification?.HasDriverCamera == true ? "checked" : "") />
                                     <span class="checkmark"></span>
                                 </label>
                             </div>
@@ -640,7 +655,10 @@
                                     <label asp-for="Specification.NotIssuedStamp"></label>
                                 </div>
                                 <label class="checkbox-container">
-                                    <input asp-for="Specification.NotIssuedStamp" type="checkbox" />
+                                    <input type="checkbox"
+                                           name="Specification.NotIssuedStamp"
+                                           value="true"
+                                           @(Model?.Specification?.NotIssuedStamp == true ? "checked" : "") />
                                     <span class="checkmark"></span>
                                 </label>
                             </div>

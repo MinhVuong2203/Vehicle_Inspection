@@ -1401,15 +1401,17 @@ body {
 .alert i {
     margin-right: 8px;
 }
-.detail-row person-info {
-    display: grid !important;
-    grid-template-columns: 1fr !important; /* Chỉ 1 cột - full width */
-    gap: 20px !important;
+.detail-row#person-info {
+    display: grid;
+    grid-template-columns: 1fr; 
+    gap: 20px ;
 }
-
-.detail-row#company-info {
+/*#company-info {
+    display: none !important;
+}*/
+.detail-row company-info owner-company{
     display: grid !important;
-    grid-template-columns: 1fr 1fr !important; /* Chia đều 50-50 */
+    grid-template-columns: 1fr 1fr;
     gap: 20px !important;
 }
 

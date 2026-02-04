@@ -47,13 +47,24 @@ function setupPhoneSync() {
         });
     }
 }
+function createNewProfile() {
+    console.log('➕ Create New Profile clicked');
 
+    // Clear current data
+    currentOwner = null;
+    currentVehicle = null;
+    currentSpecification = null;
+    currentSearchType = null;
+
+    // Redirect to create page
+    window.location.href = '/receive-profile/create';
+}
 // ========== LOAD DATA CHO TRANG EDIT ==========
 async function loadDataForEdit() {
     const urlParams = new URLSearchParams(window.location.search);
     const cccd = urlParams.get('cccd');
     const plateNo = urlParams.get('plateNo');
-    const taxCode = urlParams.get('taxCode'); // ✅ Thêm taxCode
+    const taxCode = urlParams.get('taxCode');
 
     if (!cccd && !plateNo && !taxCode) {
         showNotification('error', 'Thiếu thông tin để tải dữ liệu');
@@ -62,6 +73,8 @@ async function loadDataForEdit() {
 
     const loadingState = document.getElementById('loading-state');
     const dataDisplay = document.getElementById('data-display');
+    const pageHeader = document.getElementById('page-header');      // ✅ THÊM
+    const breadcrumb = document.getElementById('breadcrumb');        // ✅ THÊM
 
     if (loadingState) loadingState.style.display = 'flex';
     if (dataDisplay) dataDisplay.style.display = 'none';
@@ -81,7 +94,11 @@ async function loadDataForEdit() {
             currentSpecification = data.data.specification;
             currentSearchType = data.searchType;
 
+            // ✅ HIỂN THỊ TẤT CẢ CÁC PHẦN TỬ
+            if (pageHeader) pageHeader.style.display = 'block';
+            if (breadcrumb) breadcrumb.style.display = 'block';
             if (dataDisplay) dataDisplay.style.display = 'block';
+
             await populateForm(data.data);
             console.log('✅ Data loaded successfully');
         } else {
@@ -673,7 +690,15 @@ function approveProfile() {
 }
 
 // ... (giữ nguyên createNewProfile)
+function cancelChanges() {
+    console.log('❌ Cancel Changes clicked');
+    window.location.href = '/receive-profile';
+}
 
+function cancelCreate() {
+    console.log('❌ Cancel Create clicked');
+    window.location.href = '/receive-profile';
+}
 function clearSearch() {
     setFieldValue('search-cccd', ''); // Input dùng chung cho CCCD/Tax Code
     setFieldValue('search-plate', '');

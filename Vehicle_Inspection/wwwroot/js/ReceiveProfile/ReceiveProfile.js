@@ -841,11 +841,11 @@ function toggleOwnerType(ownerType) {
     const companyInfo = document.getElementById('company-info');
 
     if (ownerType === 'PERSON' || ownerType === 'Cá nhân') {
-        if (personInfo) personInfo.style.display = 'flex';
+        if (personInfo) personInfo.style.display = 'grid';
         if (companyInfo) companyInfo.style.display = 'none';
     } else {
         if (personInfo) personInfo.style.display = 'none';
-        if (companyInfo) companyInfo.style.display = 'flex';
+        if (companyInfo) companyInfo.style.display = 'grid';
     }
 }
 

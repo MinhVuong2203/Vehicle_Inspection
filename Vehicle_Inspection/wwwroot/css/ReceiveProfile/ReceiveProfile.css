@@ -1410,12 +1410,20 @@ body {
 /*#company-info {
     display: none !important;
 }*/
-.detail-row company-info owner-company {
+/*.detail-row company-info owner-company {
     display: grid !important;
     grid-template-columns: 1fr 1fr;
     gap: 20px !important;
+}*/
+#person-info {
+    grid-template-columns: 1fr;
+    gap: 20px;
 }
 
+#company-info {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
 
 /* ============================================================
    MODERN NOTIFICATION STYLES

@@ -1,181 +1,262 @@
-﻿@using Vehicle_Inspection.Models
-@using Vehicle_Inspection.ViewModels
-
-@model Vehicle_Inspection.ViewModels.CreateProfileViewModel
+﻿@model Vehicle_Inspection.Models.User
 
 @{
-    ViewData["Title"] = "Chỉnh sửa hồ sơ";
+    ViewData["Title"] = "Điều chỉnh nhân sự";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var provinces = (List<Vehicle_Inspection.Models.ProvinceDto>)ViewBag.Provinces;
+    var provincesJson = System.Text.Json.JsonSerializer.Serialize(provinces);
+    // JSON encode để tránh lỗi tiếng Việt / dấu nháy
+    var currentProvinceJson = System.Text.Json.JsonSerializer.Serialize(Model.Province ?? "");
+    var currentWardJson = System.Text.Json.JsonSerializer.Serialize(Model.Ward ?? "");
 }
 
-<!-- Link CSS -->
-<link rel="stylesheet" href="~/css/ReceiveProfile/ReceiveProfile.css" />
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+@section Styles {
+    <link rel="stylesheet" href="~/css/employee/edit.css" />
+}
 
-<!-- Main Wrapper -->
-<div class="receive-profile-wrapper">
+<h2 class="text-center text-primary">THÔNG TIN CÁ NHÂN</h2>
 
-    <!-- MAIN CONTENT -->
-    <main class="main-content" style="margin: 0 auto; max-width: 1400px;">
+<form asp-action="Edit" asp-route-id="@Model.UserId" method="post" enctype="multipart/form-data" class="p-4 border rounded bg-light form-em-edit">
+    <input type="hidden" asp-for="UserId" />
+    <input type="hidden" asp-for="IsActive" />
+    <input type="hidden" asp-for="CreatedAt" />
 
-        <!-- Loading State -->
-        <div id="loading-state" style="display: flex;">
-            <div class="loading-spinner">
-                <div class="spinner"></div>
-                <p>Đang tải dữ liệu...</p>
-            </div>
+    <div class="form-group">
+        <label asp-for="FullName" class="font-weight-bold"></label>
+        <input asp-for="FullName" class="form-control" placeholder="Nhập họ và tên" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Phone" class="font-weight-bold"></label>
+        <input asp-for="Phone" class="form-control" placeholder="Nhập số điện thoại" />
+        <span asp-validation-for="Phone" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Email" class="font-weight-bold"></label>
+        <input asp-for="Email" class="form-control" placeholder="Nhập email" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="BirthDate" class="font-weight-bold">Ngày sinh</label>
+        <input asp-for="BirthDate" type="date" class="form-control" />
+        <span asp-validation-for="BirthDate" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="CCCD" class="font-weight-bold"></label>
+        <input asp-for="CCCD" class="form-control" placeholder="Nhập CCCD" />
+        <span asp-validation-for="CCCD" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Số nhà / Đường</label>
+        <input asp-for="Address" class="form-control" placeholder="Ví dụ: 12 Nguyễn Trãi, P. ..." />
+        <span asp-validation-for="Address" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Tỉnh / Thành phố</label>
+        <select asp-for="Province" class="form-control" id="provinceSelect">
+            <option value="">Chọn tỉnh/thành</option>
+            @foreach (var p in provinces)
+            {
+                <option value="@p.tentinhmoi">@p.tentinhmoi</option>
+            }
+        </select>
+        <span asp-validation-for="Province" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Phường / Xã</label>
+        <select asp-for="Ward" class="form-control" id="wardSelect">
+            <option value="">Chọn phường/xã</option>
+        </select>
+        <span asp-validation-for="Ward" class="text-danger"></span>
+    </div>
+
+
+    <div class="form-group">
+        <label asp-for="Gender" class="font-weight-bold">Giới tính</label>
+        <select asp-for="Gender" class="form-control">
+            <option value="">Chọn giới tính</option>
+            <option value="Nam">Nam</option>
+            <option value="Nữ">Nữ</option>
+        </select>
+        <span asp-validation-for="Gender" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="PositionId" class="font-weight-bold">Chức vụ</label>
+        <select asp-for="PositionId" class="form-control" id="positionSelect">
+            <option value="">Chọn chức vụ</option>
+            @foreach (var position in (List<Vehicle_Inspection.Models.Position>)ViewBag.Positions)
+            {
+                <option value="@position.PositionId" selected="@(Model.PositionId == position.PositionId)">
+                    @position.PositionName
+                </option>
+            }
+        </select>
+        <span asp-validation-for="PositionId" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="TeamId" class="font-weight-bold">Đội nhóm</label>
+        <select asp-for="TeamId"
+                class="form-control"
+                id="teamSelect">
+            <option value="">Chọn đội nhóm</option>
+        </select>
+        <span asp-validation-for="TeamId" class="text-danger"></span>
+    </div>
+
+
+    <div class="form-group">
+        <label asp-for="Level" class="font-weight-bold">Cấp bậc</label>
+        <input asp-for="Level" class="form-control" placeholder="Nhập cấp bậc" />
+        <span asp-validation-for="Level" class="text-danger"></span>
+    </div>
+
+    <div class="form-group">
+        <label class="font-weight-bold">Ảnh đại diện</label>
+        <input type="file" name="ProfilePicture" class="form-control-file" onchange="previewImage(event)" />
+        <div class="image-preview mt-3">
+            <img id="profileImagePreview" src="#" alt="Profile Preview" class="img-thumbnail"
+                 style="width: 120px; height: 160px; display: none;" />
         </div>
+    </div>
 
-        <!-- Page Header -->
-        <div class="page-header" id="page-header" style="display: none;">
-            <div>
-                <h1><i class="bi bi-pencil-square"></i> Chỉnh sửa thông tin chủ xe</h1>
-                <p>Cập nhật thông tin chủ sở hữu phương tiện</p>
-            </div>
-        </div>
+    <div class="form-group">
+        <label asp-for="Account.Username" class="font-weight-bold">Tên đăng nhập</label>
+        <input asp-for="Account.Username" class="form-control" placeholder="Nhập tên đăng nhập" />
+        <span asp-validation-for="Account.Username" class="text-danger"></span>
+    </div>
 
-        <!-- Breadcrumb -->
-        <nav class="breadcrumb-custom" id="breadcrumb" style="display: none;">
-            <a href="/"><i class="bi bi-house-door"></i> Trang chủ</a> /
-            <a href="/receive-profile">Tiếp nhận hồ sơ</a> /
-            <span>Chỉnh sửa</span>
-        </nav>
-
-        <!-- DATA DISPLAY -->
-        <div id="data-display" style="display: none;">
-
-            <!-- ==================== SECTION: OWNER INFO ==================== -->
-            <div class="owner-info-card">
-                <div class="owner-card-header">
-                    <i class="bi bi-person-circle"></i>
-                    <h2>Thông tin chủ xe</h2>
-                </div>
-                <div class="owner-card-body">
-                    <div class="owner-profile-section">
-                        <!-- Owner Image -->
-                        <div class="owner-image-wrapper">
-                            <div id="owner-image-container">
-                                <div class="image-placeholder">
-                                    <i class="bi bi-person"></i>
-                                    <span>HÌNH 3X4</span>
-                                </div>
-                            </div>
-                            <button type="button" class="btn-upload-image" onclick="document.getElementById('owner-image-upload').click()">
-                                <i class="bi bi-upload"></i> Đổi ảnh
-                            </button>
-                            <input type="file" id="owner-image-upload" accept="image/*" style="display: none;" onchange="previewOwnerImage(event)">
-                        </div>
-
-                        <!-- Owner Details -->
-                        <div class="owner-details">
-                            <input type="hidden" id="owner-id" />
-
-                            <div class="detail-row">
-                                <div class="detail-item">
-                                    <label asp-for="Owner.OwnerType" class="detail-label"></label>
-                                    <select asp-for="Owner.OwnerType" id="owner-type" class="detail-input form-select" onchange="toggleOwnerType()">
-                                        <option value="PERSON">Cá nhân</option>
-                                        <option value="COMPANY">Công ty</option>
-                                    </select>
-                                    <span asp-validation-for="Owner.OwnerType" class="text-danger"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label asp-for="Owner.FullName" class="detail-label"></label>
-                                    <input asp-for="Owner.FullName" type="text" id="owner-fullname" class="detail-input" placeholder="Nhập họ và tên">
-                                    <span asp-validation-for="Owner.FullName" class="text-danger"></span>
-                                </div>
-                            </div>
-
-                            <!-- Person Info -->
-                            <div class="detail-row" id="person-info">
-                                <div class="detail-item">
-                                    <label asp-for="Owner.CCCD" class="detail-label"></label>
-                                    <input asp-for="Owner.CCCD" type="text" id="owner-cccd" class="detail-input" placeholder="Nhập số CCCD/CMND" maxlength="12">
-                                    <span asp-validation-for="Owner.CCCD" class="text-danger"></span>
-                                </div>
-                            </div>
-
-                            <!-- Company Info -->
-                            <div class="detail-row" id="company-info" style="display: none;">
-                                <div class="detail-item">
-                                    <label asp-for="Owner.CompanyName" class="detail-label"></label>
-                                    <input asp-for="Owner.CompanyName" type="text" id="owner-company" class="detail-input" placeholder="Nhập tên công ty">
-                                    <span asp-validation-for="Owner.CompanyName" class="text-danger"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label asp-for="Owner.TaxCode" class="detail-label"></label>
-                                    <input asp-for="Owner.TaxCode" type="text" id="owner-taxcode" class="detail-input" placeholder="Nhập mã số thuế">
-                                    <span asp-validation-for="Owner.TaxCode" class="text-danger"></span>
-                                </div>
-                            </div>
-
-                            <div class="detail-row">
-                                <div class="detail-item">
-                                    <label asp-for="Owner.Email" class="detail-label"></label>
-                                    <input asp-for="Owner.Email" type="email" id="owner-email" class="detail-input" placeholder="Nhập email">
-                                    <span asp-validation-for="Owner.Email" class="text-danger"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label asp-for="Owner.Phone" class="detail-label"></label>
-                                    <input asp-for="Owner.Phone" type="text" id="owner-phone2" class="detail-input" placeholder="Nhập số điện thoại" maxlength="20">
-                                    <span asp-validation-for="Owner.Phone" class="text-danger"></span>
-                                </div>
-                            </div>
-
-                            <div class="detail-row">
-                                <div class="detail-item">
-                                    <label asp-for="Owner.Address" class="detail-label"></label>
-                                    <input asp-for="Owner.Address" type="text" id="owner-address" class="detail-input" placeholder="Nhập địa chỉ">
-                                    <span asp-validation-for="Owner.Address" class="text-danger"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label asp-for="Owner.Province" class="detail-label"></label>
-                                    <select asp-for="Owner.Province" id="owner-province" class="detail-input form-select">
-                                        <option value="">-- Chọn Tỉnh/Thành phố --</option>
-                                    </select>
-                                    <span asp-validation-for="Owner.Province" class="text-danger"></span>
-                                </div>
-                            </div>
-
-                            <div class="detail-row">
-                                <div class="detail-item">
-                                    <label asp-for="Owner.Ward" class="detail-label"></label>
-                                    <select asp-for="Owner.Ward" id="owner-ward" class="detail-input form-select" disabled>
-                                        <option value="">-- Chọn Phường/Xã --</option>
-                                    </select>
-                                    <span asp-validation-for="Owner.Ward" class="text-danger"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label class="detail-label">Ngày tạo</label>
-                                    <input type="text" id="owner-created" class="detail-input" readonly>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Action Buttons -->
-            <div class="action-buttons">
-                <button type="button" class="btn-save" onclick="saveChanges()">
-                    <i class="bi bi-save"></i> Lưu thay đổi
+    <div class="form-group">
+        <label asp-for="Account.PasswordHash" class="font-weight-bold">Mật khẩu</label>
+        <div class="input-group">
+            <input asp-for="Account.PasswordHash" type="password" class="form-control" placeholder="Nhập mật khẩu"
+                   id="passwordField" />
+            <div class="input-group-append">
+                <button type="button" class="btn btn-outline-secondary"
+                        onclick="togglePasswordVisibility()">
+                    Hiện
                 </button>
-                <a href="/receive-profile" class="btn-cancel">
-                    <i class="bi bi-x-circle"></i> Hủy bỏ
-                </a>
             </div>
-
         </div>
+        <span asp-validation-for="Account.PasswordHash" class="text-danger"></span>
+    </div>
 
-    </main>
-</div>
-
-<!-- Notification Container -->
-<div id="notification-container"></div>
-
-<!-- Link JavaScript -->
-<script src="~/js/ReceiveProfile/ReceiveProfile.js"></script>
+    <button type="submit" class="btn btn-primary btn-block"><i class="fa-regular fa-floppy-disk" style="color: #ffffff;"></i> Lưu thay đổi</button>
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function togglePasswordVisibility() {
+            const passwordField = document.getElementById('passwordField');
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+            } else {
+                passwordField.type = 'password';
+            }
+        }
+
+        function previewImage(event) {
+            const reader = new FileReader();
+            reader.onload = function () {
+                const output = document.getElementById('profileImagePreview');
+                output.src = reader.result;
+                output.style.display = 'block';
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    </script>
+
+    <script>
+        const provinces = @Html.Raw(provincesJson);
+        const currentProvince = @Html.Raw(currentProvinceJson);
+        const currentWard = @Html.Raw(currentWardJson);
+
+        const provinceSelect = document.getElementById('provinceSelect');
+        const wardSelect = document.getElementById('wardSelect');
+
+        const norm = (s) => (s ?? "").toString().trim();
+
+        function renderWards(provinceName, selectedWard) {
+            wardSelect.innerHTML = '<option value="">Chọn phường/xã</option>';
+
+            const pName = norm(provinceName);
+            if (!pName) return;
+
+            const p = provinces.find(x => norm(x.tentinhmoi) === pName);
+            if (!p || !p.phuongxa) return;
+
+            const sw = norm(selectedWard);
+
+            p.phuongxa.forEach(w => {
+                const wn = norm(w.tenphuongxa);
+                const opt = document.createElement('option');
+                opt.value = wn;
+                opt.textContent = wn;
+
+                if (sw && wn === sw) opt.selected = true;
+
+                wardSelect.appendChild(opt);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1) Set tỉnh từ dữ liệu đã parse
+            if (currentProvince) {
+                provinceSelect.value = currentProvince;
+            }
+
+            // 2) Đổ phường theo tỉnh đang selected và chọn đúng phường
+            renderWards(provinceSelect.value, currentWard);
+        });
+
+        provinceSelect.addEventListener('change', function () {
+            // Khi đổi tỉnh, đổ lại phường và reset lựa chọn
+            renderWards(this.value, null);
+        });
+
+
+        const currentPositionId = '@Model.PositionId';
+        const currentTeamId = '@Model.TeamId';
+
+        function loadTeams(positionId, selectedTeamId = null) {
+            const teamSelect = $('#teamSelect');
+            teamSelect.empty();
+            teamSelect.append('<option value="">Chọn đội nhóm</option>');
+
+            if (!positionId) return;
+
+            $.get('/Employee/GetTeamsByPosition', { positionId })
+                .done(function (teams) {
+                    teams.forEach(t => {
+                        const selected = selectedTeamId == t.teamId ? 'selected' : '';
+                        teamSelect.append(
+                            `<option value="${t.teamId}" ${selected}>${t.teamName}</option>`
+                        );
+                    });
+                });
+        }
+
+        // Khi đổi Position
+        $('#positionSelect').on('change', function () {
+            loadTeams(this.value, null);
+        });
+
+        // Khi mở Edit
+        $(document).ready(function () {
+            if (currentPositionId) {
+                loadTeams(currentPositionId, currentTeamId);
+            }
+        });
+    </script>
+
+
 }

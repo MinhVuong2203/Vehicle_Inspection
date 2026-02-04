@@ -45,6 +45,57 @@ namespace Vehicle_Inspection.Controllers
                     .OrderByDescending(i => i.CompletedAt)
                     .ToListAsync();
 
+                // ========================================================================
+                // ✅ TÍNH TOÁN AllPassed CHO MỖI INSPECTION
+                // ========================================================================
+                foreach (var inspection in inspections)
+                {
+                    var stageIds = inspection.InspectionStages.Select(s => s.StageId).ToList();
+
+                    // Đếm số StageItem của từng stage
+                    var stageItemCountDict = await _context.StageItems
+                        .Where(si => stageIds.Contains(si.StageId))
+                        .GroupBy(si => si.StageId)
+                        .Select(g => new { StageId = g.Key, Count = g.Count() })
+                        .ToDictionaryAsync(x => x.StageId, x => x.Count);
+
+                    // Kiểm tra tất cả stages
+                    bool allPassed = true;
+                    foreach (var stage in inspection.InspectionStages)
+                    {
+                        int itemCount = stageItemCountDict.ContainsKey(stage.StageId)
+                            ? stageItemCountDict[stage.StageId]
+                            : 0;
+
+                        // Xác định isPassed cho stage này
+                        bool stagePassed;
+                        if (stage.StageResult == null)
+                        {
+                            // Chưa kiểm tra → Coi là Đạt
+                            stagePassed = true;
+                        }
+                        else if (itemCount == 0)
+                        {
+                            // Không có item → Coi là Đạt
+                            stagePassed = true;
+                        }
+                        else
+                        {
+                            // Có item → Xét theo StageResult
+                            stagePassed = (stage.StageResult == 1);
+                        }
+
+                        if (!stagePassed)
+                        {
+                            allPassed = false;
+                            break;
+                        }
+                    }
+
+                    // Lưu kết quả vào ViewBag để View sử dụng
+                    ViewData[$"AllPassed_{inspection.InspectionId}"] = allPassed;
+                }
+
                 return View(inspections);
             }
             catch (Exception ex)
@@ -56,6 +107,7 @@ namespace Vehicle_Inspection.Controllers
 
         /// <summary>
         /// API: Lấy chi tiết kết quả kiểm định của một hồ sơ
+        /// ✅ LOGIC MỚI: Override StageResult nếu công đoạn không có StageItem
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetInspectionDetails(int inspectionId)
@@ -75,28 +127,85 @@ namespace Vehicle_Inspection.Controllers
                     return NotFound(new { success = false, message = "Không tìm thấy hồ sơ" });
                 }
 
-                // Tổng hợp kết quả các công đoạn
+                // ========================================================================
+                // ✅ BƯỚC 1: ĐẾM SỐ LƯỢNG STAGEITEM CỦA TỪNG STAGE
+                // ========================================================================
+                var stageIds = inspection.InspectionStages.Select(s => s.StageId).ToList();
+
+                // Dictionary: StageId -> Số lượng StageItem
+                var stageItemCountDict = await _context.StageItems
+                    .Where(si => stageIds.Contains(si.StageId))
+                    .GroupBy(si => si.StageId)
+                    .Select(g => new { StageId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.StageId, x => x.Count);
+
+                // ========================================================================
+                // ✅ BƯỚC 2: XỬ LÝ KẾT QUẢ TỪNG STAGE
+                // ========================================================================
                 var stagesInfo = inspection.InspectionStages
                     .OrderBy(s => s.SortOrder)
-                    .Select(stage => new
+                    .Select(stage =>
                     {
-                        stageId = stage.StageId,
-                        stageName = stage.Stage?.StageName,
-                        status = stage.Status,
-                        stageResult = stage.StageResult,
-                        isPassed = stage.StageResult == 1, // 1 = Đạt, 2 = Không đạt
-                        defects = stage.InspectionDefects.Select(d => new
+                        // Lấy số lượng StageItem của Stage này
+                        int itemCount = stageItemCountDict.ContainsKey(stage.StageId)
+                            ? stageItemCountDict[stage.StageId]
+                            : 0;
+
+                        // ✅ QUAN TRỌNG: XÁC ĐỊNH KẾT QUẢ THỰC TẾ
+                        bool isPassed;
+                        bool shouldDisplay = true; // Flag để ẩn/hiện stage
+
+                        if (stage.StageResult == null)
                         {
-                            defectDescription = d.DefectDescription,
-                            defectCategory = d.DefectCategory,
-                            severity = d.Severity,
-                            defectCode = d.DefectCode
-                        }).ToList()
+                            // ✅ StageResult = null → Chưa được kiểm tra
+                            // → ẨN công đoạn này (không hiển thị)
+                            // → Nhưng vẫn coi là ĐẠT (cho phép xét tổng kết là Đạt)
+                            isPassed = true;
+                            shouldDisplay = false; // ẨN ĐI
+                        }
+                        else if (itemCount == 0)
+                        {
+                            // ✅ Stage KHÔNG có StageItem → BỎ QUA StageResult trong DB
+                            // → Luôn coi là ĐẠT
+                            isPassed = true;
+                            shouldDisplay = true; // Vẫn hiển thị với badge "Đạt"
+                        }
+                        else
+                        {
+                            // ❌ Stage CÓ StageItem + CÓ kết quả → Xét theo StageResult trong DB
+                            isPassed = (stage.StageResult == 1); // 1 = Đạt, 2 = Không đạt
+                            shouldDisplay = true;
+                        }
+
+                        return new
+                        {
+                            stageId = stage.StageId,
+                            stageName = stage.Stage?.StageName,
+                            status = stage.Status,
+                            stageResult = stage.StageResult, // Giá trị gốc từ DB
+                            itemCount = itemCount, // Số StageItem
+                            isPassed = isPassed, // ✅ Kết quả THỰC TẾ sau khi xử lý
+                            shouldDisplay = shouldDisplay, // ✅ ẨN/HIỆN công đoạn
+                            hasNoItems = (itemCount == 0), // Flag để frontend biết
+                            isNotChecked = (stage.StageResult == null), // ✅ Chưa kiểm tra
+                            defects = stage.InspectionDefects.Select(d => new
+                            {
+                                defectDescription = d.DefectDescription,
+                                defectCategory = d.DefectCategory,
+                                severity = d.Severity,
+                                defectCode = d.DefectCode
+                            }).ToList()
+                        };
                     }).ToList();
 
-                // Kiểm tra tất cả công đoạn đã đạt chưa
-                bool allPassed = stagesInfo.All(s => s.isPassed);
-                var failedStages = stagesInfo.Where(s => !s.isPassed).ToList();
+                // ========================================================================
+                // ✅ BƯỚC 3: TỔNG KẾT
+                // ========================================================================
+                // Chỉ xét các stage ĐƯỢC HIỂN THỊ (shouldDisplay = true)
+                var displayedStages = stagesInfo.Where(s => s.shouldDisplay).ToList();
+
+                bool allPassed = stagesInfo.All(s => s.isPassed); // Tất cả đều phải Đạt (kể cả ẩn)
+                var failedStages = displayedStages.Where(s => !s.isPassed).ToList(); // Chỉ lấy stage hiển thị + không đạt
 
                 return Ok(new
                 {
@@ -112,9 +221,10 @@ namespace Vehicle_Inspection.Controllers
                             model = inspection.Vehicle?.Model
                         },
                         allPassed = allPassed,
-                        stages = stagesInfo,
+                        stages = displayedStages, // ✅ CHỈ TRẢ VỀ STAGES ĐƯỢC HIỂN THỊ
+                        allStages = stagesInfo, // Tất cả stages (nếu cần debug)
                         failedStages = failedStages,
-                        totalDefects = stagesInfo.Sum(s => s.defects.Count)
+                        totalDefects = displayedStages.Sum(s => s.defects.Count)
                     }
                 });
             }
@@ -188,13 +298,14 @@ namespace Vehicle_Inspection.Controllers
 
         /// <summary>
         /// API: Kết luận KHÔNG ĐẠT - Chuyển Status từ 4 → 6 và trả về download link
-        /// ✅ ĐÃ BỎ LOGIC TĂNG Count_Re (Count_Re chỉ được cập nhật ở ApproveController khi xét duyệt lại)
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> ConcludeFailed([FromBody] ConcludeRequest request)
         {
             try
             {
+                Console.WriteLine($"🔴 Bắt đầu kết luận KHÔNG ĐẠT cho InspectionId: {request.InspectionId}");
+
                 var inspection = await _context.Inspections
                     .Include(i => i.Vehicle)
                     .Include(i => i.InspectionStages)
@@ -205,11 +316,13 @@ namespace Vehicle_Inspection.Controllers
 
                 if (inspection == null)
                 {
+                    Console.WriteLine($"❌ Không tìm thấy hồ sơ InspectionId: {request.InspectionId}");
                     return NotFound(new { success = false, message = "Không tìm thấy hồ sơ" });
                 }
 
                 if (inspection.Status != 4)
                 {
+                    Console.WriteLine($"⚠️ Hồ sơ không ở trạng thái chờ kết luận. Status hiện tại: {inspection.Status}");
                     return BadRequest(new
                     {
                         success = false,
@@ -217,36 +330,36 @@ namespace Vehicle_Inspection.Controllers
                     });
                 }
 
-                // ✅ BỎ LOGIC TĂNG Count_Re
-                // Count_Re chỉ được cập nhật ở ApproveController khi xét duyệt lại hồ sơ không đạt
-
                 // Cập nhật Status = 6 (Không đạt)
                 inspection.Status = 6;
-                inspection.FinalResult = null; // ✅ Đặt về NULL khi không đạt (để phân biệt với đạt = 1)
+                inspection.FinalResult = 2; // 2 = Không đạt
                 inspection.ConclusionNote = request.Notes;
                 inspection.ConcludedBy = request.UserId;
                 inspection.ConcludedAt = DateTime.Now;
 
+                Console.WriteLine($"✅ Đã cập nhật Status = 6 (Không đạt) cho hồ sơ {inspection.InspectionCode}");
+
                 await _context.SaveChangesAsync();
+                Console.WriteLine($"✅ Đã lưu database");
 
-                Console.WriteLine($"✅ Kết luận KHÔNG ĐẠT cho hồ sơ {inspection.InspectionCode}, Count_Re hiện tại = {inspection.Count_Re}");
-
-                // Tạo PDF báo cáo lỗi
-                var pdfResult = await GenerateFailedInspectionPDF(inspection);
+                // Tạo file PDF biên bản không đạt
+                Console.WriteLine($"📄 Bắt đầu tạo file PDF cho hồ sơ {inspection.InspectionCode}...");
+                var pdfResult = await GenerateFailedInspectionPdf(inspection);
 
                 if (!pdfResult.Success)
                 {
+                    Console.WriteLine($"❌ Tạo PDF thất bại: {pdfResult.ErrorMessage}");
                     return StatusCode(500, new
                     {
                         success = false,
-                        message = "Kết luận thành công nhưng có lỗi khi tạo PDF",
+                        message = "Kết luận không đạt thành công nhưng không thể tạo file PDF",
                         error = pdfResult.ErrorMessage
                     });
                 }
 
-                // Tạo URL download
-                string downloadUrl = $"/downloads/{pdfResult.FileName}";
+                Console.WriteLine($"✅ Tạo PDF thành công: {pdfResult.FileName}");
 
+                // Trả về kết quả kèm link download
                 return Ok(new
                 {
                     success = true,
@@ -256,15 +369,15 @@ namespace Vehicle_Inspection.Controllers
                         inspectionId = inspection.InspectionId,
                         inspectionCode = inspection.InspectionCode,
                         status = inspection.Status,
-                        countRe = inspection.Count_Re, // Trả về Count_Re hiện tại (không thay đổi)
                         pdfFileName = pdfResult.FileName,
-                        downloadUrl = downloadUrl
+                        downloadUrl = $"/failed-reports/{pdfResult.FileName}" // ✅ THAY ĐỔI KEY
                     }
                 });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"❌ LỖI ConcludeFailed: {ex.Message}");
+                Console.WriteLine($"❌ LỖI NGHIÊM TRỌNG khi kết luận không đạt: {ex.Message}");
+                Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new
                 {
                     success = false,
@@ -275,11 +388,10 @@ namespace Vehicle_Inspection.Controllers
         }
 
         /// <summary>
-        /// Tạo file PDF báo cáo lỗi cho hồ sơ không đạt
-        /// ✅ SỬA LỖI FONT TIẾNG VIỆT
-        /// ✅ BỎ MÃ CHỈ TIÊU (DefectCode)
+        /// Tạo file PDF biên bản không đạt
+        /// ✅ CHỈ LIỆT KÊ CÁC STAGE CÓ ITEM VÀ KHÔNG ĐẠT
         /// </summary>
-        private async Task<PdfGenerationResult> GenerateFailedInspectionPDF(Inspection inspection)
+        private async Task<PdfGenerationResult> GenerateFailedInspectionPdf(Inspection inspection)
         {
             var result = new PdfGenerationResult();
             Document pdfDoc = null;
@@ -288,47 +400,34 @@ namespace Vehicle_Inspection.Controllers
 
             try
             {
-                Console.WriteLine($"🔧 Bắt đầu tạo PDF cho hồ sơ: {inspection.InspectionCode}");
-
-                // Tạo thư mục downloads nếu chưa có
-                string downloadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "downloads");
-                if (!Directory.Exists(downloadsPath))
+                // Tạo thư mục lưu PDF nếu chưa có
+                string reportFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "failed-reports");
+                if (!Directory.Exists(reportFolder))
                 {
-                    Directory.CreateDirectory(downloadsPath);
-                    Console.WriteLine($"✅ Đã tạo thư mục: {downloadsPath}");
+                    Directory.CreateDirectory(reportFolder);
+                    Console.WriteLine($"📁 Đã tạo thư mục: {reportFolder}");
                 }
 
                 // Tên file PDF
-                string fileName = $"KHONG_DAT_{inspection.InspectionCode}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-                string filePath = Path.Combine(downloadsPath, fileName);
-                Console.WriteLine($"📄 Đường dẫn file: {filePath}");
+                string fileName = $"BienBan_KhongDat_{inspection.InspectionCode}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                string filePath = Path.Combine(reportFolder, fileName);
 
-                // ✅ SỬA LỖI FONT: Kiểm tra và load font tiếng Việt
-                string fontPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "fonts", "Arial.ttf");
-                bool useCustomFont = System.IO.File.Exists(fontPath);
+                Console.WriteLine($"📝 Tạo file PDF tại: {filePath}");
 
-                if (!useCustomFont)
-                {
-                    Console.WriteLine($"⚠️ Không tìm thấy font tại: {fontPath}");
-                    Console.WriteLine($"⚠️ Sẽ sử dụng font mặc định (có thể không hiển thị tiếng Việt)");
-                }
-                else
-                {
-                    Console.WriteLine($"✅ Tìm thấy font tiếng Việt: {fontPath}");
-                }
-
-                // Tạo PDF
+                // Tạo document PDF
+                pdfDoc = new Document(PageSize.A4, 50, 50, 50, 50);
                 stream = new FileStream(filePath, FileMode.Create);
-                pdfDoc = new Document(PageSize.A4, 25, 25, 30, 30);
                 writer = PdfWriter.GetInstance(pdfDoc, stream);
-
                 pdfDoc.Open();
-                Console.WriteLine($"✅ Đã mở PDF document");
 
-                // ✅ SỬA LỖI FONT: Load font tiếng Việt
+                Console.WriteLine($"📄 Đã mở PDF document");
+
+                // Font cho tiếng Việt
                 Font titleFont, headerFont, normalFont;
 
-                if (useCustomFont)
+                // Thử load font tiếng Việt
+                string fontPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "fonts", "arial.ttf");
+                if (System.IO.File.Exists(fontPath))
                 {
                     try
                     {
@@ -368,29 +467,52 @@ namespace Vehicle_Inspection.Controllers
                 pdfDoc.Add(new Paragraph($"Loại xe: {inspection.Vehicle?.Brand ?? ""} {inspection.Vehicle?.Model ?? ""}", normalFont));
                 pdfDoc.Add(new Paragraph($"Ngày kết luận: {DateTime.Now:dd/MM/yyyy HH:mm}", normalFont));
 
-                // ✅ THÊM THÔNG TIN SỐ LẦN TÁI KIỂM (nếu có)
                 if (inspection.Count_Re != null && inspection.Count_Re > 0)
                 {
                     pdfDoc.Add(new Paragraph($"Số lần tái kiểm: {inspection.Count_Re}", normalFont));
                 }
 
-                pdfDoc.Add(new Paragraph(" ", normalFont)); // Khoảng trắng
+                pdfDoc.Add(new Paragraph(" ", normalFont));
 
                 // Danh sách lỗi
                 pdfDoc.Add(new Paragraph("DANH SÁCH LỖI PHÁT HIỆN:", headerFont));
                 pdfDoc.Add(new Paragraph(" ", normalFont));
 
-                // Lặp qua các công đoạn không đạt
+                // ========================================================================
+                // ✅ CHỈ LIỆT KÊ STAGE CÓ ITEM VÀ KHÔNG ĐẠT
+                // ========================================================================
+                var stageIds = inspection.InspectionStages.Select(s => s.StageId).ToList();
+                var stageItemCountDict = await _context.StageItems
+                    .Where(si => stageIds.Contains(si.StageId))
+                    .GroupBy(si => si.StageId)
+                    .Select(g => new { StageId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.StageId, x => x.Count);
+
+                // Lọc: Stage phải:
+                // 1. CÓ ITEM (itemCount > 0)
+                // 2. StageResult = 2 (Không đạt)
+                // 3. StageResult KHÔNG NULL (đã được kiểm tra)
                 var failedStages = inspection.InspectionStages
-                    .Where(s => s.StageResult == 2) // 2 = Không đạt
+                    .Where(s =>
+                    {
+                        // Bỏ qua stage chưa kiểm tra
+                        if (s.StageResult == null) return false;
+
+                        int itemCount = stageItemCountDict.ContainsKey(s.StageId)
+                            ? stageItemCountDict[s.StageId]
+                            : 0;
+
+                        // ✅ Chỉ lấy stage: CÓ item VÀ không đạt
+                        return itemCount > 0 && s.StageResult == 2;
+                    })
                     .OrderBy(s => s.SortOrder)
                     .ToList();
 
-                Console.WriteLine($"📊 Số công đoạn không đạt: {failedStages.Count}");
+                Console.WriteLine($"📊 Số công đoạn THỰC SỰ không đạt (có item): {failedStages.Count}");
 
                 if (!failedStages.Any())
                 {
-                    pdfDoc.Add(new Paragraph("Không có công đoạn nào không đạt", normalFont));
+                    pdfDoc.Add(new Paragraph("Không có công đoạn nào không đạt (có chỉ tiêu)", normalFont));
                 }
                 else
                 {
@@ -414,7 +536,6 @@ namespace Vehicle_Inspection.Controllers
 
                                 string defectDesc = defect.DefectDescription ?? "Không có mô tả";
 
-                                // ✅ BỎ MÃ CHỈ TIÊU (DefectCode) - CHỈ HIỂN THỊ MÔ TẢ VÀ MỨC ĐỘ
                                 pdfDoc.Add(new Paragraph(
                                     $"   {stageNumber}.{defectNumber}. {defectDesc} ({severity})",
                                     normalFont
@@ -432,7 +553,7 @@ namespace Vehicle_Inspection.Controllers
                             pdfDoc.Add(new Paragraph("   Không đạt tiêu chuẩn", normalFont));
                         }
 
-                        pdfDoc.Add(new Paragraph(" ", normalFont)); // Khoảng trắng
+                        pdfDoc.Add(new Paragraph(" ", normalFont));
                         stageNumber++;
                     }
                 }

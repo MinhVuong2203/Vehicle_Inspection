@@ -32,6 +32,7 @@ namespace Vehicle_Inspection.Service
 
         bool AssignLane(AssignLaneRequest request);
 
+
         //List<User> GetUsersStage(int stageId);
     }
 
@@ -246,8 +247,10 @@ namespace Vehicle_Inspection.Service
 
         // Giá trị đã đo
         public decimal? ActualValue { get; set; }
-        public string? ActualText { get; set; }  // ✅ THÊM TRƯỜNG NÀY
+        public string? ActualText { get; set; }
         public bool? IsPassed { get; set; }
+
+        public bool HasThreshold { get; set; }
 
     }
 

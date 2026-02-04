@@ -253,10 +253,8 @@
     {
         foreach (var inspection in Model)
         {
-            // ✅ Kiểm tra xem tất cả công đoạn có đạt không
-            var allStagesPassed = inspection.InspectionStages != null &&
-            inspection.InspectionStages.Any() &&
-            inspection.InspectionStages.All(s => s.StageResult == 1);
+            @* ✅ LẤY GIÁ TRỊ AllPassed ĐÃ TÍNH SẴN TỪ CONTROLLER *@
+            var allStagesPassed = (bool)(ViewData[$"AllPassed_{inspection.InspectionId}"] ?? false);
 
             <div class="inspection-card">
                 <div class="inspection-header">
@@ -284,14 +282,14 @@
                         <span class="info-label">
                             <i class="fa-solid fa-car"></i> Biển số:
                         </span>
-                        <span class="info-value">@(inspection.Vehicle?.PlateNo ?? "N/A")</span>
+                        <span class="info-value">@inspection.Vehicle?.PlateNo</span>
                     </div>
                     <div class="info-item">
                         <span class="info-label">
                             <i class="fa-solid fa-tag"></i> Loại xe:
                         </span>
                         <span class="info-value">
-                            @(inspection.Vehicle?.Brand ?? "") @(inspection.Vehicle?.Model ?? "")
+                            @inspection.Vehicle?.Brand @inspection.Vehicle?.Model
                         </span>
                     </div>
                     <div class="info-item">
@@ -315,7 +313,7 @@
                         <i class="fa-solid fa-eye"></i> Xem chi tiết
                     </button>
 
-                    @* ✅ CHỈ HIỆN 1 NÚT DỰA VÀO KẾT QUẢ *@
+                    @* ✅ CHỈ HIỆN 1 NÚT DỰA VÀO KẾT QUẢ ĐÃ TÍNH *@
                     @if (allStagesPassed)
                     {
                         <button class="btn-pass" onclick="concludePassed(@inspection.InspectionId)">
@@ -349,9 +347,6 @@
                     <!-- Content will be loaded dynamically -->
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
-            </div>
         </div>
     </div>
 </div>
@@ -360,16 +355,16 @@
 <div class="modal fade" id="passModal" tabindex="-1" aria-labelledby="passModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #28a745; color: white;">
+            <div class="modal-header bg-success text-white">
                 <h5 class="modal-title" id="passModalLabel">
                     <i class="fa-solid fa-check-circle"></i> Xác nhận kết luận ĐẠT
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Bạn có chắc chắn muốn kết luận hồ sơ này <strong>ĐẠT</strong> tiêu chuẩn?</p>
+                <p><strong>Bạn có chắc chắn muốn kết luận hồ sơ này là ĐẠT?</strong></p>
                 <div class="mb-3">
-                    <label for="passNotes" class="form-label">Ghi chú (không bắt buộc)</label>
+                    <label for="passNotes" class="form-label">Ghi chú (không bắt buộc):</label>
                     <textarea class="form-control" id="passNotes" rows="3" placeholder="Nhập ghi chú nếu có..."></textarea>
                 </div>
             </div>
@@ -387,21 +382,21 @@
 <div class="modal fade" id="failModal" tabindex="-1" aria-labelledby="failModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header" style="background-color: #dc3545; color: white;">
+            <div class="modal-header bg-danger text-white">
                 <h5 class="modal-title" id="failModalLabel">
                     <i class="fa-solid fa-times-circle"></i> Xác nhận kết luận KHÔNG ĐẠT
                 </h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <div class="alert alert-warning">
-                    <i class="fa-solid fa-exclamation-triangle"></i>
-                    <strong>Lưu ý:</strong> Hồ sơ sẽ được đánh dấu KHÔNG ĐẠT và tạo file PDF báo cáo lỗi.
-                </div>
-                <p>Bạn có chắc chắn muốn kết luận hồ sơ này <strong>KHÔNG ĐẠT</strong>?</p>
+                <p><strong>Bạn có chắc chắn muốn kết luận hồ sơ này là KHÔNG ĐẠT?</strong></p>
                 <div class="mb-3">
-                    <label for="failNotes" class="form-label">Ghi chú (không bắt buộc)</label>
-                    <textarea class="form-control" id="failNotes" rows="3" placeholder="Nhập ghi chú nếu có..."></textarea>
+                    <label for="failNotes" class="form-label">Ghi chú (không bắt buộc):</label>
+                    <textarea class="form-control" id="failNotes" rows="3" placeholder="Nhập lý do hoặc ghi chú..."></textarea>
+                </div>
+                <div class="alert alert-warning">
+                    <i class="fa-solid fa-info-circle"></i>
+                    Hệ thống sẽ tự động tạo biên bản không đạt và cung cấp link download.
                 </div>
             </div>
             <div class="modal-footer">
@@ -414,14 +409,14 @@
     </div>
 </div>
 
-<!-- Hidden UserId (lấy từ session/claims) -->
-<div id="UserId" style="display: none;">@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value</div>
+<!-- Hidden UserId for JavaScript -->
+<div id="UserId" style="display:none;">@User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value</div>
 
-@section Scripts {
+@section scripts {
     <script>
-        let currentInspectionId = 0;
+        let currentInspectionId = null;
 
-        // Xem chi tiết kết quả kiểm định
+        // Mở modal chi tiết
         function viewDetails(inspectionId) {
             currentInspectionId = inspectionId;
             const modal = new bootstrap.Modal(document.getElementById('detailModal'));
@@ -459,7 +454,7 @@
                 });
         }
 
-        // Hiển thị chi tiết kết quả - ✅ BỎ MÃ CHỈ TIÊU
+        // Hiển thị chi tiết kết quả
         function displayDetails(data) {
             let html = `
                 <div class="mb-3">
@@ -494,7 +489,6 @@
                             case 2: severityText = 'Hư hỏng'; break;
                             case 3: severityText = 'Nguy hiểm'; break;
                         }
-                        // ✅ BỎ MÃ CHỈ TIÊU - CHỈ HIỂN THỊ MÔ TẢ VÀ MỨC ĐỘ
                         html += `
                             <li class="defect-item ${severityClass}">
                                 <i class="fa-solid fa-exclamation-circle"></i>
@@ -538,7 +532,6 @@
             const userId = document.getElementById('UserId').textContent.trim();
             const notes = document.getElementById('passNotes').value;
 
-            // Validate userId
             if (!userId) {
                 alert('❌ Không tìm thấy thông tin người dùng');
                 return;
@@ -563,13 +556,8 @@
                 })
                 .then(data => {
                     if (data.success) {
-                        // Đóng modal
                         bootstrap.Modal.getInstance(document.getElementById('passModal')).hide();
-
-                        // Hiển thị thông báo thành công
                         alert('✅ Kết luận ĐẠT thành công!');
-
-                        // Reload trang
                         location.reload();
                     } else {
                         alert('❌ ' + data.message);
@@ -589,12 +577,11 @@
             modal.show();
         }
 
-        // Xác nhận KHÔNG ĐẠT và TỰ ĐỘNG MỞ PDF
+        // Xác nhận KHÔNG ĐẠT
         function confirmFail() {
             const userId = document.getElementById('UserId').textContent.trim();
             const notes = document.getElementById('failNotes').value;
 
-            // Validate userId
             if (!userId) {
                 alert('❌ Không tìm thấy thông tin người dùng');
                 return;
@@ -619,10 +606,8 @@
                 })
                 .then(data => {
                     if (data.success) {
-                        // Đóng modal
                         bootstrap.Modal.getInstance(document.getElementById('failModal')).hide();
 
-                        // Hiển thị thông báo thành công với số lần tái kiểm
                         let message = '✅ Kết luận KHÔNG ĐẠT thành công!';
                         if (data.data.countRe) {
                             message += `\n📊 Đây là lần tái kiểm thứ ${data.data.countRe}`;
@@ -630,19 +615,17 @@
                         message += '\n📄 Đang tải file PDF báo cáo lỗi...';
                         alert(message);
 
-                        // MỞ PDF TRỰC TIẾP bằng download URL
+                        // MỞ PDF
                         if (data.data.downloadUrl) {
-                            // Tạo link download và click tự động
                             const downloadLink = document.createElement('a');
                             downloadLink.href = data.data.downloadUrl;
                             downloadLink.download = data.data.pdfFileName;
-                            downloadLink.target = '_blank'; // Mở trong tab mới
+                            downloadLink.target = '_blank';
                             document.body.appendChild(downloadLink);
                             downloadLink.click();
                             document.body.removeChild(downloadLink);
                         }
 
-                        // Reload trang sau 1 giây
                         setTimeout(() => {
                             location.reload();
                         }, 1000);

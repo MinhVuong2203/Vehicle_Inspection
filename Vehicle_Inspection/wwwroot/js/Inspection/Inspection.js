@@ -872,15 +872,26 @@ function renderStagesList() {
 
     stagesData.forEach((stage, index) => {
         const stageItem = document.createElement('div');
+
+        // ✅ KIỂM TRA STAGE CÓ ITEM APPLICABLE KHÔNG
+        const isDisabled = !stage.hasApplicableItems;
+
         stageItem.className = 'stage-item';
 
         if (stage.status === 2) stageItem.classList.add('completed');
         if (stage.result === 2) stageItem.classList.add('failed');
         if (index === currentStageIndex) stageItem.classList.add('active');
 
+        // ✅ THÊM CLASS DISABLED
+        if (isDisabled) stageItem.classList.add('stage-disabled');
+
         let statusText = 'Chờ thực hiện';
         let statusClass = 'pending';
-        if (stage.status === 2) {
+
+        if (isDisabled) {
+            statusText = 'Không áp dụng';
+            statusClass = 'not-applicable';
+        } else if (stage.status === 2) {
             statusText = stage.result === 1 ? 'Đã hoàn thành' : 'Không đạt';
             statusClass = stage.result === 1 ? 'completed' : 'failed';
         } else if (stage.status === 1) {
@@ -890,16 +901,31 @@ function renderStagesList() {
 
         stageItem.innerHTML = `
             <div class="stage-icon">
-                <i class="fa-solid ${stage.status === 2 ? (stage.result === 1 ? 'fa-check' : 'fa-xmark') : 'fa-clock'}"></i>
+                <i class="fa-solid ${isDisabled ? 'fa-ban' : (stage.status === 2 ? (stage.result === 1 ? 'fa-check' : 'fa-xmark') : 'fa-clock')}"></i>
             </div>
             <div class="stage-info">
                 <h4>${index + 1}. ${stage.stageName}</h4>
-                <p>KTV: ${stage.assignedUser || 'Chưa phân công'}</p>
+                <p>
+                    ${isDisabled
+                ? `<i class="fa-solid fa-info-circle"></i> Không có item áp dụng cho loại xe này`
+                : `KTV: ${stage.assignedUser || 'Chưa phân công'}`
+            }
+                </p>
             </div>
             <div class="stage-status ${statusClass}">${statusText}</div>
         `;
 
-        stageItem.onclick = () => showStage(index);
+        // ✅ DISABLE CLICK NẾU KHÔNG CÓ ITEM
+        if (!isDisabled) {
+            stageItem.onclick = () => showStage(index);
+        } else {
+            stageItem.style.cursor = 'not-allowed';
+            stageItem.style.opacity = '0.6';
+            //stageItem.onclick = () => {
+            //    alert(`⚠️ Công đoạn "${stage.stageName}" không có mục kiểm tra nào áp dụng cho loại xe này.`);
+            //};
+        }
+
         stagesList.appendChild(stageItem);
     });
 
@@ -917,25 +943,40 @@ function renderStageForm(stage) {
         const formGroup = document.createElement('div');
         formGroup.className = 'form-group';
 
+        // ✅ KIỂM TRA DISABLED
+        const isDisabled = item.disabled === true;
+        const disabledAttr = isDisabled ? 'disabled' : '';
+        const disabledStyle = isDisabled ? 'background-color: #f0f0f0; cursor: not-allowed;' : '';
+
         let inputHtml = '';
+
         if (item.type === 'select') {
             inputHtml = `
-                <select id="item_${item.id}" onchange="checkItemStandard(${item.id})">
-                    <option value="">-- Chọn --</option>
-                    ${item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                <select id="item_${item.id}" 
+                        onchange="checkItemStandard(${item.id})"
+                        ${disabledAttr}
+                        style="${disabledStyle}">
+                    <option value="">-- ${isDisabled ? 'Không áp dụng' : 'Chọn'} --</option>
+                    ${!isDisabled && item.options ? item.options.map(opt => `<option value="${opt}">${opt}</option>`).join('') : ''}
                 </select>
             `;
         } else if (item.type === 'number') {
             inputHtml = `
-                <input type="number" id="item_${item.id}" 
+                <input type="number" 
+                       id="item_${item.id}" 
                        step="0.1" 
-                       placeholder="Nhập giá trị đo"
-                       onchange="checkItemStandard(${item.id})">
+                       placeholder="${isDisabled ? 'Không áp dụng cho loại xe này' : 'Nhập giá trị đo'}"
+                       onchange="checkItemStandard(${item.id})"
+                       ${disabledAttr}
+                       style="${disabledStyle}">
             `;
         }
 
         formGroup.innerHTML = `
-            <label>${item.name} <span style="color: #dc3545;">*</span></label>
+            <label>
+                ${item.name} 
+                ${!isDisabled ? '<span style="color: #dc3545;">*</span>' : '<span style="color: #6c757d;">(Không áp dụng)</span>'}
+            </label>
             ${inputHtml}
             <div class="help-text">Tiêu chuẩn: ${item.standard}</div>
             <div id="result_${item.id}" style="margin-top: 5px;"></div>
@@ -943,9 +984,13 @@ function renderStageForm(stage) {
 
         form.appendChild(formGroup);
 
+        // ✅ LOAD GIÁ TRỊ ĐÃ LƯU (nếu có)
         if (stage.measurements && stage.measurements[item.id]) {
-            document.getElementById(`item_${item.id}`).value = stage.measurements[item.id];
-            checkItemStandard(item.id);
+            const input = document.getElementById(`item_${item.id}`);
+            if (input && !isDisabled) {
+                input.value = stage.measurements[item.id];
+                checkItemStandard(item.id);
+            }
         }
     });
 
@@ -993,10 +1038,15 @@ function checkItemStandard(itemId) {
 
 
 // Hiển thị chi tiết một giai đoạn
-// ✅ KIỂM TRA QUYỀN KHI HIỂN thị FORM
 async function showStage(index) {
     currentStageIndex = index;
     const stage = stagesData[index];
+
+    // ✅ KIỂM TRA STAGE CÓ ITEM APPLICABLE KHÔNG
+    if (!stage.hasApplicableItems) {
+        //alert(`⚠️ Công đoạn "${stage.stageName}" không có mục kiểm tra nào áp dụng cho loại xe này.\n\nVui lòng chuyển sang công đoạn khác.`);
+        return;
+    }
 
     document.getElementById('stageDetail').style.display = 'block';
     document.getElementById('inspectionConclusion').style.display = 'none';
@@ -1008,17 +1058,15 @@ async function showStage(index) {
     const hasPermission = await checkStagePermission(currentInspection.inspectionId, stage.stageId);
 
     if (!hasPermission) {
-        // ✅ HIỂN THỊ THÔNG BÁO VÀ DISABLE FORM
         renderStageFormDisabled(stage);
         showPermissionWarning();
     } else {
-        // ✅ RENDER FORM BÌNH THƯỜNG
         renderStageForm(stage);
     }
 
     if (stage.result === 2) {
         document.getElementById('defectsSection').style.display = 'block';
-        renderDefects(stage.stageId);
+        await loadStageDefects(stage.stageId);
     } else {
         document.getElementById('defectsSection').style.display = 'none';
     }
@@ -1147,11 +1195,18 @@ async function saveStageResult() {
     const measurements = [];
 
     for (const item of items) {
+        // ✅ BỎ QUA ITEM DISABLED
+        if (item.disabled === true) {
+            console.log(`⏭️ Skipping disabled item: ${item.name}`);
+            continue;
+        }
+
         const inputElement = document.getElementById(`item_${item.id}`);
         const value = inputElement?.value;
 
         if (!value) {
             allFilled = false;
+            console.warn(`⚠️ Item ${item.name} is not filled`);
             continue;
         }
 
@@ -1197,7 +1252,7 @@ async function saveStageResult() {
     }
 
     if (!allFilled) {
-        alert('⚠️ Vui lòng nhập đầy đủ tất cả các thông số!');
+        alert('⚠️ Vui lòng nhập đầy đủ tất cả các thông số bắt buộc!');
         return;
     }
 
@@ -1266,6 +1321,8 @@ async function saveStageResult() {
 // ✅ THÊM HÀM LOAD DEFECTS TỪ DATABASE
 async function loadStageDefects(stageId) {
     try {
+        console.log(`Loading defects for InspectionId: ${currentInspection.inspectionId}, StageId: ${stageId}`);
+
         const response = await fetch(`/Inspection/GetStageDefects?inspectionId=${currentInspection.inspectionId}&stageId=${stageId}`, {
             method: 'GET',
             headers: {
@@ -1279,20 +1336,27 @@ async function loadStageDefects(stageId) {
         }
 
         const result = await response.json();
+        console.log('Defects result:', result);
 
         if (result.success && result.data) {
-            // Cập nhật allDefects
+            // ✅ Xóa defects cũ của stage này
             allDefects = allDefects.filter(d => d.stageId !== stageId);
+
+            // ✅ Thêm defects mới từ database
             result.data.forEach(defect => {
                 allDefects.push({
                     defectId: defect.defectId,
                     stageId: stageId,
                     category: defect.defectCategory,
                     description: defect.defectDescription,
-                    severity: defect.severity
+                    severity: defect.severity,
+                    isFixed: defect.isFixed
                 });
             });
 
+            console.log(`✅ Loaded ${result.data.length} defects for stage ${stageId}`);
+
+            // ✅ Render lại danh sách lỗi
             renderDefects(stageId);
         }
     } catch (error) {
@@ -1307,24 +1371,39 @@ function renderDefects(stageId) {
 
     defectsList.innerHTML = '';
 
+    if (stageDefects.length === 0) {
+        defectsList.innerHTML = `
+            <div style="text-align: center; padding: 20px; color: #6c757d;">
+                <i class="fa-solid fa-check-circle" style="font-size: 32px; color: #28a745;"></i>
+                <p style="margin-top: 10px;">Không có lỗi nào được phát hiện</p>
+            </div>
+        `;
+        return;
+    }
+
     stageDefects.forEach((defect, index) => {
         const defectItem = document.createElement('div');
         defectItem.className = 'defect-item';
+
+        const severityText = defect.severity === 3 ? 'Nghiêm trọng' :
+            defect.severity === 2 ? 'Hư hỏng' : 'Khuyết điểm';
+        const severityClass = defect.severity === 3 ? 'critical' :
+            defect.severity === 2 ? 'major' : 'minor';
+
         defectItem.innerHTML = `
-// Đại lý phân phối thiết bị điện tử
-<div class="defect-header">
+            <div class="defect-header">
                 <strong>${defect.category}</strong>
                 <div>
-                    <span class="defect-severity ${defect.severity === 3 ? 'critical' : defect.severity === 2 ? 'major' : 'minor'}">
-                        ${defect.severity === 3 ? 'Nghiêm trọng' : defect.severity === 2 ? 'Hư hỏng' : 'Khuyết điểm' }
+                    <span class="defect-severity ${severityClass}">
+                        <i class="fa-solid fa-${defect.severity === 3 ? 'exclamation-triangle' : 'exclamation-circle'}"></i>
+                        ${severityText}
                     </span>
-                    <button onclick="removeDefect(${stageId}, ${index})" style="margin-left: 10px; color: #dc3545; background: none; border: none; cursor: pointer;">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
                 </div>
             </div>
             <p>${defect.description}</p>
+            ${defect.isFixed ? '<div class="defect-fixed"><i class="fa-solid fa-wrench"></i> Đã sửa chữa</div>' : ''}
         `;
+
         defectsList.appendChild(defectItem);
     });
 }
@@ -1365,9 +1444,12 @@ function removeDefect(stageId, index) {
 
 // Cập nhật progress bar
 function updateProgress() {
-    const completedCount = stagesData.filter(s => s.status === 2).length;
-    const totalCount = stagesData.length;
-    const percentage = (completedCount / totalCount) * 100;
+    // ✅ CHỈ ĐẾM STAGE CÓ ITEM APPLICABLE
+    const applicableStages = stagesData.filter(s => s.hasApplicableItems);
+    const completedCount = applicableStages.filter(s => s.status === 2).length;
+    const totalCount = applicableStages.length;
+
+    const percentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
     document.getElementById('progressFill').style.width = percentage + '%';
     document.getElementById('currentStageNum').textContent = completedCount;
@@ -1376,26 +1458,47 @@ function updateProgress() {
 
 // Giai đoạn trước
 function previousStage() {
-    if (currentStageIndex > 0) {
-        showStage(currentStageIndex - 1);
+    // ✅ TÌM STAGE TRƯỚC ĐÓ CÓ ITEM APPLICABLE
+    let prevIndex = currentStageIndex - 1;
+
+    while (prevIndex >= 0) {
+        if (stagesData[prevIndex].hasApplicableItems) {
+            showStage(prevIndex);
+            return;
+        }
+        console.log(`⏮️ Skipping stage ${prevIndex} (${stagesData[prevIndex].stageName}) - No applicable items`);
+        prevIndex--;
     }
+
+    // ✅ NẾU KHÔNG CÓ STAGE NÀO TRƯỚC ĐÓ
+    alert('⚠️ Đây là công đoạn đầu tiên có thể thực hiện.');
 }
 
 // Giai đoạn tiếp theo
 function nextStage() {
     const stage = stagesData[currentStageIndex];
 
-    if (stage.status !== 2) {
+    // ✅ NẾU STAGE HIỆN TẠI CÓ ITEM VÀ CHƯA LƯU → CẢNH BÁO
+    if (stage.hasApplicableItems && stage.status !== 2) {
         if (!confirm('Bạn chưa lưu kết quả công đoạn này. Tiếp tục?')) {
             return;
         }
     }
 
-    if (currentStageIndex < stagesData.length - 1) {
-        showStage(currentStageIndex + 1);
-    } else {
-        showConclusion();
+    // ✅ TÌM STAGE TIẾP THEO CÓ ITEM APPLICABLE
+    let nextIndex = currentStageIndex + 1;
+
+    while (nextIndex < stagesData.length) {
+        if (stagesData[nextIndex].hasApplicableItems) {
+            showStage(nextIndex);
+            return;
+        }
+        console.log(`⏭️ Skipping stage ${nextIndex} (${stagesData[nextIndex].stageName}) - No applicable items`);
+        nextIndex++;
     }
+
+    // ✅ NẾU KHÔNG CÒN STAGE NÀO → HIỂN THỊ KẾT LUẬN
+    showConclusion();
 }
 
 // Hiển thị phần kết luận
@@ -1481,18 +1584,13 @@ function backToStages() {
     showStage(stagesData.length - 1);
 }
 
-// Hoàn thành kiểm định
+// Hoàn thành kiểm định - KHÔNG YÊU CẦU CHỌN KẾT LUẬN
 async function submitConclusion() {
-    const finalResult = document.getElementById('finalResultSelect').value;
-    const conclusionNote = document.getElementById('conclusionNote')?.value || '' ;
+    // ✅ BỎ PHẦN KIỂM TRA finalResultSelect
+    const conclusionNote = document.getElementById('conclusionNote')?.value || '';
 
-    // ✅ KIỂM TRA finalResult có được chọn không
-    if (!finalResult) {
-        alert('Vui lòng chọn kết luận cuối cùng!');
-        return;
-    }
-
-    if (!confirm('Xác nhận hoàn thành kiểm định?')) {
+    // ✅ XÁC NHẬN ĐƠN GIẢN
+    if (!confirm('Xác nhận hoàn thành kiểm định?\n\nTất cả các công đoạn đã được lưu kết quả.')) {
         return;
     }
 
@@ -1501,7 +1599,7 @@ async function submitConclusion() {
     try {
         console.log('=== Submitting Conclusion ===');
         console.log('InspectionId:', currentInspection.inspectionId);
-        console.log('FinalResult:', finalResult);
+        console.log('ConclusionNote:', conclusionNote);
 
         const response = await fetch('/Inspection/SubmitInspectionResult', {
             method: 'POST',
@@ -1511,7 +1609,7 @@ async function submitConclusion() {
             },
             body: JSON.stringify({
                 inspectionId: currentInspection.inspectionId,
-                finalResult: parseInt(finalResult),
+                finalResult: null,  // ✅ KHÔNG GỬI KẾT LUẬN
                 conclusionNote: conclusionNote
             })
         });
@@ -1519,18 +1617,20 @@ async function submitConclusion() {
         console.log('Response status:', response.status);
 
         if (!response.ok) {
-            throw new Error('Không thể lưu kết quả kiểm định');
+            const errorText = await response.text();
+            console.error('Server error:', errorText);
+            throw new Error(`Server returned ${response.status}: ${errorText}`);
         }
 
         const result = await response.json();
         console.log('Submit result:', result);
 
         if (result.success) {
-            alert('✅ Đã hoàn thành kiểm định!');
+            alert('✅ Đã hoàn thành kiểm định thành công!');
             closeInspectionProcess();
             await loadInspectionRecords();
         } else {
-            alert('❌ ' + (result.message || 'Có lỗi xảy ra'));
+            alert('❌ ' + (result.message || 'Có lỗi xảy ra khi hoàn thành kiểm định'));
         }
     } catch (error) {
         console.error('Error submitting inspection:', error);

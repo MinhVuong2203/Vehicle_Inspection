@@ -846,7 +846,38 @@ h3 {
         border-left-color: #dc3545;
         background: #fff5f5;
     }
+    /* Stage item disabled */
+    .stage-item.stage-disabled {
+        background-color: #f8f9fa;
+        border-left: 4px solid #6c757d;
+        opacity: 0.7;
+        cursor: not-allowed !important;
+    }
 
+        .stage-item.stage-disabled:hover {
+            background-color: #f8f9fa;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .stage-item.stage-disabled .stage-icon i {
+            color: #6c757d;
+        }
+
+        .stage-item.stage-disabled .stage-info h4 {
+            color: #6c757d;
+        }
+
+        .stage-item.stage-disabled .stage-info p {
+            color: #adb5bd;
+            font-style: italic;
+        }
+
+.stage-status.not-applicable {
+    background-color: #e9ecef;
+    color: #6c757d;
+    font-weight: 500;
+}
 .stage-icon {
     width: 50px;
     height: 50px;

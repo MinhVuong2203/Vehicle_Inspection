@@ -323,12 +323,18 @@ async function submitApproval() {
         }
 
         if (data.success) {
-            showNotification('success', data.message);
+            // Kiểm tra nếu là tái kiểm miễn phí → hiển thị thông báo đặc biệt
+            if (data.showInspectionRedirect) {
+                showInspectionRedirectNotification(data.message, data.data);
+            } else {
+                // Thông báo bình thường
+                showNotification('success', data.message);
 
-            // Redirect về trang index sau 2 giây
-            setTimeout(() => {
-                window.location.href = '/receive-profile';
-            }, 2000);
+                // Redirect về trang index sau 2 giây
+                setTimeout(() => {
+                    window.location.href = '/receive-profile';
+                }, 2000);
+            }
         } else {
             showNotification('error', data.message || 'Xét duyệt thất bại');
         }
@@ -396,6 +402,83 @@ function showNotification(type, message) {
         notification.style.opacity = '0';
         setTimeout(() => notification.remove(), 300);
     }, 5000);
+}
+
+// ========== THÔNG BÁO ĐẶC BIỆT CHO TÁI KIỂM MIỄN PHÍ ==========
+function showInspectionRedirectNotification(message, data) {
+    const container = document.getElementById('notification-container');
+    if (!container) {
+        console.log(`SUCCESS: ${message}`);
+        return;
+    }
+
+    const notification = document.createElement('div');
+    notification.className = 'notification-large-container';
+
+    notification.innerHTML = `
+        <div class="notification-large">
+            <div class="notification-success-icon">
+                <i class="bi bi-check-circle-fill"></i>
+            </div>
+            
+            <div class="notification-content-large">
+                <h3 class="notification-title">Xét duyệt thành công!</h3>
+                <p class="notification-message">Hồ sơ đã được duyệt tái kiểm. Vui lòng chuyển sang mục Kiểm định để tiếp tục!</p>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Mã kiểm định</div>
+                        <div class="info-value">${data.inspectionCode}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Loại kiểm định</div>
+                        <div class="info-value">${getInspectionTypeLabel(data.inspectionType)}</div>
+                    </div>
+                    <div class="info-item full-width">
+                        <div class="info-label">Trạng thái</div>
+                        <div class="info-value status-free">
+                            <i class="bi "></i> Tái kiểm miễn phí (${data.countRe}/3 lần)
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="notification-footer">
+                <button onclick="redirectToInspection('${data.inspectionCode}')" class="btn-action btn-primary">
+                    <i class="bi "></i>
+                    <span>Chuyển sang Kiểm định</span>
+                </button>
+                <button onclick="window.location.href='/receive-profile'" class="btn-action btn-secondary">
+                    <i class="bi bi-list-ul"></i>
+                    <span>Quay lại danh sách</span>
+                </button>
+            </div>
+            
+            <button class="btn-close-notification" onclick="this.closest('.notification-large-container').remove()">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+    `;
+
+    container.appendChild(notification);
+
+    // Animation
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+
+    // Tự động đóng sau 20 giây
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 20000);
+}
+
+// ========== CHUYỂN HƯỚNG SANG TRANG KIỂM ĐỊNH ==========
+function redirectToInspection(inspectionCode) {
+    // Chuyển đến trang kiểm định với mã kiểm định
+    // Thay đổi URL theo route thực tế của bạn
+    window.location.href = `/inspection?code=${encodeURIComponent(inspectionCode)}`;
 }
 
 console.log('Approve.js - Simplified Logic loaded');

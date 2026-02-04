@@ -50,17 +50,27 @@ async function loadInspectionStagesFromDB(inspectionId) {
  * Convert loaded stages từ DB sang format của UI
  */
 function convertStagesToUIFormat(dbStages) {
-    return dbStages.map(stage => ({
-        stageId: stage.stageId,
-        inspStageId: stage.inspStageId, // ✅ QUAN TRỌNG: Phải có trường này
-        stageName: stage.stageName,
-        status: stage.status || 0,
-        result: stage.stageResult,
-        assignedUser: stage.assignedUserName,
-        measurements: convertItemsToMeasurements(stage.items),
-        items: stage.items,
-        sortOrder: stage.sortOrder
-    }));
+    return dbStages.map(stage => {
+        // ✅ ĐẾM SỐ ITEM CÓ THRESHOLD (applicable)
+        const applicableItemsCount = stage.items.filter(item => item.hasThreshold).length;
+        const hasApplicableItems = applicableItemsCount > 0;
+
+        return {
+            stageId: stage.stageId,
+            inspStageId: stage.inspStageId,
+            stageName: stage.stageName,
+            status: stage.status || 0,
+            result: stage.stageResult,
+            assignedUser: stage.assignedUserName,
+            measurements: convertItemsToMeasurements(stage.items),
+            items: stage.items,
+            sortOrder: stage.sortOrder,
+            // ✅ THÊM FLAG
+            hasApplicableItems: hasApplicableItems,
+            applicableItemsCount: applicableItemsCount,
+            totalItemsCount: stage.items.length
+        };
+    });
 }
 
 /**
@@ -102,23 +112,31 @@ function buildStageItemsConfig(stages) {
                 unit: item.unit,
                 type: getInputType(item.dataType),
                 standard: getStandardText(item),
-                isRequired: item.isRequired
+                isRequired: item.isRequired,
+                hasThreshold: item.hasThreshold // ✅ THÊM FLAG
             };
 
+            // ✅ NẾU KHÔNG CÓ THRESHOLD → DISABLE
+            if (!item.hasThreshold) {
+                config.disabled = true;
+                config.standard = 'Không áp dụng';
+                console.warn(`⚠️ Item ${item.itemName} (ID: ${item.itemId}) has no threshold → disabled`);
+            }
+
             // ✅ NẾU CÓ AllowedValues → Dùng SELECT
-            if (item.allowedValues) {
+            if (item.allowedValues && item.hasThreshold) {
                 config.type = 'select';
                 config.options = item.allowedValues.split(';').map(v => v.trim()).filter(v => v);
                 config.standard = config.options[0] || 'Đạt';
             }
             // ✅ NẾU KHÔNG CÓ AllowedValues → Dùng NUMBER INPUT
-            else if (config.type === 'number') {
+            else if (config.type === 'number' && item.hasThreshold) {
                 config.min = item.minValue !== null && item.minValue !== undefined ? item.minValue : 0;
                 config.max = item.maxValue !== null && item.maxValue !== undefined ? item.maxValue : 999999;
                 config.standard = getStandardText(item);
             }
             // ✅ FALLBACK: Nếu là BOOL nhưng không có AllowedValues
-            else {
+            else if (item.hasThreshold) {
                 config.type = 'select';
                 config.options = ['Đạt', 'Không đạt'];
                 config.standard = 'Đạt';

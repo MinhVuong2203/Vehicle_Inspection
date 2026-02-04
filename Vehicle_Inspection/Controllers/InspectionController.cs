@@ -208,9 +208,13 @@ namespace Vehicle_Inspection.Controllers
                 System.Diagnostics.Debug.WriteLine($"Submitting inspection result for InspectionId: {request.InspectionId}");
                 System.Diagnostics.Debug.WriteLine($"FinalResult: {request.FinalResult}");
 
-                if (request.FinalResult == null || request.FinalResult < 1 || request.FinalResult > 3)
+                if (request.FinalResult.HasValue && (request.FinalResult < 1 || request.FinalResult > 3))
                 {
-                    return Json(new { success = false, message = "Vui lòng chọn kết luận cuối cùng!" }, _jsonOptions);
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Kết luận không hợp lệ!"
+                    }, _jsonOptions);
                 }
 
                 var success = _inspectionService.SubmitInspectionResult(request);

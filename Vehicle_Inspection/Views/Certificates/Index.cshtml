@@ -170,10 +170,10 @@
                                     <th>Ngày Tạo:</th>
                                     <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                                 </tr>
-                                <tr>
+                                @* <tr>
                                     <th>Ngày Tiếp Nhận:</th>
                                     <td>@(item.ReceivedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
-                                </tr>
+                                </tr> *@
                                 <tr>
                                     <th>Ngày Thanh Toán:</th>
                                     <td>@(item.PaidAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
@@ -186,10 +186,10 @@
                                     <th>Ngày Hoàn Thành:</th>
                                     <td>@(item.CompletedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
                                 </tr>
-                                <tr>
+                                @* <tr>
                                     <th>Ngày Cấp Chứng Nhận:</th>
                                     <td>@(item.CertifiedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
-                                </tr>
+                                </tr> *@
                                 <tr>
                                     <th>Ngày Kết Luận:</th>
                                     <td>@(item.ConcludedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</td>
@@ -229,8 +229,8 @@
                     <div class="row align-items-center">
                         <div class="col">
                             <small class="text-muted">
-                                <i class="fas fa-user"></i> Tạo bởi: @(item.CreatedByNavigation?.FullName ?? "N/A") |
-                                <i class="fas fa-user-check"></i> Tiếp nhận bởi: @(item.ReceivedByNavigation?.FullName ?? "N/A") |
+                                @* <i class="fas fa-user"></i> Tạo bởi: @(item.CreatedByNavigation?.FullName ?? "N/A") |
+                                <i class="fas fa-user-check"></i> Tiếp nhận bởi: @(item.ReceivedByNavigation?.FullName ?? "N/A") | *@
                                 <i class="fas fa-calendar"></i> @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")
                             </small>
                         </div>

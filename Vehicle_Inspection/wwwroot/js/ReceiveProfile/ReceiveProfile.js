@@ -21,7 +21,7 @@ async function initializePage(mode) {
 
     setupProvinceListener();
 
-    const ownerTypeSelect = document.getElementById('owner-type');
+    const ownerTypeSelect = getElement('owner-type', 'Owner.OwnerType');
     if (ownerTypeSelect) {
         ownerTypeSelect.addEventListener('change', toggleOwnerType);
     }
@@ -33,10 +33,28 @@ async function initializePage(mode) {
     }
 }
 
+// ========== HELPER FUNCTION: GET ELEMENT BY ID OR NAME ==========
+function getElement(id, name = null) {
+    // Thử tìm theo id trước
+    let element = document.getElementById(id);
+
+    // Nếu không có id, thử tìm theo name
+    if (!element && name) {
+        element = document.querySelector(`[name="${name}"]`);
+    }
+
+    // Nếu vẫn không có, thử tìm theo id là name
+    if (!element) {
+        element = document.querySelector(`[name="${id}"]`);
+    }
+
+    return element;
+}
+
 // ========== SETUP PHONE SYNC ==========
 function setupPhoneSync() {
-    const phone1 = document.getElementById('owner-phone');
-    const phone2 = document.getElementById('owner-phone2');
+    const phone1 = getElement('owner-phone', 'Owner.Phone');
+    const phone2 = getElement('owner-phone2', 'Owner.Phone');
 
     if (phone1 && phone2) {
         phone1.addEventListener('input', function () {
@@ -47,6 +65,7 @@ function setupPhoneSync() {
         });
     }
 }
+
 function createNewProfile() {
     console.log('➕ Create New Profile clicked');
 
@@ -59,6 +78,7 @@ function createNewProfile() {
     // Redirect to create page
     window.location.href = '/receive-profile/create';
 }
+
 // ========== LOAD DATA CHO TRANG EDIT ==========
 async function loadDataForEdit() {
     const urlParams = new URLSearchParams(window.location.search);
@@ -73,8 +93,8 @@ async function loadDataForEdit() {
 
     const loadingState = document.getElementById('loading-state');
     const dataDisplay = document.getElementById('data-display');
-    const pageHeader = document.getElementById('page-header');      // ✅ THÊM
-    const breadcrumb = document.getElementById('breadcrumb');        // ✅ THÊM
+    const pageHeader = document.getElementById('page-header');
+    const breadcrumb = document.getElementById('breadcrumb');
 
     if (loadingState) loadingState.style.display = 'flex';
     if (dataDisplay) dataDisplay.style.display = 'none';
@@ -94,7 +114,6 @@ async function loadDataForEdit() {
             currentSpecification = data.data.specification;
             currentSearchType = data.searchType;
 
-            // ✅ HIỂN THỊ TẤT CẢ CÁC PHẦN TỬ
             if (pageHeader) pageHeader.style.display = 'block';
             if (breadcrumb) breadcrumb.style.display = 'block';
             if (dataDisplay) dataDisplay.style.display = 'block';
@@ -113,8 +132,8 @@ async function loadDataForEdit() {
 
 // ========== SEARCH FUNCTION (CHO TRANG INDEX) ==========
 async function searchProfile() {
-    const identifierInput = document.getElementById('search-cccd')?.value?.trim() || '';
-    const plateNo = document.getElementById('search-plate')?.value?.trim() || '';
+    const identifierInput = getFieldValue('search-cccd') || '';
+    const plateNo = getFieldValue('search-plate') || '';
 
     console.log('🔍 Search with identifier:', identifierInput, 'plateNo:', plateNo);
 
@@ -123,29 +142,22 @@ async function searchProfile() {
         return;
     }
 
-    // ✅ Tự động phân biệt CCCD vs Tax Code
     let cccd = '';
     let taxCode = '';
 
     if (identifierInput) {
-        // Loại bỏ ký tự đặc biệt, chỉ giữ số
         const cleanInput = identifierInput.replace(/[^0-9]/g, '');
-
         console.log('🔢 Clean input:', cleanInput, 'Length:', cleanInput.length);
 
-        // ✅ Phân loại dựa vào độ dài
         if (cleanInput.length === 9 || cleanInput.length === 12) {
-            // CCCD: chỉ nhận 9 hoặc 12 số
             cccd = cleanInput;
             console.log('✅ Detected as CCCD:', cccd);
         }
         else if (cleanInput.length >= 10 && cleanInput.length <= 13) {
-            // Tax Code: 10-13 số
             taxCode = cleanInput;
             console.log('✅ Detected as Tax Code:', taxCode);
         }
         else {
-            // Ngoài phạm vi
             showNotification('warning', 'CCCD phải có 9 hoặc 12 chữ số. Mã số thuế phải có 10-13 chữ số');
             return;
         }
@@ -193,7 +205,7 @@ async function searchProfile() {
     }
 }
 
-// ✅ ========== HIỂN THỊ DATA THEO LOẠI TÌM KIẾM ==========
+// ========== HIỂN THỊ DATA THEO LOẠI TÌM KIẾM ==========
 function displayDataBySearchType(searchType) {
     console.log('📋 Displaying data for search type:', searchType);
 
@@ -202,25 +214,21 @@ function displayDataBySearchType(searchType) {
     const actionButtons = document.querySelector('.action-buttons');
 
     if (searchType === 'cccd' || searchType === 'taxCode') {
-        // ✅ CHỈ CCCD/TAXCODE: Chỉ hiển thị thông tin chủ sở hữu
         console.log('👤 Showing OWNER info only (CCCD or TaxCode)');
         if (ownerCard) ownerCard.style.display = 'block';
         vehicleCards.forEach(card => card.style.display = 'none');
 
     } else if (searchType === 'plateNo') {
-        // ✅ CHỈ BIỂN SỐ: Hiển thị thông tin xe + thông số kỹ thuật
         console.log('🚗 Showing VEHICLE and SPECIFICATION only');
         if (ownerCard) ownerCard.style.display = 'none';
         vehicleCards.forEach(card => card.style.display = 'block');
 
     } else if (searchType === 'combined_cccd' || searchType === 'combined_taxcode') {
-        // ✅ KẾT HỢP: Hiển thị đầy đủ 3 sections
         console.log('📋 Showing ALL sections (Owner + Vehicle + Specification)');
         if (ownerCard) ownerCard.style.display = 'block';
         vehicleCards.forEach(card => card.style.display = 'block');
     }
 
-    // Luôn hiển thị action buttons
     if (actionButtons) actionButtons.style.display = 'flex';
 }
 
@@ -229,39 +237,34 @@ async function populateForm(data) {
     console.log('🔄 Populating form with data:', data);
     console.log('🔍 Current search type:', currentSearchType);
 
-    // ✅ POPULATE DỮ LIỆU THEO LOẠI TÌM KIẾM
-
-    // Populate Owner data (nếu tìm theo CCCD/TaxCode hoặc combined)
     if ((currentSearchType === 'cccd' ||
         currentSearchType === 'taxCode' ||
         currentSearchType === 'combined_cccd' ||
         currentSearchType === 'combined_taxcode') && data.owner) {
 
         console.log('👤 Populating OWNER data...');
-        setFieldValue('owner-id', data.owner.ownerId);
-        setFieldValue('owner-fullname', data.owner.fullName);
+        setFieldValue('owner-id', 'Owner.OwnerId', data.owner.ownerId);
+        setFieldValue('owner-fullname', 'Owner.FullName', data.owner.fullName);
 
-        // ✅ Set owner type và toggle display
         const ownerTypeValue = data.owner.ownerType || 'PERSON';
-        setFieldValue('owner-type', ownerTypeValue);
+        setFieldValue('owner-type', 'Owner.OwnerType', ownerTypeValue);
 
-        setFieldValue('owner-cccd', data.owner.cccd);
-        setFieldValue('owner-taxcode', data.owner.taxCode);
-        setFieldValue('owner-company', data.owner.companyName);
+        setFieldValue('owner-cccd', 'Owner.CCCD', data.owner.cccd);
+        setFieldValue('owner-taxcode', 'Owner.TaxCode', data.owner.taxCode);
+        setFieldValue('owner-company', 'Owner.CompanyName', data.owner.companyName);
 
         const phoneValue = data.owner.phone || '';
-        setFieldValue('owner-phone', phoneValue);
-        setFieldValue('owner-phone2', phoneValue);
+        setFieldValue('owner-phone', 'Owner.Phone', phoneValue);
+        setFieldValue('owner-phone2', 'Owner.Phone', phoneValue);
 
-        setFieldValue('owner-email', data.owner.email);
-        setFieldValue('owner-address', data.owner.address);
-        setFieldValue('owner-province', data.owner.province);
-        setFieldValue('owner-ward', data.owner.ward);
+        setFieldValue('owner-email', 'Owner.Email', data.owner.email);
+        setFieldValue('owner-address', 'Owner.Address', data.owner.address);
+        setFieldValue('owner-province', 'Owner.Province', data.owner.province);
+        setFieldValue('owner-ward', 'Owner.Ward', data.owner.ward);
 
         const createdAt = data.owner.createdAt ? new Date(data.owner.createdAt).toLocaleString('vi-VN') : '';
-        setFieldValue('owner-created', createdAt);
+        setFieldValue('owner-created', null, createdAt);
 
-        // ✅ Toggle hiển thị theo loại chủ sở hữu
         toggleOwnerType(ownerTypeValue);
 
         if (data.owner.imageUrl) {
@@ -270,116 +273,116 @@ async function populateForm(data) {
         console.log('✅ Owner data populated');
     }
 
-    // Populate Vehicle data (nếu tìm theo plateNo hoặc combined)
     if ((currentSearchType === 'plateNo' ||
         currentSearchType === 'combined_cccd' ||
         currentSearchType === 'combined_taxcode') && data.vehicle) {
 
         console.log('🚗 Populating VEHICLE data...');
-        setFieldValue('vehicle-id', data.vehicle.vehicleId);
-        setFieldValue('vehicle-plate', data.vehicle.plateNo);
-        setFieldValue('vehicle-inspection', data.vehicle.inspectionNo);
-        setFieldValue('vehicle-group', data.vehicle.vehicleGroup);
+        setFieldValue('vehicle-id', 'Vehicle.VehicleId', data.vehicle.vehicleId);
+        setFieldValue('vehicle-plate', 'Vehicle.PlateNo', data.vehicle.plateNo);
+        setFieldValue('vehicle-inspection', 'Vehicle.InspectionNo', data.vehicle.inspectionNo);
+        setFieldValue('vehicle-group', 'Vehicle.VehicleGroup', data.vehicle.vehicleGroup);
+
         if (data.vehicle.vehicleType) {
             setTimeout(() => {
-                setFieldValue('vehicle-type', data.vehicle.vehicleType);
+                setFieldValue('vehicle-type', 'Vehicle.VehicleTypeId', data.vehicle.vehicleType);
                 console.log(`✅ Vehicle type set to: ${data.vehicle.vehicleType}`);
             }, 300);
         }
-        setFieldValue('vehicle-energy', data.vehicle.energyType);
-        setCheckboxValue('vehicle-clean', data.vehicle.isCleanEnergy);
-        setFieldValue('vehicle-usage', data.vehicle.usagePermission);
-        setFieldValue('vehicle-brand', data.vehicle.brand);
-        setFieldValue('vehicle-model', data.vehicle.model);
-        setFieldValue('vehicle-engine', data.vehicle.engineNo);
-        setFieldValue('vehicle-chassis', data.vehicle.chassis);
-        setFieldValue('vehicle-year', data.vehicle.manufactureYear);
-        setFieldValue('vehicle-country', data.vehicle.manufactureCountry);
-        setFieldValue('vehicle-lifetime', data.vehicle.lifetimeLimitYear);
-        setCheckboxValue('vehicle-commercial', data.vehicle.hasCommercialModification);
-        setCheckboxValue('vehicle-modification', data.vehicle.hasModification);
+
+        setFieldValue('vehicle-energy', 'Vehicle.EnergyType', data.vehicle.energyType);
+        setCheckboxValue('vehicle-clean', 'Vehicle.IsCleanEnergy', data.vehicle.isCleanEnergy);
+        setFieldValue('vehicle-usage', 'Vehicle.UsagePermission', data.vehicle.usagePermission);
+        setFieldValue('vehicle-brand', 'Vehicle.Brand', data.vehicle.brand);
+        setFieldValue('vehicle-model', 'Vehicle.Model', data.vehicle.model);
+        setFieldValue('vehicle-engine', 'Vehicle.EngineNo', data.vehicle.engineNo);
+        setFieldValue('vehicle-chassis', 'Vehicle.Chassis', data.vehicle.chassis);
+        setFieldValue('vehicle-year', 'Vehicle.ManufactureYear', data.vehicle.manufactureYear);
+        setFieldValue('vehicle-country', 'Vehicle.ManufactureCountry', data.vehicle.manufactureCountry);
+        setFieldValue('vehicle-lifetime', 'Vehicle.LifetimeLimitYear', data.vehicle.lifetimeLimitYear);
+        setCheckboxValue('vehicle-commercial', 'Vehicle.HasCommercialModification', data.vehicle.hasCommercialModification);
+        setCheckboxValue('vehicle-modification', 'Vehicle.HasModification', data.vehicle.hasModification);
 
         const vehicleCreated = data.vehicle.createdAt ? new Date(data.vehicle.createdAt).toLocaleString('vi-VN') : '';
         const vehicleUpdated = data.vehicle.updatedAt ? new Date(data.vehicle.updatedAt).toLocaleString('vi-VN') : '';
-        setFieldValue('vehicle-created', vehicleCreated);
-        setFieldValue('vehicle-updated', vehicleUpdated);
+        setFieldValue('vehicle-created', null, vehicleCreated);
+        setFieldValue('vehicle-updated', null, vehicleUpdated);
         console.log('✅ Vehicle data populated');
     }
 
-    // Populate Specification data (nếu tìm theo plateNo hoặc combined)
     if ((currentSearchType === 'plateNo' ||
         currentSearchType === 'combined_cccd' ||
         currentSearchType === 'combined_taxcode') && data.specification) {
 
         console.log('⚙️ Populating SPECIFICATION data...');
-        setFieldValue('spec-id', data.specification.specificationId);
-        setFieldValue('spec-wheel-formula', data.specification.wheelFormula);
-        setFieldValue('spec-wheel-tread', data.specification.wheelTread);
-        setFieldValue('spec-wheelbase', data.specification.wheelbase);
-        setFieldValue('spec-length', data.specification.overallLength);
-        setFieldValue('spec-width', data.specification.overallWidth);
-        setFieldValue('spec-height', data.specification.overallHeight);
-        setFieldValue('spec-cargo-length', data.specification.cargoInsideLength);
-        setFieldValue('spec-cargo-width', data.specification.cargoInsideWidth);
-        setFieldValue('spec-cargo-height', data.specification.cargoInsideHeight);
-        setFieldValue('spec-kerb-weight', data.specification.kerbWeight);
-        setFieldValue('spec-cargo-weight', data.specification.authorizedCargoWeight);
-        setFieldValue('spec-towed-weight', data.specification.authorizedTowedWeight);
-        setFieldValue('spec-total-weight', data.specification.authorizedTotalWeight);
-        setFieldValue('spec-seating', data.specification.seatingCapacity);
-        setFieldValue('spec-standing', data.specification.standingCapacity);
-        setFieldValue('spec-lying', data.specification.lyingCapacity);
-        setFieldValue('spec-engine-type', data.specification.engineType);
-        setFieldValue('spec-engine-position', data.specification.enginePosition);
-        setFieldValue('spec-engine-model', data.specification.engineModel);
-        setFieldValue('spec-displacement', data.specification.engineDisplacement);
-        setFieldValue('spec-max-power', data.specification.maxPower);
-        setFieldValue('spec-max-rpm', data.specification.maxPowerRPM);
-        setFieldValue('spec-fuel-type', data.specification.fuelType);
-        setFieldValue('spec-motor-type', data.specification.motorType);
-        setFieldValue('spec-motor-count', data.specification.numberOfMotors);
-        setFieldValue('spec-motor-model', data.specification.motorModel);
-        setFieldValue('spec-motor-power', data.specification.totalMotorPower);
-        setFieldValue('spec-motor-voltage', data.specification.motorVoltage);
-        setFieldValue('spec-battery-type', data.specification.batteryType);
-        setFieldValue('spec-battery-voltage', data.specification.batteryVoltage);
-        setFieldValue('spec-battery-capacity', data.specification.batteryCapacity);
-        setFieldValue('spec-tire-count', data.specification.tireCount);
-        setFieldValue('spec-tire-size', data.specification.tireSize);
-        setFieldValue('spec-tire-axle', data.specification.tireAxleInfo);
-        setFieldValue('spec-image-position', data.specification.imagePosition);
-        setCheckboxValue('spec-tachograph', data.specification.hasTachograph);
-        setCheckboxValue('spec-camera', data.specification.hasDriverCamera);
-        setCheckboxValue('spec-no-stamp', data.specification.notIssuedStamp);
-        setFieldValue('spec-notes', data.specification.notes);
+        setFieldValue('spec-id', 'Specification.SpecificationId', data.specification.specificationId);
+        setFieldValue('spec-wheel-formula', 'Specification.WheelFormula', data.specification.wheelFormula);
+        setFieldValue('spec-wheel-tread', 'Specification.WheelTread', data.specification.wheelTread);
+        setFieldValue('spec-wheelbase', 'Specification.Wheelbase', data.specification.wheelbase);
+        setFieldValue('spec-length', 'Specification.OverallLength', data.specification.overallLength);
+        setFieldValue('spec-width', 'Specification.OverallWidth', data.specification.overallWidth);
+        setFieldValue('spec-height', 'Specification.OverallHeight', data.specification.overallHeight);
+        setFieldValue('spec-cargo-length', 'Specification.CargoInsideLength', data.specification.cargoInsideLength);
+        setFieldValue('spec-cargo-width', 'Specification.CargoInsideWidth', data.specification.cargoInsideWidth);
+        setFieldValue('spec-cargo-height', 'Specification.CargoInsideHeight', data.specification.cargoInsideHeight);
+        setFieldValue('spec-kerb-weight', 'Specification.KerbWeight', data.specification.kerbWeight);
+        setFieldValue('spec-cargo-weight', 'Specification.AuthorizedCargoWeight', data.specification.authorizedCargoWeight);
+        setFieldValue('spec-towed-weight', 'Specification.AuthorizedTowedWeight', data.specification.authorizedTowedWeight);
+        setFieldValue('spec-total-weight', 'Specification.AuthorizedTotalWeight', data.specification.authorizedTotalWeight);
+        setFieldValue('spec-seating', 'Specification.SeatingCapacity', data.specification.seatingCapacity);
+        setFieldValue('spec-standing', 'Specification.StandingCapacity', data.specification.standingCapacity);
+        setFieldValue('spec-lying', 'Specification.LyingCapacity', data.specification.lyingCapacity);
+        setFieldValue('spec-engine-type', 'Specification.EngineType', data.specification.engineType);
+        setFieldValue('spec-engine-position', 'Specification.EnginePosition', data.specification.enginePosition);
+        setFieldValue('spec-engine-model', 'Specification.EngineModel', data.specification.engineModel);
+        setFieldValue('spec-displacement', 'Specification.EngineDisplacement', data.specification.engineDisplacement);
+        setFieldValue('spec-max-power', 'Specification.MaxPower', data.specification.maxPower);
+        setFieldValue('spec-max-rpm', 'Specification.MaxPowerRPM', data.specification.maxPowerRPM);
+        setFieldValue('spec-fuel-type', 'Specification.FuelType', data.specification.fuelType);
+        setFieldValue('spec-motor-type', 'Specification.MotorType', data.specification.motorType);
+        setFieldValue('spec-motor-count', 'Specification.NumberOfMotors', data.specification.numberOfMotors);
+        setFieldValue('spec-motor-model', 'Specification.MotorModel', data.specification.motorModel);
+        setFieldValue('spec-motor-power', 'Specification.TotalMotorPower', data.specification.totalMotorPower);
+        setFieldValue('spec-motor-voltage', 'Specification.MotorVoltage', data.specification.motorVoltage);
+        setFieldValue('spec-battery-type', 'Specification.BatteryType', data.specification.batteryType);
+        setFieldValue('spec-battery-voltage', 'Specification.BatteryVoltage', data.specification.batteryVoltage);
+        setFieldValue('spec-battery-capacity', 'Specification.BatteryCapacity', data.specification.batteryCapacity);
+        setFieldValue('spec-tire-count', 'Specification.TireCount', data.specification.tireCount);
+        setFieldValue('spec-tire-size', 'Specification.TireSize', data.specification.tireSize);
+        setFieldValue('spec-tire-axle', 'Specification.TireAxleInfo', data.specification.tireAxleInfo);
+        setFieldValue('spec-image-position', 'Specification.ImagePosition', data.specification.imagePosition);
+        setCheckboxValue('spec-tachograph', 'Specification.HasTachograph', data.specification.hasTachograph);
+        setCheckboxValue('spec-camera', 'Specification.HasDriverCamera', data.specification.hasDriverCamera);
+        setCheckboxValue('spec-no-stamp', 'Specification.NotIssuedStamp', data.specification.notIssuedStamp);
+        setFieldValue('spec-notes', 'Specification.Notes', data.specification.notes);
         console.log('✅ Specification data populated');
     }
 
     console.log('✅ Form populated successfully');
 }
 
-// ========== HELPER FUNCTIONS ==========
-function setFieldValue(fieldId, value) {
-    const field = document.getElementById(fieldId);
+// ========== HELPER FUNCTIONS (ĐÃ SỬA) ==========
+function setFieldValue(fieldId, fieldName, value) {
+    const field = getElement(fieldId, fieldName);
     if (field) {
         field.value = value || '';
     }
 }
 
-function setCheckboxValue(fieldId, value) {
-    const field = document.getElementById(fieldId);
+function setCheckboxValue(fieldId, fieldName, value) {
+    const field = getElement(fieldId, fieldName);
     if (field) {
         field.checked = value || false;
     }
 }
 
-function getFieldValue(fieldId, defaultValue = '') {
-    const field = document.getElementById(fieldId);
+function getFieldValue(fieldId, fieldName = null, defaultValue = '') {
+    const field = getElement(fieldId, fieldName);
     return field?.value?.trim() || defaultValue;
 }
 
-function getCheckboxValue(fieldId, defaultValue = false) {
-    const field = document.getElementById(fieldId);
+function getCheckboxValue(fieldId, fieldName = null, defaultValue = false) {
+    const field = getElement(fieldId, fieldName);
     return field?.checked ?? defaultValue;
 }
 
@@ -400,96 +403,96 @@ function previewOwnerImage(event) {
     }
 }
 
-// ========== COLLECT FORM DATA ==========
+// ========== COLLECT FORM DATA (ĐÃ SỬA) ==========
 function collectFormData() {
-    const ownerType = getFieldValue('owner-type');
-    const phoneValue = getFieldValue('owner-phone2') || getFieldValue('owner-phone');
+    const ownerType = getFieldValue('owner-type', 'Owner.OwnerType');
+    const phoneValue = getFieldValue('owner-phone2', 'Owner.Phone') || getFieldValue('owner-phone', 'Owner.Phone');
 
     const formData = {
         Owner: {
-            OwnerId: getFieldValue('owner-id') || '00000000-0000-0000-0000-000000000000',
+            OwnerId: getFieldValue('owner-id', 'Owner.OwnerId') || '00000000-0000-0000-0000-000000000000',
             OwnerType: ownerType || 'PERSON',
-            FullName: getFieldValue('owner-fullname'),
-            CompanyName: getFieldValue('owner-company'),
-            TaxCode: getFieldValue('owner-taxcode'),
-            CCCD: getFieldValue('owner-cccd'),
+            FullName: getFieldValue('owner-fullname', 'Owner.FullName'),
+            CompanyName: getFieldValue('owner-company', 'Owner.CompanyName'),
+            TaxCode: getFieldValue('owner-taxcode', 'Owner.TaxCode'),
+            CCCD: getFieldValue('owner-cccd', 'Owner.CCCD'),
             Phone: phoneValue,
-            Email: getFieldValue('owner-email'),
-            Address: getFieldValue('owner-address'),
-            Ward: getFieldValue('owner-ward'),
-            Province: getFieldValue('owner-province'),
+            Email: getFieldValue('owner-email', 'Owner.Email'),
+            Address: getFieldValue('owner-address', 'Owner.Address'),
+            Ward: getFieldValue('owner-ward', 'Owner.Ward'),
+            Province: getFieldValue('owner-province', 'Owner.Province'),
             ImageUrl: currentOwner?.imageUrl || '',
             CreatedAt: currentOwner?.createdAt
         },
         Vehicle: {
             VehicleId: (() => {
-                const val = getFieldValue('vehicle-id');
+                const val = getFieldValue('vehicle-id', 'Vehicle.VehicleId');
                 return val ? parseInt(val) : null;
             })(),
-            PlateNo: getFieldValue('vehicle-plate'),
-            InspectionNo: getFieldValue('vehicle-inspection'),
-            VehicleGroup: getFieldValue('vehicle-group'),
-            VehicleType: getFieldValue('vehicle-type'),
-            EnergyType: getFieldValue('vehicle-energy'),
-            IsCleanEnergy: getCheckboxValue('vehicle-clean'),
-            UsagePermission: getFieldValue('vehicle-usage'),
-            Brand: getFieldValue('vehicle-brand'),
-            Model: getFieldValue('vehicle-model'),
-            EngineNo: getFieldValue('vehicle-engine'),
-            Chassis: getFieldValue('vehicle-chassis'),
-            ManufactureYear: parseInt(getFieldValue('vehicle-year')) || null,
-            ManufactureCountry: getFieldValue('vehicle-country'),
-            LifetimeLimitYear: parseInt(getFieldValue('vehicle-lifetime')) || null,
-            HasCommercialModification: getCheckboxValue('vehicle-commercial'),
-            HasModification: getCheckboxValue('vehicle-modification'),
+            PlateNo: getFieldValue('vehicle-plate', 'Vehicle.PlateNo'),
+            InspectionNo: getFieldValue('vehicle-inspection', 'Vehicle.InspectionNo'),
+            VehicleGroup: getFieldValue('vehicle-group', 'Vehicle.VehicleGroup'),
+            VehicleType: getFieldValue('vehicle-type', 'Vehicle.VehicleTypeId'),
+            EnergyType: getFieldValue('vehicle-energy', 'Vehicle.EnergyType'),
+            IsCleanEnergy: getCheckboxValue('vehicle-clean', 'Vehicle.IsCleanEnergy'),
+            UsagePermission: getFieldValue('vehicle-usage', 'Vehicle.UsagePermission'),
+            Brand: getFieldValue('vehicle-brand', 'Vehicle.Brand'),
+            Model: getFieldValue('vehicle-model', 'Vehicle.Model'),
+            EngineNo: getFieldValue('vehicle-engine', 'Vehicle.EngineNo'),
+            Chassis: getFieldValue('vehicle-chassis', 'Vehicle.Chassis'),
+            ManufactureYear: parseInt(getFieldValue('vehicle-year', 'Vehicle.ManufactureYear')) || null,
+            ManufactureCountry: getFieldValue('vehicle-country', 'Vehicle.ManufactureCountry'),
+            LifetimeLimitYear: parseInt(getFieldValue('vehicle-lifetime', 'Vehicle.LifetimeLimitYear')) || null,
+            HasCommercialModification: getCheckboxValue('vehicle-commercial', 'Vehicle.HasCommercialModification'),
+            HasModification: getCheckboxValue('vehicle-modification', 'Vehicle.HasModification'),
             CreatedAt: currentVehicle?.createdAt,
             UpdatedAt: currentVehicle?.updatedAt
         },
         Specification: {
             SpecificationId: (() => {
-                const val = getFieldValue('spec-id');
+                const val = getFieldValue('spec-id', 'Specification.SpecificationId');
                 return val ? parseInt(val) : null;
             })(),
-            PlateNo: getFieldValue('vehicle-plate'),
-            WheelFormula: getFieldValue('spec-wheel-formula'),
-            WheelTread: parseInt(getFieldValue('spec-wheel-tread')) || null,
-            OverallLength: parseInt(getFieldValue('spec-length')) || null,
-            OverallWidth: parseInt(getFieldValue('spec-width')) || null,
-            OverallHeight: parseInt(getFieldValue('spec-height')) || null,
-            CargoInsideLength: parseInt(getFieldValue('spec-cargo-length')) || null,
-            CargoInsideWidth: parseInt(getFieldValue('spec-cargo-width')) || null,
-            CargoInsideHeight: parseInt(getFieldValue('spec-cargo-height')) || null,
-            Wheelbase: parseInt(getFieldValue('spec-wheelbase')) || null,
-            KerbWeight: parseFloat(getFieldValue('spec-kerb-weight')) || null,
-            AuthorizedCargoWeight: parseFloat(getFieldValue('spec-cargo-weight')) || null,
-            AuthorizedTowedWeight: parseFloat(getFieldValue('spec-towed-weight')) || null,
-            AuthorizedTotalWeight: parseFloat(getFieldValue('spec-total-weight')) || null,
-            SeatingCapacity: parseInt(getFieldValue('spec-seating')) || null,
-            StandingCapacity: parseInt(getFieldValue('spec-standing')) || null,
-            LyingCapacity: parseInt(getFieldValue('spec-lying')) || null,
-            EngineType: getFieldValue('spec-engine-type'),
-            EnginePosition: getFieldValue('spec-engine-position'),
-            EngineModel: getFieldValue('spec-engine-model'),
-            EngineDisplacement: parseInt(getFieldValue('spec-displacement')) || null,
-            MaxPower: parseFloat(getFieldValue('spec-max-power')) || null,
-            MaxPowerRPM: parseInt(getFieldValue('spec-max-rpm')) || null,
-            FuelType: getFieldValue('spec-fuel-type'),
-            MotorType: getFieldValue('spec-motor-type'),
-            NumberOfMotors: parseInt(getFieldValue('spec-motor-count')) || null,
-            MotorModel: getFieldValue('spec-motor-model'),
-            TotalMotorPower: parseFloat(getFieldValue('spec-motor-power')) || null,
-            MotorVoltage: parseFloat(getFieldValue('spec-motor-voltage')) || null,
-            BatteryType: getFieldValue('spec-battery-type'),
-            BatteryVoltage: parseFloat(getFieldValue('spec-battery-voltage')) || null,
-            BatteryCapacity: parseFloat(getFieldValue('spec-battery-capacity')) || null,
-            TireCount: parseInt(getFieldValue('spec-tire-count')) || null,
-            TireSize: getFieldValue('spec-tire-size'),
-            TireAxleInfo: getFieldValue('spec-tire-axle'),
-            ImagePosition: getFieldValue('spec-image-position'),
-            HasTachograph: getCheckboxValue('spec-tachograph'),
-            HasDriverCamera: getCheckboxValue('spec-camera'),
-            NotIssuedStamp: getCheckboxValue('spec-no-stamp'),
-            Notes: getFieldValue('spec-notes'),
+            PlateNo: getFieldValue('vehicle-plate', 'Vehicle.PlateNo'),
+            WheelFormula: getFieldValue('spec-wheel-formula', 'Specification.WheelFormula'),
+            WheelTread: parseInt(getFieldValue('spec-wheel-tread', 'Specification.WheelTread')) || null,
+            OverallLength: parseInt(getFieldValue('spec-length', 'Specification.OverallLength')) || null,
+            OverallWidth: parseInt(getFieldValue('spec-width', 'Specification.OverallWidth')) || null,
+            OverallHeight: parseInt(getFieldValue('spec-height', 'Specification.OverallHeight')) || null,
+            CargoInsideLength: parseInt(getFieldValue('spec-cargo-length', 'Specification.CargoInsideLength')) || null,
+            CargoInsideWidth: parseInt(getFieldValue('spec-cargo-width', 'Specification.CargoInsideWidth')) || null,
+            CargoInsideHeight: parseInt(getFieldValue('spec-cargo-height', 'Specification.CargoInsideHeight')) || null,
+            Wheelbase: parseInt(getFieldValue('spec-wheelbase', 'Specification.Wheelbase')) || null,
+            KerbWeight: parseFloat(getFieldValue('spec-kerb-weight', 'Specification.KerbWeight')) || null,
+            AuthorizedCargoWeight: parseFloat(getFieldValue('spec-cargo-weight', 'Specification.AuthorizedCargoWeight')) || null,
+            AuthorizedTowedWeight: parseFloat(getFieldValue('spec-towed-weight', 'Specification.AuthorizedTowedWeight')) || null,
+            AuthorizedTotalWeight: parseFloat(getFieldValue('spec-total-weight', 'Specification.AuthorizedTotalWeight')) || null,
+            SeatingCapacity: parseInt(getFieldValue('spec-seating', 'Specification.SeatingCapacity')) || null,
+            StandingCapacity: parseInt(getFieldValue('spec-standing', 'Specification.StandingCapacity')) || null,
+            LyingCapacity: parseInt(getFieldValue('spec-lying', 'Specification.LyingCapacity')) || null,
+            EngineType: getFieldValue('spec-engine-type', 'Specification.EngineType'),
+            EnginePosition: getFieldValue('spec-engine-position', 'Specification.EnginePosition'),
+            EngineModel: getFieldValue('spec-engine-model', 'Specification.EngineModel'),
+            EngineDisplacement: parseInt(getFieldValue('spec-displacement', 'Specification.EngineDisplacement')) || null,
+            MaxPower: parseFloat(getFieldValue('spec-max-power', 'Specification.MaxPower')) || null,
+            MaxPowerRPM: parseInt(getFieldValue('spec-max-rpm', 'Specification.MaxPowerRPM')) || null,
+            FuelType: getFieldValue('spec-fuel-type', 'Specification.FuelType'),
+            MotorType: getFieldValue('spec-motor-type', 'Specification.MotorType'),
+            NumberOfMotors: parseInt(getFieldValue('spec-motor-count', 'Specification.NumberOfMotors')) || null,
+            MotorModel: getFieldValue('spec-motor-model', 'Specification.MotorModel'),
+            TotalMotorPower: parseFloat(getFieldValue('spec-motor-power', 'Specification.TotalMotorPower')) || null,
+            MotorVoltage: parseFloat(getFieldValue('spec-motor-voltage', 'Specification.MotorVoltage')) || null,
+            BatteryType: getFieldValue('spec-battery-type', 'Specification.BatteryType'),
+            BatteryVoltage: parseFloat(getFieldValue('spec-battery-voltage', 'Specification.BatteryVoltage')) || null,
+            BatteryCapacity: parseFloat(getFieldValue('spec-battery-capacity', 'Specification.BatteryCapacity')) || null,
+            TireCount: parseInt(getFieldValue('spec-tire-count', 'Specification.TireCount')) || null,
+            TireSize: getFieldValue('spec-tire-size', 'Specification.TireSize'),
+            TireAxleInfo: getFieldValue('spec-tire-axle', 'Specification.TireAxleInfo'),
+            ImagePosition: getFieldValue('spec-image-position', 'Specification.ImagePosition'),
+            HasTachograph: getCheckboxValue('spec-tachograph', 'Specification.HasTachograph'),
+            HasDriverCamera: getCheckboxValue('spec-camera', 'Specification.HasDriverCamera'),
+            NotIssuedStamp: getCheckboxValue('spec-no-stamp', 'Specification.NotIssuedStamp'),
+            Notes: getFieldValue('spec-notes', 'Specification.Notes'),
             CreatedAt: currentSpecification?.createdAt,
             UpdatedAt: currentSpecification?.updatedAt
         }
@@ -501,21 +504,21 @@ function collectFormData() {
 // ========== VALIDATE, SAVE, CREATE FUNCTIONS ==========
 function validateForm(mode) {
     const errors = [];
-    const ownerType = getFieldValue('owner-type');
-    const fullName = getFieldValue('owner-fullname');
+    const ownerType = getFieldValue('owner-type', 'Owner.OwnerType');
+    const fullName = getFieldValue('owner-fullname', 'Owner.FullName');
 
     if (!fullName) {
         errors.push('Vui lòng nhập họ và tên');
     }
 
     if (ownerType === 'PERSON') {
-        const cccd = getFieldValue('owner-cccd');
+        const cccd = getFieldValue('owner-cccd', 'Owner.CCCD');
         if (mode === 'create' && !cccd) {
             errors.push('Vui lòng nhập CCCD/CMND');
         }
     } else if (ownerType === 'COMPANY') {
-        const companyName = getFieldValue('owner-company');
-        const taxCode = getFieldValue('owner-taxcode');
+        const companyName = getFieldValue('owner-company', 'Owner.CompanyName');
+        const taxCode = getFieldValue('owner-taxcode', 'Owner.TaxCode');
         if (mode === 'create' && !companyName) {
             errors.push('Vui lòng nhập tên công ty');
         }
@@ -524,7 +527,7 @@ function validateForm(mode) {
         }
     }
 
-    const plateNo = getFieldValue('vehicle-plate');
+    const plateNo = getFieldValue('vehicle-plate', 'Vehicle.PlateNo');
     if (!plateNo) {
         errors.push('Vui lòng nhập biển số xe');
     }
@@ -554,7 +557,7 @@ async function saveChanges() {
 
         formData.append('jsonData', JSON.stringify(requestData));
 
-        const fileInput = document.getElementById('owner-image-upload');
+        const fileInput = getElement('owner-image-upload');
         if (fileInput && fileInput.files.length > 0) {
             formData.append('ProfilePicture', fileInput.files[0]);
         }
@@ -589,8 +592,14 @@ async function createProfile() {
     try {
         console.log('💾 ========== BẮT ĐẦU TẠO MỚI ==========');
 
+        // ✅ THÊM ĐOẠN DEBUG NÀY
+        const plateNoValue = getFieldValue('vehicle-plate', 'Vehicle.PlateNo');
+        console.log('🚗 PlateNo value:', plateNoValue);
+        console.log('🚗 PlateNo element:', getElement('vehicle-plate', 'Vehicle.PlateNo'));
+
         const errors = validateForm('create');
         if (errors.length > 0) {
+            console.log('❌ Validation errors:', errors);
             showNotification('error', errors.join('<br>'));
             return;
         }
@@ -598,15 +607,16 @@ async function createProfile() {
         const formData = new FormData();
         const requestData = collectFormData();
 
+        // ✅ THÊM LOG ĐỂ XEM REQUEST DATA
+        console.log('📤 Full Request data:', JSON.stringify(requestData, null, 2));
+
         delete requestData.Owner.OwnerId;
         delete requestData.Vehicle.VehicleId;
         delete requestData.Specification.SpecificationId;
 
-        console.log('📤 Request data:', requestData);
-
         formData.append('jsonData', JSON.stringify(requestData));
 
-        const fileInput = document.getElementById('owner-image-upload');
+        const fileInput = getElement('owner-image-upload');
         if (fileInput && fileInput.files.length > 0) {
             formData.append('ProfilePicture', fileInput.files[0]);
         }
@@ -689,7 +699,6 @@ function approveProfile() {
     window.location.href = `/receive-profile/approve?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}&taxCode=${encodeURIComponent(taxCode)}`;
 }
 
-// ... (giữ nguyên createNewProfile)
 function cancelChanges() {
     console.log('❌ Cancel Changes clicked');
     window.location.href = '/receive-profile';
@@ -699,9 +708,10 @@ function cancelCreate() {
     console.log('❌ Cancel Create clicked');
     window.location.href = '/receive-profile';
 }
+
 function clearSearch() {
-    setFieldValue('search-cccd', ''); // Input dùng chung cho CCCD/Tax Code
-    setFieldValue('search-plate', '');
+    setFieldValue('search-cccd', null, '');
+    setFieldValue('search-plate', null, '');
 
     const noDataState = document.getElementById('no-data-state');
     const dataDisplay = document.getElementById('data-display');
@@ -722,7 +732,7 @@ async function loadProvinces() {
         const data = await response.json();
 
         if (data.success && data.data) {
-            const provinceSelect = document.getElementById('owner-province');
+            const provinceSelect = getElement('owner-province', 'Owner.Province');
             if (provinceSelect) {
                 provinceSelect.innerHTML = '<option value="">-- Chọn Tỉnh/Thành phố --</option>';
                 data.data.forEach(province => {
@@ -747,7 +757,7 @@ async function loadWards(provinceName) {
         const response = await fetch(`/api/receive-profile/wards?province=${encodeURIComponent(provinceName)}`);
         const data = await response.json();
 
-        const wardSelect = document.getElementById('owner-ward');
+        const wardSelect = getElement('owner-ward', 'Owner.Ward');
         if (data.success && wardSelect) {
             wardSelect.innerHTML = '<option value="">-- Chọn Phường/Xã --</option>';
             wardSelect.disabled = false;
@@ -782,10 +792,10 @@ async function loadVehicleTypes() {
         const data = await response.json();
 
         if (data.success && data.data) {
-            const vehicleTypeSelect = document.getElementById('vehicle-type');
+            const vehicleTypeSelect = getElement('vehicle-type', 'Vehicle.VehicleTypeId');
 
             if (!vehicleTypeSelect) {
-                console.error('❌ Cannot find element with id="vehicle-type"');
+                console.error('❌ Cannot find element with id="vehicle-type" or name="Vehicle.VehicleTypeId"');
                 return;
             }
 
@@ -808,10 +818,10 @@ async function loadVehicleTypes() {
 }
 
 function setupProvinceListener() {
-    const provinceSelect = document.getElementById('owner-province');
+    const provinceSelect = getElement('owner-province', 'Owner.Province');
     if (provinceSelect) {
         provinceSelect.addEventListener('change', function () {
-            const wardSelect = document.getElementById('owner-ward');
+            const wardSelect = getElement('owner-ward', 'Owner.Ward');
             if (this.value) {
                 loadWards(this.value);
             } else if (wardSelect) {
@@ -824,7 +834,7 @@ function setupProvinceListener() {
 
 function toggleOwnerType(ownerType) {
     if (!ownerType) {
-        ownerType = getFieldValue('owner-type');
+        ownerType = getFieldValue('owner-type', 'Owner.OwnerType');
     }
 
     const personInfo = document.getElementById('person-info');

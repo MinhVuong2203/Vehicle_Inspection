@@ -214,6 +214,10 @@ public partial class VehInsContext : DbContext
                 .IsUnique()
                 .HasFilter("([OwnerType]=N'PERSON' AND [CCCD] IS NOT NULL)");
 
+            entity.HasIndex(e => e.Email, "UX_Owner_Email")
+                .IsUnique()
+                .HasFilter("([Email] IS NOT NULL)");
+
             entity.HasIndex(e => e.TaxCode, "UX_Owner_TaxCode_Company")
                 .IsUnique()
                 .HasFilter("([OwnerType]=N'COMPANY' AND [TaxCode] IS NOT NULL)");
@@ -381,6 +385,14 @@ public partial class VehInsContext : DbContext
         modelBuilder.Entity<Vehicle>(entity =>
         {
             entity.HasKey(e => e.VehicleId).HasName("PK__Vehicle__476B54929039405F");
+
+            entity.HasIndex(e => e.Chassis, "UX_Owner_Chassis")
+                .IsUnique()
+                .HasFilter("([Chassis] IS NOT NULL)");
+
+            entity.HasIndex(e => e.PlateNo, "UX_Vehilce_Plateno")
+                .IsUnique()
+                .HasFilter("([PlateNo] IS NOT NULL)");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysdatetime())");
             entity.Property(e => e.HasCommercialModification).HasDefaultValue(false);

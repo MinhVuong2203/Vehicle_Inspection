@@ -29,8 +29,8 @@
         <!-- Page Header -->
         <div class="page-header" id="page-header" style="display: none;">
             <div>
-                <h1><i class="bi bi-pencil-square"></i> Chỉnh sửa hồ sơ đăng kiểm</h1>
-                <p>Cập nhật thông tin chủ xe và phương tiện</p>
+                <h1><i class="bi bi-pencil-square"></i> Chỉnh sửa thông tin chủ xe</h1>
+                <p>Cập nhật thông tin chủ sở hữu phương tiện</p>
             </div>
         </div>
 
@@ -44,7 +44,7 @@
         <!-- DATA DISPLAY -->
         <div id="data-display" style="display: none;">
 
-            <!-- ==================== SECTION 1: OWNER INFO ==================== -->
+            <!-- ==================== SECTION: OWNER INFO ==================== -->
             <div class="owner-info-card">
                 <div class="owner-card-header">
                     <i class="bi bi-person-circle"></i>
@@ -73,7 +73,7 @@
                             <div class="detail-row">
                                 <div class="detail-item">
                                     <label asp-for="Owner.OwnerType" class="detail-label"></label>
-                                    <select id="owner-type" class="detail-input form-select">
+                                    <select asp-for="Owner.OwnerType" id="owner-type" class="detail-input form-select" onchange="toggleOwnerType()">
                                         <option value="PERSON">Cá nhân</option>
                                         <option value="COMPANY">Công ty</option>
                                     </select>
@@ -81,7 +81,7 @@
                                 </div>
                                 <div class="detail-item">
                                     <label asp-for="Owner.FullName" class="detail-label"></label>
-                                    <input type="text" id="owner-fullname" class="detail-input" placeholder="Nhập họ và tên">
+                                    <input asp-for="Owner.FullName" type="text" id="owner-fullname" class="detail-input" placeholder="Nhập họ và tên">
                                     <span asp-validation-for="Owner.FullName" class="text-danger"></span>
                                 </div>
                             </div>
@@ -90,7 +90,7 @@
                             <div class="detail-row" id="person-info">
                                 <div class="detail-item">
                                     <label asp-for="Owner.CCCD" class="detail-label"></label>
-                                    <input type="text" id="owner-cccd" class="detail-input" placeholder="Nhập số CCCD/CMND" maxlength="12">
+                                    <input asp-for="Owner.CCCD" type="text" id="owner-cccd" class="detail-input" placeholder="Nhập số CCCD/CMND" maxlength="12">
                                     <span asp-validation-for="Owner.CCCD" class="text-danger"></span>
                                 </div>
                             </div>
@@ -99,12 +99,12 @@
                             <div class="detail-row" id="company-info" style="display: none;">
                                 <div class="detail-item">
                                     <label asp-for="Owner.CompanyName" class="detail-label"></label>
-                                    <input type="text" id="owner-company" class="detail-input" placeholder="Nhập tên công ty">
+                                    <input asp-for="Owner.CompanyName" type="text" id="owner-company" class="detail-input" placeholder="Nhập tên công ty">
                                     <span asp-validation-for="Owner.CompanyName" class="text-danger"></span>
                                 </div>
                                 <div class="detail-item">
                                     <label asp-for="Owner.TaxCode" class="detail-label"></label>
-                                    <input type="text" id="owner-taxcode" class="detail-input" placeholder="Nhập mã số thuế">
+                                    <input asp-for="Owner.TaxCode" type="text" id="owner-taxcode" class="detail-input" placeholder="Nhập mã số thuế">
                                     <span asp-validation-for="Owner.TaxCode" class="text-danger"></span>
                                 </div>
                             </div>
@@ -112,12 +112,12 @@
                             <div class="detail-row">
                                 <div class="detail-item">
                                     <label asp-for="Owner.Email" class="detail-label"></label>
-                                    <input type="email" id="owner-email" class="detail-input" placeholder="Nhập email">
+                                    <input asp-for="Owner.Email" type="email" id="owner-email" class="detail-input" placeholder="Nhập email">
                                     <span asp-validation-for="Owner.Email" class="text-danger"></span>
                                 </div>
                                 <div class="detail-item">
                                     <label asp-for="Owner.Phone" class="detail-label"></label>
-                                    <input type="text" id="owner-phone2" class="detail-input" placeholder="Nhập số điện thoại" maxlength="20">
+                                    <input asp-for="Owner.Phone" type="text" id="owner-phone2" class="detail-input" placeholder="Nhập số điện thoại" maxlength="20">
                                     <span asp-validation-for="Owner.Phone" class="text-danger"></span>
                                 </div>
                             </div>
@@ -125,12 +125,12 @@
                             <div class="detail-row">
                                 <div class="detail-item">
                                     <label asp-for="Owner.Address" class="detail-label"></label>
-                                    <input type="text" id="owner-address" class="detail-input" placeholder="Nhập địa chỉ">
+                                    <input asp-for="Owner.Address" type="text" id="owner-address" class="detail-input" placeholder="Nhập địa chỉ">
                                     <span asp-validation-for="Owner.Address" class="text-danger"></span>
                                 </div>
                                 <div class="detail-item">
                                     <label asp-for="Owner.Province" class="detail-label"></label>
-                                    <select id="owner-province" class="detail-input form-select">
+                                    <select asp-for="Owner.Province" id="owner-province" class="detail-input form-select">
                                         <option value="">-- Chọn Tỉnh/Thành phố --</option>
                                     </select>
                                     <span asp-validation-for="Owner.Province" class="text-danger"></span>
@@ -140,7 +140,7 @@
                             <div class="detail-row">
                                 <div class="detail-item">
                                     <label asp-for="Owner.Ward" class="detail-label"></label>
-                                    <select id="owner-ward" class="detail-input form-select" disabled>
+                                    <select asp-for="Owner.Ward" id="owner-ward" class="detail-input form-select" disabled>
                                         <option value="">-- Chọn Phường/Xã --</option>
                                     </select>
                                     <span asp-validation-for="Owner.Ward" class="text-danger"></span>
@@ -150,548 +150,6 @@
                                     <input type="text" id="owner-created" class="detail-input" readonly>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== SECTION 2: VEHICLE INFO ==================== -->
-            <div class="vehicle-info-card">
-                <div class="vehicle-card-header">
-                    <i class="bi bi-car-front"></i>
-                    <h2>Thông tin phương tiện</h2>
-                </div>
-                <div class="vehicle-card-body">
-                    <input type="hidden" id="vehicle-id" />
-
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-card-heading"></i>
-                                <label asp-for="Vehicle.PlateNo"></label>
-                            </div>
-                            <input type="text" id="vehicle-plate" class="vehicle-input" placeholder="VD: 51A-12345">
-                            <span asp-validation-for="Vehicle.PlateNo" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-file-text"></i>
-                                <label asp-for="Vehicle.InspectionNo"></label>
-                            </div>
-                            <input type="text" id="vehicle-inspection" class="vehicle-input" placeholder="Số quản lý">
-                            <span asp-validation-for="Vehicle.InspectionNo" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-collection"></i>
-                                <label asp-for="Vehicle.VehicleGroup"></label>
-                            </div>
-                            <input type="text" id="vehicle-group" class="vehicle-input" placeholder="Nhóm phương tiện">
-                            <span asp-validation-for="Vehicle.VehicleGroup" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-tag"></i>
-                                <label asp-for="Vehicle.VehicleType"></label>
-                            </div>
-                            <select id="vehicle-type" class="vehicle-input form-select">
-                                <option value="">-- Chọn loại phương tiện --</option>
-                            </select>
-                            <span asp-validation-for="Vehicle.VehicleType" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-award"></i>
-                                <label asp-for="Vehicle.Brand"></label>
-                            </div>
-                            <input type="text" id="vehicle-brand" class="vehicle-input" placeholder="Nhãn hiệu">
-                            <span asp-validation-for="Vehicle.Brand" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-box"></i>
-                                <label asp-for="Vehicle.Model"></label>
-                            </div>
-                            <input type="text" id="vehicle-model" class="vehicle-input" placeholder="Mã kiểu loại">
-                            <span asp-validation-for="Vehicle.Model" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-gear"></i>
-                                <label asp-for="Vehicle.EngineNo"></label>
-                            </div>
-                            <input type="text" id="vehicle-engine" class="vehicle-input" placeholder="Số động cơ">
-                            <span asp-validation-for="Vehicle.EngineNo" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-hash"></i>
-                                <label asp-for="Vehicle.Chassis"></label>
-                            </div>
-                            <input type="text" id="vehicle-chassis" class="vehicle-input" placeholder="Số khung">
-                            <span asp-validation-for="Vehicle.Chassis" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-calendar"></i>
-                                <label asp-for="Vehicle.ManufactureYear"></label>
-                            </div>
-                            <input type="number" id="vehicle-year" class="vehicle-input" placeholder="Năm" min="1900" max="2100">
-                            <span asp-validation-for="Vehicle.ManufactureYear" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-globe"></i>
-                                <label asp-for="Vehicle.ManufactureCountry"></label>
-                            </div>
-                            <input type="text" id="vehicle-country" class="vehicle-input" placeholder="Nước sản xuất">
-                            <span asp-validation-for="Vehicle.ManufactureCountry" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-lightning-charge"></i>
-                                <label asp-for="Vehicle.EnergyType"></label>
-                            </div>
-                            <input type="text" id="vehicle-energy" class="vehicle-input" placeholder="Loại năng lượng">
-                            <span asp-validation-for="Vehicle.EnergyType" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-leaf"></i>
-                                <label asp-for="Vehicle.IsCleanEnergy"></label>
-                            </div>
-                            <!-- ✅ KHÔNG DÙNG asp-for cho checkbox, chỉ dùng id -->
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="vehicle-clean" name="Vehicle.IsCleanEnergy" value="1" />
-                                <input type="hidden" name="Vehicle.IsCleanEnergy" value="0" />
-                                <span class="checkmark"></span>
-                            </label>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-robot"></i>
-                                <label asp-for="Vehicle.UsagePermission"></label>
-                            </div>
-                            <input type="text" id="vehicle-usage" class="vehicle-input" placeholder="Quyền sử dụng">
-                            <span asp-validation-for="Vehicle.UsagePermission" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-hourglass"></i>
-                                <label asp-for="Vehicle.LifetimeLimitYear"></label>
-                            </div>
-                            <input type="number" id="vehicle-lifetime" class="vehicle-input" placeholder="Số năm" min="0">
-                            <span asp-validation-for="Vehicle.LifetimeLimitYear" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-tools"></i>
-                                <label asp-for="Vehicle.HasModification"></label>
-                            </div>
-                            <!-- ✅ KHÔNG DÙNG asp-for cho checkbox -->
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="vehicle-modification" name="Vehicle.HasModification" value="1" />
-                                <input type="hidden" name="Vehicle.HasModification" value="0" />
-                                <span class="checkmark"></span>
-                            </label>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <i class="bi bi-truck"></i>
-                                <label asp-for="Vehicle.HasCommercialModification"></label>
-                            </div>
-                            <!-- ✅ KHÔNG DÙNG asp-for cho checkbox -->
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="vehicle-commercial" name="Vehicle.HasCommercialModification" value="1" />
-                                <input type="hidden" name="Vehicle.HasCommercialModification" value="0" />
-                                <span class="checkmark"></span>
-                            </label>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label>Ngày tạo</label>
-                            </div>
-                            <input type="text" id="vehicle-created" class="vehicle-input" readonly>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label>Ngày cập nhật</label>
-                            </div>
-                            <input type="text" id="vehicle-updated" class="vehicle-input" readonly>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ==================== SECTION 3: SPECIFICATION INFO ==================== -->
-            <div class="vehicle-info-card">
-                <div class="vehicle-card-header">
-                    <i class="bi bi-clipboard-data"></i>
-                    <h2>Thông số kỹ thuật</h2>
-                </div>
-                <div class="vehicle-card-body">
-                    <input type="hidden" id="spec-id" />
-
-                    <h4 class="spec-section-title"><i class="bi bi-rulers"></i> Kích thước</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.WheelFormula"></label>
-                            </div>
-                            <input type="text" id="spec-wheel-formula" class="vehicle-input" placeholder="VD: 4x2">
-                            <span asp-validation-for="Specification.WheelFormula" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.WheelTread"></label>
-                            </div>
-                            <input type="number" id="spec-wheel-tread" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.WheelTread" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.Wheelbase"></label>
-                            </div>
-                            <input type="number" id="spec-wheelbase" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.Wheelbase" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.OverallLength"></label>
-                            </div>
-                            <input type="number" id="spec-length" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.OverallLength" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.OverallWidth"></label>
-                            </div>
-                            <input type="number" id="spec-width" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.OverallWidth" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.OverallHeight"></label>
-                            </div>
-                            <input type="number" id="spec-height" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.OverallHeight" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.CargoInsideLength"></label>
-                            </div>
-                            <input type="number" id="spec-cargo-length" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.CargoInsideLength" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.CargoInsideWidth"></label>
-                            </div>
-                            <input type="number" id="spec-cargo-width" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.CargoInsideWidth" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.CargoInsideHeight"></label>
-                            </div>
-                            <input type="number" id="spec-cargo-height" class="vehicle-input" placeholder="mm" min="0">
-                            <span asp-validation-for="Specification.CargoInsideHeight" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="spec-section-title"><i class="bi bi-speedometer"></i> Khối lượng</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.KerbWeight"></label>
-                            </div>
-                            <input type="number" id="spec-kerb-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
-                            <span asp-validation-for="Specification.KerbWeight" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.AuthorizedCargoWeight"></label>
-                            </div>
-                            <input type="number" id="spec-cargo-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
-                            <span asp-validation-for="Specification.AuthorizedCargoWeight" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.AuthorizedTowedWeight"></label>
-                            </div>
-                            <input type="number" id="spec-towed-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
-                            <span asp-validation-for="Specification.AuthorizedTowedWeight" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.AuthorizedTotalWeight"></label>
-                            </div>
-                            <input type="number" id="spec-total-weight" class="vehicle-input" placeholder="kg" min="0" step="0.01">
-                            <span asp-validation-for="Specification.AuthorizedTotalWeight" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="spec-section-title"><i class="bi bi-people"></i> Số người cho phép chở</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.SeatingCapacity"></label>
-                            </div>
-                            <input type="number" id="spec-seating" class="vehicle-input" placeholder="Số người" min="0">
-                            <span asp-validation-for="Specification.SeatingCapacity" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.StandingCapacity"></label>
-                            </div>
-                            <input type="number" id="spec-standing" class="vehicle-input" placeholder="Số người" min="0">
-                            <span asp-validation-for="Specification.StandingCapacity" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.LyingCapacity"></label>
-                            </div>
-                            <input type="number" id="spec-lying" class="vehicle-input" placeholder="Số người" min="0">
-                            <span asp-validation-for="Specification.LyingCapacity" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="spec-section-title"><i class="bi bi-gear-fill"></i> Động cơ</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.EngineType"></label>
-                            </div>
-                            <input type="text" id="spec-engine-type" class="vehicle-input" placeholder="VD: 4 kỳ">
-                            <span asp-validation-for="Specification.EngineType" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.EnginePosition"></label>
-                            </div>
-                            <input type="text" id="spec-engine-position" class="vehicle-input" placeholder="VD: Trước">
-                            <span asp-validation-for="Specification.EnginePosition" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.EngineModel"></label>
-                            </div>
-                            <input type="text" id="spec-engine-model" class="vehicle-input" placeholder="Model">
-                            <span asp-validation-for="Specification.EngineModel" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.EngineDisplacement"></label>
-                            </div>
-                            <input type="number" id="spec-displacement" class="vehicle-input" placeholder="cm³" min="0">
-                            <span asp-validation-for="Specification.EngineDisplacement" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.MaxPower"></label>
-                            </div>
-                            <input type="number" id="spec-max-power" class="vehicle-input" placeholder="kW" min="0" step="0.01">
-                            <span asp-validation-for="Specification.MaxPower" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.MaxPowerRPM"></label>
-                            </div>
-                            <input type="number" id="spec-max-rpm" class="vehicle-input" placeholder="v/ph" min="0">
-                            <span asp-validation-for="Specification.MaxPowerRPM" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.FuelType"></label>
-                            </div>
-                            <input type="text" id="spec-fuel-type" class="vehicle-input" placeholder="VD: Xăng, Dầu">
-                            <span asp-validation-for="Specification.FuelType" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="spec-section-title"><i class="bi bi-ev-station"></i> Động cơ điện (nếu có)</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.MotorType"></label>
-                            </div>
-                            <input type="text" id="spec-motor-type" class="vehicle-input" placeholder="Loại mô tơ">
-                            <span asp-validation-for="Specification.MotorType" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.NumberOfMotors"></label>
-                            </div>
-                            <input type="number" id="spec-motor-count" class="vehicle-input" placeholder="Số lượng" min="0">
-                            <span asp-validation-for="Specification.NumberOfMotors" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.MotorModel"></label>
-                            </div>
-                            <input type="text" id="spec-motor-model" class="vehicle-input" placeholder="Model">
-                            <span asp-validation-for="Specification.MotorModel" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.TotalMotorPower"></label>
-                            </div>
-                            <input type="number" id="spec-motor-power" class="vehicle-input" placeholder="kW" min="0" step="0.01">
-                            <span asp-validation-for="Specification.TotalMotorPower" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.MotorVoltage"></label>
-                            </div>
-                            <input type="number" id="spec-motor-voltage" class="vehicle-input" placeholder="V" min="0" step="0.01">
-                            <span asp-validation-for="Specification.MotorVoltage" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.BatteryType"></label>
-                            </div>
-                            <input type="text" id="spec-battery-type" class="vehicle-input" placeholder="Loại ắc quy">
-                            <span asp-validation-for="Specification.BatteryType" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.BatteryVoltage"></label>
-                            </div>
-                            <input type="number" id="spec-battery-voltage" class="vehicle-input" placeholder="V" min="0" step="0.01">
-                            <span asp-validation-for="Specification.BatteryVoltage" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.BatteryCapacity"></label>
-                            </div>
-                            <input type="number" id="spec-battery-capacity" class="vehicle-input" placeholder="Ah" min="0" step="0.01">
-                            <span asp-validation-for="Specification.BatteryCapacity" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="spec-section-title"><i class="bi bi-disc"></i> Lốp xe</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.TireCount"></label>
-                            </div>
-                            <input type="number" id="spec-tire-count" class="vehicle-input" placeholder="Số lượng" min="0">
-                            <span asp-validation-for="Specification.TireCount" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.TireSize"></label>
-                            </div>
-                            <input type="text" id="spec-tire-size" class="vehicle-input" placeholder="VD: 195/65R15">
-                            <span asp-validation-for="Specification.TireSize" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.TireAxleInfo"></label>
-                            </div>
-                            <input type="text" id="spec-tire-axle" class="vehicle-input" placeholder="Thông tin">
-                            <span asp-validation-for="Specification.TireAxleInfo" class="text-danger"></span>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.ImagePosition"></label>
-                            </div>
-                            <input type="text" id="spec-image-position" class="vehicle-input" placeholder="Vị trí">
-                            <span asp-validation-for="Specification.ImagePosition" class="text-danger"></span>
-                        </div>
-                    </div>
-
-                    <h4 class="spec-section-title"><i class="bi bi-check2-square"></i> Thiết bị bổ sung</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.HasTachograph"></label>
-                            </div>
-                            <!-- ✅ KHÔNG DÙNG asp-for cho checkbox -->
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="spec-tachograph" name="Specification.HasTachograph" value="1" />
-                                <input type="hidden" name="Specification.HasTachograph" value="0" />
-                                <span class="checkmark"></span>
-                            </label>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.HasDriverCamera"></label>
-                            </div>
-                            <!-- ✅ KHÔNG DÙNG asp-for cho checkbox -->
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="spec-camera" name="Specification.HasDriverCamera" value="1" />
-                                <input type="hidden" name="Specification.HasDriverCamera" value="0" />
-                                <span class="checkmark"></span>
-                            </label>
-                        </div>
-
-                        <div class="vehicle-item">
-                            <div class="vehicle-item-label">
-                                <label asp-for="Specification.NotIssuedStamp"></label>
-                            </div>
-                            <!-- ✅ KHÔNG DÙNG asp-for cho checkbox -->
-                            <label class="checkbox-container">
-                                <input type="checkbox" id="spec-no-stamp" name="Specification.NotIssuedStamp" value="1" />
-                                <input type="hidden" name="Specification.NotIssuedStamp" value="0" />
-                                <span class="checkmark"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <h4 class="spec-section-title"><i class="bi bi-chat-left-text"></i> Ghi chú</h4>
-                    <div class="vehicle-grid">
-                        <div class="vehicle-item" style="grid-column: 1 / -1;">
-                            <label asp-for="Specification.Notes"></label>
-                            <textarea id="spec-notes" class="spec-notes-textarea" rows="4" placeholder="Nhập ghi chú..."></textarea>
-                            <span asp-validation-for="Specification.Notes" class="text-danger"></span>
                         </div>
                     </div>
                 </div>

@@ -807,5 +807,6 @@ namespace Vehicle_Inspection.Service
                 throw new Exception($"Lỗi lấy danh sách loại phương tiện: {ex.Message}", ex);
             }
         }
+
     }
 }

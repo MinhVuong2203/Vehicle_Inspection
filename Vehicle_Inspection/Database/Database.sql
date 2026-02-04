@@ -236,6 +236,10 @@ ON dbo.Owner(CCCD)
 WHERE OwnerType = N'PERSON' AND CCCD IS NOT NULL;
 GO
 
+CREATE UNIQUE INDEX UX_Owner_Email
+ON dbo.Owner(Email) WHERE Email IS NOT NULL;
+GO
+
 ALTER TABLE dbo.Owner
 Add Ward NVARCHAR(100), Province NVARCHAR(100);
 
@@ -291,7 +295,13 @@ CREATE TABLE dbo.Vehicle(
 	FOREIGN KEY (VehicleTypeId) REFERENCES dbo.VehicleType(VehicleTypeId),
 	CONSTRAINT UQ_Vehicle_PlateNo UNIQUE (PlateNo)
 );
+CREATE UNIQUE INDEX UX_Vehilce_Plateno
+ON dbo.Vehicle (PlateNo) WHERE PlateNo IS NOT NULL;
+GO
 
+CREATE UNIQUE INDEX UX_Owner_Chassis 
+ON dbo.Vehicle (Chassis ) WHERE Chassis  IS NOT NULL;
+GO
 
 CREATE INDEX IX_Vehicle_PlateNo ON dbo.Vehicle(PlateNo);
 CREATE INDEX IX_Vehicle_OwnerId ON dbo.Vehicle(OwnerId);

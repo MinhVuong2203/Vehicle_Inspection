@@ -551,6 +551,7 @@ namespace Vehicle_Inspection.Controllers
             ViewBag.SearchData = result.Data;
             return View();
         }
+
     }
 }
 

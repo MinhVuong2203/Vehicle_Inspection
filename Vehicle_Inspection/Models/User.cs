@@ -74,9 +74,6 @@ public partial class User
     [InverseProperty("ReceivedByNavigation")]
     public virtual ICollection<Inspection> InspectionReceivedByNavigations { get; set; } = new List<Inspection>();
 
-    [InverseProperty("AssignedUser")]
-    public virtual ICollection<InspectionStage> InspectionStages { get; set; } = new List<InspectionStage>();
-
     [InverseProperty("User")]
     public virtual ICollection<PasswordRecovery> PasswordRecoveries { get; set; } = new List<PasswordRecovery>();
 

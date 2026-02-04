@@ -242,25 +242,27 @@ namespace Vehicle_Inspection.Service
         /// - Cùng ngày: 50%
         /// - Qua ngày: 100%
         /// </summary>
+        
         private decimal CalculateFeePercentage(DateTime originalCreatedAt)
         {
             DateTime today = DateTime.Now.Date;
             DateTime originalDate = originalCreatedAt.Date;
 
-            // Nếu ngày tạo payment gốc = ngày hiện tại → 50%
-            if (originalDate == today)
+            // Tính số ngày chênh lệch
+            int daysDifference = (today - originalDate).Days;
+
+            // Trong vòng 1-7 ngày → 50%
+            if (daysDifference >= 0 && daysDifference <= 7)
             {
                 return 0.5m;
             }
 
-            // Nếu ngày tạo payment gốc < ngày hiện tại → 100%
-            if (originalDate < today)
+            // Trên 7 ngày → 100%
+            if (daysDifference > 7)
             {
                 return 1.0m;
             }
-
-            // Trường hợp ngày tạo > ngày hiện tại (không nên xảy ra)
-            return 1.0m;
+            return 0.5m;
         }
 
         /// <summary>
@@ -292,7 +294,7 @@ namespace Vehicle_Inspection.Service
 
         //    return $"{prefix}{nextNumber:D4}"; // RCP-20250203-0001
         //}
-    
+
 
 
 

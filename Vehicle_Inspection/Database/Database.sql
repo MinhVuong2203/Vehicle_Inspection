@@ -1598,9 +1598,6 @@ CREATE TABLE dbo.InspectionStage (
     InspectionId INT NOT NULL,
     StageId INT NOT NULL,-- Công đoạn (Động cơ, Phanh, Đèn...)
     
-    -- PHÂN CÔNG KỸ THUẬT VIÊN
-    AssignedUserId UNIQUEIDENTIFIER NULL,-- KTV thực hiện (mapping UserStage)
-    
     -- TRẠNG THÁI CÔNG ĐOẠN
     Status INT NOT NULL DEFAULT 0,
     /*
@@ -1630,11 +1627,11 @@ CREATE TABLE dbo.InspectionStage (
     
     FOREIGN KEY (InspectionId) REFERENCES dbo.Inspection(InspectionId) ON DELETE CASCADE,
     FOREIGN KEY (StageId) REFERENCES dbo.Stage(StageId),
-    FOREIGN KEY (AssignedUserId) REFERENCES dbo.[User](UserId),
     CONSTRAINT CK_InspStage_Status CHECK (Status BETWEEN 0 AND 4),
     CONSTRAINT CK_InspStage_Result CHECK (StageResult IN (1,2,3) OR StageResult IS NULL),
     CONSTRAINT UQ_InspStage UNIQUE (InspectionId, StageId)
 );
+
 
 CREATE INDEX IX_InspStage_InspectionId ON dbo.InspectionStage(InspectionId);
 CREATE INDEX IX_InspStage_Status ON dbo.InspectionStage(Status);

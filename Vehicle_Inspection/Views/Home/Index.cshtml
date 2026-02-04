@@ -1,8 +1,575 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Trang chủ";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Chúc các bạn một ngày vui nhé!</p>
+@section Styles {
+    <style>
+        /* ===== CAROUSEL ===== */
+        .hero-carousel {
+            margin-bottom: 40px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .carousel-item {
+            height: 500px;
+        }
+
+            .carousel-item img {
+                object-fit: cover;
+                height: 100%;
+                width: 100%;
+            }
+
+        .carousel-caption {
+            background: rgba(0,0,0,0.6);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        /* ===== STATS CARDS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            border-left: 4px solid;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            }
+
+            .stat-card.primary {
+                border-color: #0d6efd;
+            }
+
+            .stat-card.success {
+                border-color: #198754;
+            }
+
+            .stat-card.warning {
+                border-color: #ffc107;
+            }
+
+            .stat-card.info {
+                border-color: #0dcaf0;
+            }
+
+            .stat-card.danger {
+                border-color: #dc3545;
+            }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            font-size: 24px;
+        }
+
+        .stat-card.primary .stat-icon {
+            background: rgba(13, 110, 253, 0.1);
+            color: #0d6efd;
+        }
+
+        .stat-card.success .stat-icon {
+            background: rgba(25, 135, 84, 0.1);
+            color: #198754;
+        }
+
+        .stat-card.warning .stat-icon {
+            background: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+        }
+
+        .stat-card.info .stat-icon {
+            background: rgba(13, 202, 240, 0.1);
+            color: #0dcaf0;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        /* ===== SECTION TITLES ===== */
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #0d6efd;
+            display: inline-block;
+        }
+
+        /* ===== TABLES ===== */
+        .info-table-wrapper {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 40px;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+            .info-table th,
+            .info-table td {
+                padding: 12px 16px;
+                text-align: left;
+                border: 1px solid #dee2e6;
+            }
+
+            .info-table th {
+                background: #f8f9fa;
+                font-weight: 600;
+                color: #495057;
+            }
+
+            .info-table tr:hover {
+                background: #f8f9fa;
+            }
+
+            .info-table .indent-1 {
+                padding-left: 40px;
+            }
+
+            .info-table .indent-2 {
+                padding-left: 60px;
+            }
+
+        .text-center {
+            text-align: center !important;
+        }
+
+        .text-end {
+            text-align: right !important;
+        }
+
+        /* Highlight row */
+        .info-table .highlight {
+            background: #fff3cd;
+            font-weight: 600;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 768px) {
+            .carousel-item {
+                height: 300px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 12px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .info-table-wrapper {
+                padding: 15px;
+                overflow-x: auto;
+            }
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- ===== CAROUSEL ===== -->
+    <div id="centerCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
+        <div class="carousel-indicators">
+            <button type="button" data-bs-target="#centerCarousel" data-bs-slide-to="0" class="active"></button>
+            <button type="button" data-bs-target="#centerCarousel" data-bs-slide-to="1"></button>
+            <button type="button" data-bs-target="#centerCarousel" data-bs-slide-to="2"></button>
+            <button type="button" data-bs-target="#centerCarousel" data-bs-slide-to="3"></button>
+        </div>
+
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="~/images/slide/p1.jpg" class="d-block w-100" alt="Trung tâm đăng kiểm">
+                <div class="carousel-caption">
+                    <h3>Trung Tâm Đăng Kiểm RAD</h3>
+                    <p>Uy tín - Chất lượng - Chuyên nghiệp</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="~/images/slide/p2.webp" class="d-block w-100" alt="Dây chuyền kiểm định">
+                <div class="carousel-caption">
+                    <h3>Dây Chuyền Kiểm Định Hiện Đại</h3>
+                    <p>Trang thiết bị đạt tiêu chuẩn quốc tế</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="~/images/slide/p3.jpg" class="d-block w-100" alt="Đội ngũ kỹ thuật viên">
+                <div class="carousel-caption">
+                    <h3>Đội Ngũ Kỹ Thuật Viên Chuyên Nghiệp</h3>
+                    <p>Được đào tạo bài bản và có chứng chỉ hành nghề</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="~/images/slide/p4.jpg" class="d-block w-100" alt="Khu vực chờ">
+                <div class="carousel-caption">
+                    <h3>Khu Vực Chờ Tiện Nghi</h3>
+                    <p>Phục vụ khách hàng chu đáo, tận tình</p>
+                </div>
+            </div>
+            <div class="carousel-item">
+                <img src="~/images/slide/p5.webp" class="d-block w-100" alt="Khu vực chờ">
+                <div class="carousel-caption">
+                    <h3>Khu Vực Chờ Tiện Nghi</h3>
+                    <p>Phục vụ khách hàng chu đáo, tận tình</p>
+                </div>
+            </div>
+        </div>
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#centerCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+            <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#centerCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+            <span class="visually-hidden">Next</span>
+        </button>
+    </div>
+
+    <!-- ===== THỐNG KÊ ===== -->
+    <h2 class="section-title">
+        <i class="fas fa-chart-line me-2"></i>
+        Thống Kê Hôm Nay
+    </h2>
+
+    <div class="stats-grid">
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-clipboard-list"></i>
+            </div>
+            <div class="stat-value">@ViewBag.Stats.TodayInspections</div>
+            <div class="stat-label">Đơn kiểm định hôm nay</div>
+        </div>
+
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-value">@ViewBag.Stats.CompletedToday</div>
+            <div class="stat-label">Đã hoàn thành hôm nay</div>
+        </div>
+
+        <div class="stat-card info">
+            <div class="stat-icon">
+                <i class="fas fa-car"></i>
+            </div>
+            <div class="stat-value">@ViewBag.Stats.TotalVehicles</div>
+            <div class="stat-label">Tổng số phương tiện</div>
+        </div>
+
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-clipboard-check"></i>
+            </div>
+            <div class="stat-value">@ViewBag.Stats.TotalInspections</div>
+            <div class="stat-label">Tổng đơn kiểm định</div>
+        </div>
+
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-value">@ViewBag.Stats.ActiveEmployees</div>
+            <div class="stat-label">Nhân viên hoạt động</div>
+        </div>
+    </div>
+
+    <!-- ===== BẢNG CHU KỲ KIỂM ĐỊNH ===== -->
+    <div class="info-table-wrapper">
+        <h2 class="section-title">
+            <i class="fas fa-calendar-alt me-2"></i>
+            Bảng Chu Kỳ Kiểm Định
+        </h2>
+
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th width="5%">TT</th>
+                    <th width="60%">Loại phương tiện</th>
+                    <th width="15%" class="text-center">Chu kỳ đầu<br />(tháng)</th>
+                    <th width="20%" class="text-center">Chu kỳ định kỳ<br />(tháng)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- 1. Ô tô chở người đến 08 chỗ (không kể chỗ của người của lái xe) không kinh doanh vận tải -->
+                <tr class="highlight">
+                    <td>1</td>
+                    <td>Ô tô chở người đến 08 chỗ (không kể chỗ của người của lái xe) không kinh doanh vận tải</td>
+                    <td class="text-center">36</td>
+                    <td class="text-center">-</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">1.1 Thời gian sản xuất đến 07 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">24</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">1.2 Thời gian sản xuất trên 07 năm đến 20 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">12</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">1.3 Thời gian sản xuất trên 20 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">06</td>
+                </tr>
+
+                <!-- 2. Ô tô chở người các loại đến 08 chỗ có kinh doanh vận tải -->
+                <tr class="highlight">
+                    <td>2</td>
+                    <td>Ô tô chở người các loại đến 08 chỗ (không kể chỗ của người của lái xe) có kinh doanh vận tải</td>
+                    <td class="text-center">24</td>
+                    <td class="text-center">-</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">2.1 Thời gian sản xuất đến 05 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">12</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">2.2 Thời gian sản xuất trên 05 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">06</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">2.3 Cơ cải tạo</td>
+                    <td class="text-center">12</td>
+                    <td class="text-center">06</td>
+                </tr>
+
+                <!-- 3. Ô tô chở người các loại trên 08 chỗ và ô tô chở người chuyên dùng -->
+                <tr class="highlight">
+                    <td>3</td>
+                    <td>Ô tô chở người các loại trên 08 chỗ (không kể chỗ của người của lái xe) và ô tô chở người chuyên dùng</td>
+                    <td class="text-center">24</td>
+                    <td class="text-center">-</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">3.1 Thời gian sản xuất đến 05 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">12</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">3.2 Thời gian sản xuất trên 05 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">06</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">3.3 Cơ cải tạo</td>
+                    <td class="text-center">12</td>
+                    <td class="text-center">06</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-2">3.4 Ô tô chở người các loại trên 08 chỗ (không kể chỗ của người của lái xe), đã sản xuất từ 15 năm trở lên (kể cả ô tô chở người trên 08 chỗ (không kể chỗ của người của lái xe) đã cải tạo thành ô tô chở người đến 08 chỗ (không kể chỗ của người của lái xe))</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">03</td>
+                </tr>
+
+                <!-- 4. Ô tô tải các loại -->
+                <tr class="highlight">
+                    <td>4</td>
+                    <td>Ô tô tải các loại, ô tô chuyên dùng, ô tô đầu kéo, rơ moóc, sơmi rơ moóc</td>
+                    <td class="text-center">24</td>
+                    <td class="text-center">-</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">4.1 Ô tô tải các loại, ô tô chuyên dùng, ô tô đầu kéo có thời gian sản xuất đến 07 năm; rơ moóc, sơmi rơ moóc có thời gian sản xuất đến 12 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">12</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">4.2 Ô tô tải các loại, ô tô chuyên dùng, ô tô đầu kéo có thời gian sản xuất trên 07 năm; rơ moóc, sơmi rơ moóc có thời gian sản xuất trên 12 năm</td>
+                    <td class="text-center">-</td>
+                    <td class="text-center">06</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">4.3 Cơ cải tạo</td>
+                    <td class="text-center">12</td>
+                    <td class="text-center">06</td>
+                </tr>
+
+                <!-- 5-8 -->
+                <tr class="highlight">
+                    <td>5</td>
+                    <td>Xe chở người bốn bánh có gắn động cơ</td>
+                    <td class="text-center">18</td>
+                    <td class="text-center">12</td>
+                </tr>
+                <tr class="highlight">
+                    <td>6</td>
+                    <td>Xe chở hàng bốn bánh có gắn động cơ</td>
+                    <td class="text-center">12</td>
+                    <td class="text-center">06</td>
+                </tr>
+                <tr class="highlight">
+                    <td>7</td>
+                    <td>Xe máy chuyên dùng</td>
+                    <td class="text-center">18</td>
+                    <td class="text-center">12</td>
+                </tr>
+
+                <!-- 8. Xe mô tô -->
+                <tr class="highlight">
+                    <td>8</td>
+                    <td>Xe mô tô, xe gắn máy</td>
+                    <td colspan="2" class="text-center">Chu kỳ kiểm định (tháng)</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">8.1 Thời gian sản xuất đến 05 năm</td>
+                    <td colspan="2" class="text-center">60</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">8.2 Thời gian sản xuất trên 05 năm đến 12 năm</td>
+                    <td colspan="2" class="text-center">24</td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td class="indent-1">8.3 Thời gian sản xuất trên 12 năm</td>
+                    <td colspan="2" class="text-center">12</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- ===== BẢNG PHÍ KIỂM ĐỊNH ===== -->
+    <div class="info-table-wrapper">
+        <h2 class="section-title">
+            <i class="fas fa-money-bill-wave me-2"></i>
+            Bảng Phí Kiểm Định
+        </h2>
+
+        <table class="info-table">
+            <thead>
+                <tr>
+                    <th width="10%" class="text-center">TT</th>
+                    <th width="70%">Loại xe cơ giới</th>
+                    <th width="20%" class="text-end">Mức giá (VNĐ)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-center">1</td>
+                    <td>Xe ô tô tải có khối lượng hàng chuyển chở cho phép tham gia giao thông trên 20 tấn, xe ô tô đầu kéo có khối lượng kéo theo cho phép tham gia giao thông trên 20 tấn và các loại xe ô tô chuyên dùng</td>
+                    <td class="text-end">670,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">2</td>
+                    <td>Xe ô tô tải có khối lượng hàng chuyển chở cho phép tham gia giao thông trên 7 tấn đến 20 tấn, xe ô tô đầu kéo có khối lượng kéo theo cho phép tham gia giao thông đến 20 tấn và các loại máy kéo</td>
+                    <td class="text-end">360,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">3</td>
+                    <td>Xe ô tô tải có khối lượng hàng chuyển chở cho phép tham gia giao thông trên 2 tấn đến 7 tấn</td>
+                    <td class="text-end">330,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">4</td>
+                    <td>Xe ô tô tải có khối lượng hàng chuyển chở cho phép tham gia giao thông đến 2 tấn</td>
+                    <td class="text-end">290,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">5</td>
+                    <td>Máy kéo, xe chở hàng bốn bánh có gắn động cơ, xe chở người bốn bánh có gắn động cơ và các loại phương tiện vận chuyển tương tự</td>
+                    <td class="text-end">190,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">6</td>
+                    <td>Rơ moóc, sơ mi rơ moóc</td>
+                    <td class="text-end">190,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">7</td>
+                    <td>Xe ô tô chở người trên 40 ghế (kể cả lái xe), xe buýt</td>
+                    <td class="text-end">360,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">8</td>
+                    <td>Xe ô tô chở người từ 25 đến 40 ghế (kể cả lái xe)</td>
+                    <td class="text-end">330,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">9</td>
+                    <td>Xe ô tô chở người từ 10 ghế đến 24 ghế (kể cả lái xe)</td>
+                    <td class="text-end">290,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">10</td>
+                    <td>Xe ô tô chở người dưới 10 chỗ ngồi, xe ô tô cứu thương</td>
+                    <td class="text-end">250,000</td>
+                </tr>
+                <tr>
+                    <td class="text-center">11</td>
+                    <td>Xe ba bánh và các loại phương tiện vận chuyển tương tự</td>
+                    <td class="text-end">110,000</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="mt-3">
+            <p class="text-muted mb-1"><em>Lưu ý:</em></p>
+            <ul class="text-muted">
+                <li>Mức phí trên chưa bao gồm VAT và các chi phí phát sinh khác</li>
+                <li>Phí cấp giấy chứng nhận và tem kiểm định tính riêng</li>
+                <li>Liên hệ trực tiếp với Trung tâm để biết thêm chi tiết</li>
+            </ul>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        // Auto play carousel
+        var carousel = new bootstrap.Carousel(document.getElementById('centerCarousel'), {
+            interval: 5000,
+            ride: 'carousel'
+        });
+    </script>
+}

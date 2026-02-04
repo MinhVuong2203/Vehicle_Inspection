@@ -159,8 +159,6 @@ public partial class VehInsContext : DbContext
 
             entity.Property(e => e.IsRequired).HasDefaultValue(true);
 
-            entity.HasOne(d => d.AssignedUser).WithMany(p => p.InspectionStages).HasConstraintName("FK__Inspectio__Assig__662B2B3B");
-
             entity.HasOne(d => d.Inspection).WithMany(p => p.InspectionStages).HasConstraintName("FK__Inspectio__Inspe__6442E2C9");
 
             entity.HasOne(d => d.Stage).WithMany(p => p.InspectionStages)

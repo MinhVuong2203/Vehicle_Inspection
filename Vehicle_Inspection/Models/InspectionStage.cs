@@ -17,8 +17,6 @@ public partial class InspectionStage
 
     public int StageId { get; set; }
 
-    public Guid? AssignedUserId { get; set; }
-
     public int Status { get; set; }
 
     public int? StageResult { get; set; }
@@ -29,10 +27,6 @@ public partial class InspectionStage
     public int SortOrder { get; set; }
 
     public bool IsRequired { get; set; }
-
-    [ForeignKey("AssignedUserId")]
-    [InverseProperty("InspectionStages")]
-    public virtual User? AssignedUser { get; set; }
 
     [ForeignKey("InspectionId")]
     [InverseProperty("InspectionStages")]

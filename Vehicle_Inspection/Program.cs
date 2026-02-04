@@ -12,6 +12,8 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddDbContext<VehInsContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("VehicleDb")));
 
+builder.Services.AddControllersWithViews()
+    .AddDataAnnotationsLocalization();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
 {

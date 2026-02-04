@@ -145,7 +145,7 @@ namespace Vehicle_Inspection.Service
         /// <summary>
         /// Tìm kiếm thông tin theo CCCD hoặc Biển số
         /// </summary>
-        public async Task<SearchResponse?> SearchAsync(string? cccd, string? plateNo)
+        public async Task<SearchResponse?> SearchAsync(string? cccd, string? plateNo, string? taxCode = null)
         {
             try
             {
@@ -154,14 +154,25 @@ namespace Vehicle_Inspection.Service
                 Specification? specification = null;
                 string searchType = "";
 
-                // ✅ TH1: Có cả CCCD và Biển số (người đi đăng kiểm khác chủ xe)
-                if (!string.IsNullOrWhiteSpace(cccd) && !string.IsNullOrWhiteSpace(plateNo))
+                // ✅ TH1: Có cả (CCCD hoặc TaxCode) VÀ Biển số (người đi đăng kiểm khác chủ xe)
+                if ((!string.IsNullOrWhiteSpace(cccd) || !string.IsNullOrWhiteSpace(taxCode))
+                    && !string.IsNullOrWhiteSpace(plateNo))
                 {
-                    Console.WriteLine("🔍 Tìm kiếm kết hợp: CCCD + Biển số");
+                    Console.WriteLine("🔍 Tìm kiếm kết hợp: (CCCD/MST) + Biển số");
 
-                    // Tìm Owner theo CCCD
-                    owner = await _context.Owners
-                        .FirstOrDefaultAsync(o => o.CCCD == cccd);
+                    // Tìm Owner theo CCCD hoặc TaxCode
+                    if (!string.IsNullOrWhiteSpace(cccd))
+                    {
+                        owner = await _context.Owners
+                            .FirstOrDefaultAsync(o => o.CCCD == cccd && o.OwnerType == "PERSON");
+                        searchType = "combined_cccd";
+                    }
+                    else if (!string.IsNullOrWhiteSpace(taxCode))
+                    {
+                        owner = await _context.Owners
+                            .FirstOrDefaultAsync(o => o.TaxCode == taxCode && o.OwnerType == "COMPANY");
+                        searchType = "combined_taxcode";
+                    }
 
                     // Tìm Vehicle theo Biển số
                     vehicle = await _context.Vehicles
@@ -174,17 +185,28 @@ namespace Vehicle_Inspection.Service
                         specification = await _context.Specifications
                             .FirstOrDefaultAsync(s => s.PlateNo == vehicle.PlateNo);
                     }
-
-                    searchType = "combined"; // ✅ Loại tìm kiếm kết hợp
                 }
-                // ✅ TH2: Chỉ có CCCD
-                else if (!string.IsNullOrWhiteSpace(cccd))
+                // ✅ TH2: Chỉ có CCCD hoặc TaxCode
+                else if (!string.IsNullOrWhiteSpace(cccd) || !string.IsNullOrWhiteSpace(taxCode))
                 {
-                    Console.WriteLine("🔍 Tìm kiếm theo CCCD");
+                    // Tìm theo CCCD (Cá nhân)
+                    if (!string.IsNullOrWhiteSpace(cccd))
+                    {
+                        Console.WriteLine("🔍 Tìm kiếm theo CCCD");
+                        owner = await _context.Owners
+                            .FirstOrDefaultAsync(o => o.CCCD == cccd && o.OwnerType == "PERSON");
+                        searchType = "cccd";
+                    }
+                    // Tìm theo TaxCode (Công ty)
+                    else if (!string.IsNullOrWhiteSpace(taxCode))
+                    {
+                        Console.WriteLine("🔍 Tìm kiếm theo Mã số thuế");
+                        owner = await _context.Owners
+                            .FirstOrDefaultAsync(o => o.TaxCode == taxCode && o.OwnerType == "COMPANY");
+                        searchType = "taxCode";
+                    }
 
-                    owner = await _context.Owners
-                        .FirstOrDefaultAsync(o => o.CCCD == cccd);
-
+                    // Tìm Vehicle và Specification liên quan đến Owner
                     if (owner != null)
                     {
                         vehicle = await _context.Vehicles
@@ -197,14 +219,11 @@ namespace Vehicle_Inspection.Service
                                 .FirstOrDefaultAsync(s => s.PlateNo == vehicle.PlateNo);
                         }
                     }
-
-                    searchType = "cccd";
                 }
                 // ✅ TH3: Chỉ có Biển số
                 else if (!string.IsNullOrWhiteSpace(plateNo))
                 {
                     Console.WriteLine("🔍 Tìm kiếm theo Biển số");
-
                     vehicle = await _context.Vehicles
                         .Include(v => v.VehicleType)
                         .FirstOrDefaultAsync(v => v.PlateNo == plateNo);

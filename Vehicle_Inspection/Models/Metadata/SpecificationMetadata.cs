@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Vehicle_Inspection.Models.Validation;
 
-namespace Vehicle_Inspection.Models.Metadata
+namespace Vehicle_Inspection.Models
 {
     [ModelMetadataType(typeof(SpecificationMetadata))]
     [SpecificationValidation]

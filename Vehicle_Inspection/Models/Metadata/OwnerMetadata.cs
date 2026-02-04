@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations;
 using Vehicle_Inspection.Models.Validation;
 
-namespace Vehicle_Inspection.Models.Metadata
+namespace Vehicle_Inspection.Models
 {
     [ModelMetadataType(typeof(OwnerMetadata))]
     [OwnerValidation]
@@ -23,7 +23,8 @@ namespace Vehicle_Inspection.Models.Metadata
         [Required(ErrorMessage = "Họ và tên không được để trống")]
         [Display(Name = "Họ và tên")]
         [StringLength(150, MinimumLength = 2, ErrorMessage = "Họ và tên phải từ 2-150 ký tự")]
-        [RegularExpression(@"^[\p{L}\s]+$", ErrorMessage = "Họ và tên chỉ được chứa chữ cái và khoảng trắng")]
+        [RegularExpression(@"^[a-zA-ZÀ-ỹ\s]+$", ErrorMessage = "Họ và tên chỉ được chứa chữ cái và khoảng trắng")]
+
         public string FullName { get; set; }
 
         [Display(Name = "Tên công ty")]

@@ -4,7 +4,8 @@ namespace Vehicle_Inspection.Service
 {
     public interface IReceiveProfile
     {
-        Task<SearchResponse?> SearchAsync(string? cccd, string? plateNo);
+        Task<SearchResponse?> SearchAsync(string? cccd, string? plateNo, string? taxCode = null);
+
         List<string> ValidateProfile(UpdateProfileRequest request);
         Task<bool> UpdateProfileAsync(UpdateProfileRequest request, string? imageUrl);
         Task<List<string>> GetProvincesAsync();

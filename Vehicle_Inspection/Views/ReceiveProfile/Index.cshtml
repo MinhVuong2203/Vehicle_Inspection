@@ -18,15 +18,16 @@
         </div>
 
         <!-- Search by CCCD -->
+        <!-- Search by CCCD/Tax Code -->
         <div class="search-section">
             <label class="search-label">
-                <i class="bi bi-credit-card-2-front"></i> CCCD/CMND
+                <i class="bi bi-credit-card-2-front"></i> CCCD/CMND hoặc Mã số thuế
             </label>
             <input type="text"
                    id="search-cccd"
                    class="search-input"
-                   placeholder="Nhập số CCCD/CMND"
-                   maxlength="12">
+                   placeholder="Nhập CCCD (9-12 số) hoặc MST (10-13 số)"
+                   maxlength="15">
         </div>
 
         <!-- Search by Plate Number -->
@@ -139,10 +140,10 @@
                                         <span class="detail-label">CCCD/CMND</span>
                                         <input type="text" id="owner-cccd" class="detail-input" readonly>
                                     </div>
-                                    <div class="detail-item">
+                                    @* <div class="detail-item">
                                         <span class="detail-label">Số điện thoại</span>
                                         <input type="text" id="owner-phone" class="detail-input" readonly>
-                                    </div>
+                                    </div> *@
                                 </div>
 
                                 <div class="detail-row" id="company-info" style="display: none;">

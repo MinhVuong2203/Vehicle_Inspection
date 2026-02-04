@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Vehicle_Inspection.Models;
 using Vehicle_Inspection.Service;
+using Vehicle_Inspection.ViewModels;
+//using static AspNetCoreGeneratedDocument.Views_ReceiveProfile_Create;
 using static Vehicle_Inspection.Service.IReceiveProfile;
 
 namespace Vehicle_Inspection.Controllers
@@ -26,15 +29,15 @@ namespace Vehicle_Inspection.Controllers
         /// Hiển thị trang Sửa hồ sơ
         /// </summary>
         [Route("receive-profile/edit")]
-        public async Task<IActionResult> Edit([FromQuery] string? cccd, [FromQuery] string? plateNo)
+        public async Task<IActionResult> Edit([FromQuery] string? cccd, [FromQuery] string? plateNo, [FromQuery] string? taxCode)
         {
-            if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo))
+            if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo) && string.IsNullOrWhiteSpace(taxCode))
             {
                 TempData["ErrorMessage"] = "Vui lòng tìm kiếm hồ sơ trước khi chỉnh sửa";
                 return RedirectToAction("Index");
             }
 
-            var result = await _receiveProfileService.SearchAsync(cccd, plateNo);
+            var result = await _receiveProfileService.SearchAsync(cccd, plateNo, taxCode);
 
             if (result == null)
             {
@@ -52,7 +55,163 @@ namespace Vehicle_Inspection.Controllers
         [Route("receive-profile/create")]
         public IActionResult Create()
         {
-            return View();
+            // Khởi tạo ViewModel với các giá trị mặc định
+            var viewModel = new CreateProfileViewModel
+            {
+                Owner = new Owner
+                {
+                    OwnerType = "PERSON" // Giá trị mặc định
+                },
+                Vehicle = new Vehicle(),
+                Specification = new Specification()
+            };
+
+            return View(viewModel);
+        }
+
+        /// <summary>
+        /// API: Tạo mới hồ sơ Owner, Vehicle và Specification (có upload ảnh)
+        /// </summary>
+        [HttpPost]
+        [Route("api/receive-profile/create")]
+        public async Task<IActionResult> CreateProfile()
+        {
+            try
+            {
+                Console.WriteLine("=== START CREATE API ===");
+
+                // Đọc JSON từ form
+                var jsonData = Request.Form["jsonData"].ToString();
+                Console.WriteLine($"📦 JSON Data length: {jsonData?.Length ?? 0} characters");
+
+                if (string.IsNullOrWhiteSpace(jsonData))
+                {
+                    Console.WriteLine("❌ JSON Data is empty!");
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Dữ liệu không hợp lệ - JSON rỗng"
+                    });
+                }
+
+                // Parse JSON thành object
+                UpdateProfileRequest? request = null;
+                try
+                {
+                    request = System.Text.Json.JsonSerializer.Deserialize<UpdateProfileRequest>(jsonData, new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                    Console.WriteLine($"✅ Parsed JSON successfully");
+                }
+                catch (Exception parseEx)
+                {
+                    Console.WriteLine($"❌ JSON Parse Error: {parseEx.Message}");
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = $"Lỗi parse JSON: {parseEx.Message}"
+                    });
+                }
+
+                if (request == null)
+                {
+                    Console.WriteLine("❌ Request object is null after parsing");
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Dữ liệu không hợp lệ - Parse thất bại"
+                    });
+                }
+
+                Console.WriteLine($"📋 Owner Name: {request.Owner?.FullName}");
+                Console.WriteLine($"📋 Plate No: {request.Vehicle?.PlateNo}");
+
+                // Validate dữ liệu
+                var validationErrors = _receiveProfileService.ValidateProfile(request);
+                if (validationErrors.Any())
+                {
+                    Console.WriteLine($"❌ Validation errors: {string.Join(", ", validationErrors)}");
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = string.Join("<br>", validationErrors)
+                    });
+                }
+
+                // Upload ảnh (nếu có)
+                string? imageUrl = null;
+                var profilePicture = Request.Form.Files.GetFile("ProfilePicture");
+
+                if (profilePicture != null && profilePicture.Length > 0)
+                {
+                    Console.WriteLine($"📷 Uploading image: {profilePicture.FileName} ({profilePicture.Length} bytes)");
+
+                    try
+                    {
+                        var uploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "receiveprofile");
+                        if (!Directory.Exists(uploads))
+                        {
+                            Directory.CreateDirectory(uploads);
+                            Console.WriteLine($"📁 Created directory: {uploads}");
+                        }
+
+                        var fileName = $"{Guid.NewGuid()}{Path.GetExtension(profilePicture.FileName)}";
+                        var filePath = Path.Combine(uploads, fileName);
+
+                        using (var stream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await profilePicture.CopyToAsync(stream);
+                        }
+
+                        imageUrl = $"/images/receiveprofile/{fileName}";
+                        Console.WriteLine($"✅ Image saved: {imageUrl}");
+                    }
+                    catch (Exception imgEx)
+                    {
+                        Console.WriteLine($"⚠️ Image upload error: {imgEx.Message}");
+                        // Tiếp tục xử lý dù upload ảnh lỗi
+                    }
+                }
+
+                // Gọi service để tạo mới trong database
+                Console.WriteLine("💾 Calling CreateProfileAsync...");
+                var result = await _receiveProfileService.CreateProfileAsync(request, imageUrl);
+                Console.WriteLine($"✅ Create result: {result}");
+
+                if (result)
+                {
+                    return Ok(new
+                    {
+                        success = true,
+                        message = "Tạo mới hồ sơ thành công",
+                        imageUrl = imageUrl
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Không thể tạo mới hồ sơ"
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"💥 EXCEPTION: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                }
+
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi tạo mới",
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message
+                });
+            }
         }
 
         /// <summary>
@@ -60,20 +219,20 @@ namespace Vehicle_Inspection.Controllers
         /// </summary>
         [HttpGet]
         [Route("api/receive-profile/search")]
-        public async Task<IActionResult> Search([FromQuery] string? cccd, [FromQuery] string? plateNo)
+        public async Task<IActionResult> Search([FromQuery] string? cccd, [FromQuery] string? plateNo, [FromQuery] string? taxCode)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo))
+                if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo) && string.IsNullOrWhiteSpace(taxCode))
                 {
                     return BadRequest(new
                     {
                         success = false,
-                        message = "Vui lòng nhập CCCD hoặc Biển số xe"
+                        message = "Vui lòng nhập CCCD/MST hoặc Biển số xe"
                     });
                 }
 
-                var result = await _receiveProfileService.SearchAsync(cccd, plateNo);
+                var result = await _receiveProfileService.SearchAsync(cccd, plateNo, taxCode);
 
                 if (result == null)
                 {
@@ -84,12 +243,18 @@ namespace Vehicle_Inspection.Controllers
                     });
                 }
 
+                string message = result.SearchType switch
+                {
+                    "cccd" => "Tìm kiếm thành công theo CCCD",
+                    "taxCode" => "Tìm kiếm thành công theo Mã số thuế",
+                    "plateNo" => "Tìm kiếm thành công theo biển số xe",
+                    _ => "Tìm kiếm thành công"
+                };
+
                 return Ok(new
                 {
                     success = true,
-                    message = result.SearchType == "cccd"
-                        ? "Tìm kiếm thành công theo CCCD"
-                        : "Tìm kiếm thành công theo biển số xe",
+                    message = message,
                     searchType = result.SearchType,
                     data = result.Data
                 });
@@ -367,15 +532,15 @@ namespace Vehicle_Inspection.Controllers
         /// Hiển thị trang Xét duyệt hồ sơ
         /// </summary>
         [Route("receive-profile/approve")]
-        public async Task<IActionResult> Approve([FromQuery] string? cccd, [FromQuery] string? plateNo)
+        public async Task<IActionResult> Approve([FromQuery] string? cccd, [FromQuery] string? plateNo, [FromQuery] string? taxCode)
         {
-            if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo))
+            if (string.IsNullOrWhiteSpace(cccd) && string.IsNullOrWhiteSpace(plateNo) && string.IsNullOrWhiteSpace(taxCode))
             {
                 TempData["ErrorMessage"] = "Vui lòng tìm kiếm hồ sơ trước khi xét duyệt";
                 return RedirectToAction("Index");
             }
 
-            var result = await _receiveProfileService.SearchAsync(cccd, plateNo);
+            var result = await _receiveProfileService.SearchAsync(cccd, plateNo, taxCode);
 
             if (result == null)
             {

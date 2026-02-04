@@ -3,7 +3,7 @@ let currentOwner = null;
 let currentVehicle = null;
 let currentSpecification = null;
 let currentPageMode = 'view'; // 'view', 'edit', 'create'
-let currentSearchType = null; // ✅ 'cccd' hoặc 'plateNo'
+let currentSearchType = null; // ✅ 'cccd', 'taxCode', 'plateNo', 'combined_cccd',
 
 // ========== KHỞI TẠO TRANG ==========
 async function initializePage(mode) {
@@ -53,8 +53,9 @@ async function loadDataForEdit() {
     const urlParams = new URLSearchParams(window.location.search);
     const cccd = urlParams.get('cccd');
     const plateNo = urlParams.get('plateNo');
+    const taxCode = urlParams.get('taxCode'); // ✅ Thêm taxCode
 
-    if (!cccd && !plateNo) {
+    if (!cccd && !plateNo && !taxCode) {
         showNotification('error', 'Thiếu thông tin để tải dữ liệu');
         return;
     }
@@ -66,7 +67,7 @@ async function loadDataForEdit() {
     if (dataDisplay) dataDisplay.style.display = 'none';
 
     try {
-        const url = `/api/receive-profile/search?cccd=${encodeURIComponent(cccd || '')}&plateNo=${encodeURIComponent(plateNo || '')}`;
+        const url = `/api/receive-profile/search?cccd=${encodeURIComponent(cccd || '')}&plateNo=${encodeURIComponent(plateNo || '')}&taxCode=${encodeURIComponent(taxCode || '')}`;
         console.log('📡 Loading data from:', url);
 
         const response = await fetch(url);
@@ -95,20 +96,43 @@ async function loadDataForEdit() {
 
 // ========== SEARCH FUNCTION (CHO TRANG INDEX) ==========
 async function searchProfile() {
-    const cccd = document.getElementById('search-cccd')?.value?.trim() || '';
+    const identifierInput = document.getElementById('search-cccd')?.value?.trim() || '';
     const plateNo = document.getElementById('search-plate')?.value?.trim() || '';
 
-    console.log('🔍 Search with:', { cccd, plateNo });
+    console.log('🔍 Search with identifier:', identifierInput, 'plateNo:', plateNo);
 
-    if (!cccd && !plateNo) {
-        showNotification('warning', 'Vui lòng nhập CCCD hoặc Biển số xe');
+    if (!identifierInput && !plateNo) {
+        showNotification('warning', 'Vui lòng nhập CCCD/MST hoặc Biển số xe');
         return;
     }
 
-    // ✅ Cho phép nhập cả 2:
-    // - Chỉ CCCD: Hiển thị thông tin người đi đăng kiểm
-    // - Chỉ Biển số: Hiển thị thông tin xe + thông số kỹ thuật
-    // - Cả hai: Hiển thị cả 3 (người đi đăng kiểm có thể khác chủ xe)
+    // ✅ Tự động phân biệt CCCD vs Tax Code
+    let cccd = '';
+    let taxCode = '';
+
+    if (identifierInput) {
+        // Loại bỏ ký tự đặc biệt, chỉ giữ số
+        const cleanInput = identifierInput.replace(/[^0-9]/g, '');
+
+        console.log('🔢 Clean input:', cleanInput, 'Length:', cleanInput.length);
+
+        // ✅ Phân loại dựa vào độ dài
+        if (cleanInput.length === 9 || cleanInput.length === 12) {
+            // CCCD: chỉ nhận 9 hoặc 12 số
+            cccd = cleanInput;
+            console.log('✅ Detected as CCCD:', cccd);
+        }
+        else if (cleanInput.length >= 10 && cleanInput.length <= 13) {
+            // Tax Code: 10-13 số
+            taxCode = cleanInput;
+            console.log('✅ Detected as Tax Code:', taxCode);
+        }
+        else {
+            // Ngoài phạm vi
+            showNotification('warning', 'CCCD phải có 9 hoặc 12 chữ số. Mã số thuế phải có 10-13 chữ số');
+            return;
+        }
+    }
 
     const noDataState = document.getElementById('no-data-state');
     const loadingState = document.getElementById('loading-state');
@@ -119,7 +143,7 @@ async function searchProfile() {
     if (dataDisplay) dataDisplay.style.display = 'none';
 
     try {
-        const url = `/api/receive-profile/search?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}`;
+        const url = `/api/receive-profile/search?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}&taxCode=${encodeURIComponent(taxCode)}`;
         console.log('📡 Request URL:', url);
 
         const response = await fetch(url);
@@ -133,13 +157,11 @@ async function searchProfile() {
             currentOwner = data.data.owner;
             currentVehicle = data.data.vehicle;
             currentSpecification = data.data.specification;
-            currentSearchType = data.searchType; // ✅ 'cccd' hoặc 'plateNo'
+            currentSearchType = data.searchType;
 
             if (dataDisplay) dataDisplay.style.display = 'block';
 
-            // ✅ Hiển thị theo loại tìm kiếm
             displayDataBySearchType(data.searchType);
-
             await populateForm(data.data);
             showNotification('success', data.message);
         } else {
@@ -162,9 +184,9 @@ function displayDataBySearchType(searchType) {
     const vehicleCards = document.querySelectorAll('.vehicle-info-card');
     const actionButtons = document.querySelector('.action-buttons');
 
-    if (searchType === 'cccd') {
-        // ✅ CHỈ CCCD: Chỉ hiển thị thông tin người đi đăng kiểm
-        console.log('👤 Showing OWNER info only');
+    if (searchType === 'cccd' || searchType === 'taxCode') {
+        // ✅ CHỈ CCCD/TAXCODE: Chỉ hiển thị thông tin chủ sở hữu
+        console.log('👤 Showing OWNER info only (CCCD or TaxCode)');
         if (ownerCard) ownerCard.style.display = 'block';
         vehicleCards.forEach(card => card.style.display = 'none');
 
@@ -174,9 +196,8 @@ function displayDataBySearchType(searchType) {
         if (ownerCard) ownerCard.style.display = 'none';
         vehicleCards.forEach(card => card.style.display = 'block');
 
-    } else if (searchType === 'combined') {
-        // ✅ CẢ HAI: Hiển thị đầy đủ 3 sections
-        // Người đi đăng kiểm có thể khác chủ xe
+    } else if (searchType === 'combined_cccd' || searchType === 'combined_taxcode') {
+        // ✅ KẾT HỢP: Hiển thị đầy đủ 3 sections
         console.log('📋 Showing ALL sections (Owner + Vehicle + Specification)');
         if (ownerCard) ownerCard.style.display = 'block';
         vehicleCards.forEach(card => card.style.display = 'block');
@@ -193,13 +214,23 @@ async function populateForm(data) {
 
     // ✅ POPULATE DỮ LIỆU THEO LOẠI TÌM KIẾM
 
-    // Populate Owner data (nếu tìm theo CCCD hoặc combined)
-    if ((currentSearchType === 'cccd' || currentSearchType === 'combined') && data.owner) {
+    // Populate Owner data (nếu tìm theo CCCD/TaxCode hoặc combined)
+    if ((currentSearchType === 'cccd' ||
+        currentSearchType === 'taxCode' ||
+        currentSearchType === 'combined_cccd' ||
+        currentSearchType === 'combined_taxcode') && data.owner) {
+
         console.log('👤 Populating OWNER data...');
         setFieldValue('owner-id', data.owner.ownerId);
         setFieldValue('owner-fullname', data.owner.fullName);
-        setFieldValue('owner-type', data.owner.ownerType === 'PERSON' ? 'Cá nhân' : 'Công ty');
+
+        // ✅ Set owner type và toggle display
+        const ownerTypeValue = data.owner.ownerType || 'PERSON';
+        setFieldValue('owner-type', ownerTypeValue);
+
         setFieldValue('owner-cccd', data.owner.cccd);
+        setFieldValue('owner-taxcode', data.owner.taxCode);
+        setFieldValue('owner-company', data.owner.companyName);
 
         const phoneValue = data.owner.phone || '';
         setFieldValue('owner-phone', phoneValue);
@@ -207,15 +238,14 @@ async function populateForm(data) {
 
         setFieldValue('owner-email', data.owner.email);
         setFieldValue('owner-address', data.owner.address);
-        setFieldValue('owner-company', data.owner.companyName);
-        setFieldValue('owner-taxcode', data.owner.taxCode);
         setFieldValue('owner-province', data.owner.province);
         setFieldValue('owner-ward', data.owner.ward);
 
         const createdAt = data.owner.createdAt ? new Date(data.owner.createdAt).toLocaleString('vi-VN') : '';
         setFieldValue('owner-created', createdAt);
 
-        toggleOwnerType(data.owner.ownerType);
+        // ✅ Toggle hiển thị theo loại chủ sở hữu
+        toggleOwnerType(ownerTypeValue);
 
         if (data.owner.imageUrl) {
             displayOwnerImage(data.owner.imageUrl);
@@ -224,7 +254,10 @@ async function populateForm(data) {
     }
 
     // Populate Vehicle data (nếu tìm theo plateNo hoặc combined)
-    if ((currentSearchType === 'plateNo' || currentSearchType === 'combined') && data.vehicle) {
+    if ((currentSearchType === 'plateNo' ||
+        currentSearchType === 'combined_cccd' ||
+        currentSearchType === 'combined_taxcode') && data.vehicle) {
+
         console.log('🚗 Populating VEHICLE data...');
         setFieldValue('vehicle-id', data.vehicle.vehicleId);
         setFieldValue('vehicle-plate', data.vehicle.plateNo);
@@ -257,7 +290,10 @@ async function populateForm(data) {
     }
 
     // Populate Specification data (nếu tìm theo plateNo hoặc combined)
-    if ((currentSearchType === 'plateNo' || currentSearchType === 'combined') && data.specification) {
+    if ((currentSearchType === 'plateNo' ||
+        currentSearchType === 'combined_cccd' ||
+        currentSearchType === 'combined_taxcode') && data.specification) {
+
         console.log('⚙️ Populating SPECIFICATION data...');
         setFieldValue('spec-id', data.specification.specificationId);
         setFieldValue('spec-wheel-formula', data.specification.wheelFormula);
@@ -584,12 +620,13 @@ async function createProfile() {
 
 async function refreshCurrentData() {
     const searchCCCD = currentOwner?.cccd || '';
+    const searchTaxCode = currentOwner?.taxCode || '';
     const searchPlate = currentVehicle?.plateNo || '';
 
-    if (!searchCCCD && !searchPlate) return;
+    if (!searchCCCD && !searchTaxCode && !searchPlate) return;
 
     try {
-        const url = `/api/receive-profile/search?cccd=${encodeURIComponent(searchCCCD)}&plateNo=${encodeURIComponent(searchPlate)}`;
+        const url = `/api/receive-profile/search?cccd=${encodeURIComponent(searchCCCD)}&plateNo=${encodeURIComponent(searchPlate)}&taxCode=${encodeURIComponent(searchTaxCode)}`;
         const response = await fetch(url);
         const data = await response.json();
 
@@ -614,9 +651,10 @@ function editProfile() {
     }
 
     const cccd = currentOwner.cccd || '';
+    const taxCode = currentOwner.taxCode || '';
     const plateNo = currentVehicle.plateNo || '';
 
-    window.location.href = `/receive-profile/edit?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}`;
+    window.location.href = `/receive-profile/edit?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}&taxCode=${encodeURIComponent(taxCode)}`;
 }
 
 function approveProfile() {
@@ -627,37 +665,17 @@ function approveProfile() {
         return;
     }
 
-    const cccd = currentOwner.cccd || currentOwner.taxCode || '';
+    const cccd = currentOwner.cccd || '';
+    const taxCode = currentOwner.taxCode || '';
     const plateNo = currentVehicle.plateNo || '';
 
-    window.location.href = `/receive-profile/approve?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}`;
+    window.location.href = `/receive-profile/approve?cccd=${encodeURIComponent(cccd)}&plateNo=${encodeURIComponent(plateNo)}&taxCode=${encodeURIComponent(taxCode)}`;
 }
 
-function createNewProfile() {
-    window.location.href = '/receive-profile/create';
-}
-
-function cancelChanges() {
-    if (confirm('Bạn có chắc muốn hủy các thay đổi?')) {
-        if (currentOwner && currentVehicle) {
-            populateForm({
-                owner: currentOwner,
-                vehicle: currentVehicle,
-                specification: currentSpecification
-            });
-            showNotification('info', 'Đã hủy thay đổi');
-        }
-    }
-}
-
-function cancelCreate() {
-    if (confirm('Bạn có chắc muốn hủy tạo mới?')) {
-        window.location.href = '/receive-profile';
-    }
-}
+// ... (giữ nguyên createNewProfile)
 
 function clearSearch() {
-    setFieldValue('search-cccd', '');
+    setFieldValue('search-cccd', ''); // Input dùng chung cho CCCD/Tax Code
     setFieldValue('search-plate', '');
 
     const noDataState = document.getElementById('no-data-state');

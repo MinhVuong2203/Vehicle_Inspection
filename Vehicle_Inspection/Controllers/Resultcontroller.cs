@@ -180,61 +180,68 @@ namespace Vehicle_Inspection.Controllers
                         return new
                         {
                             stageId = stage.StageId,
-                            stageName = stage.Stage?.StageName,
-                            status = stage.Status,
-                            stageResult = stage.StageResult, // Giá trị gốc từ DB
-                            itemCount = itemCount, // Số StageItem
-                            isPassed = isPassed, // ✅ Kết quả THỰC TẾ sau khi xử lý
-                            shouldDisplay = shouldDisplay, // ✅ ẨN/HIỆN công đoạn
-                            hasNoItems = (itemCount == 0), // Flag để frontend biết
-                            isNotChecked = (stage.StageResult == null), // ✅ Chưa kiểm tra
-                            defects = stage.InspectionDefects.Select(d => new
+                            stageName = stage.Stage?.StageName ?? "N/A",
+                            isPassed = isPassed,
+                            shouldDisplay = shouldDisplay,
+                            itemCount = itemCount,
+                            defects = stage.InspectionDefects?.Select(d => new
                             {
+                                defectId = d.DefectId,
                                 defectDescription = d.DefectDescription,
-                                defectCategory = d.DefectCategory,
                                 severity = d.Severity,
-                                defectCode = d.DefectCode
+                                severityText = d.Severity switch
+                                {
+                                    1 => "Khuyết điểm",
+                                    2 => "Hư hỏng",
+                                    3 => "Nguy hiểm",
+                                    _ => "Không xác định"
+                                },
+                                category = d.DefectCategory
                             }).ToList()
                         };
-                    }).ToList();
+                    })
+                    .Where(s => s.shouldDisplay) // ✅ CHỈ TRẢ VỀ CÁC STAGE CẦN HIỂN THỊ
+                    .ToList();
 
                 // ========================================================================
-                // ✅ BƯỚC 3: TỔNG KẾT
+                // ✅ BƯỚC 3: KIỂM TRA TỔNG KẾT TOÀN BỘ
                 // ========================================================================
-                // Chỉ xét các stage ĐƯỢC HIỂN THỊ (shouldDisplay = true)
-                var displayedStages = stagesInfo.Where(s => s.shouldDisplay).ToList();
+                bool allPassed = inspection.InspectionStages.All(stage =>
+                {
+                    if (stage.StageResult == null) return true;
 
-                bool allPassed = stagesInfo.All(s => s.isPassed); // Tất cả đều phải Đạt (kể cả ẩn)
-                var failedStages = displayedStages.Where(s => !s.isPassed).ToList(); // Chỉ lấy stage hiển thị + không đạt
+                    int itemCount = stageItemCountDict.ContainsKey(stage.StageId)
+                        ? stageItemCountDict[stage.StageId]
+                        : 0;
 
-                return Ok(new
+                    if (itemCount == 0) return true;
+
+                    return stage.StageResult == 1;
+                });
+
+                Console.WriteLine($"📊 Tổng kết: {(allPassed ? "ĐẠT" : "KHÔNG ĐẠT")}");
+
+                // ========================================================================
+                // ✅ BƯỚC 4: TRẢ VỀ KẾT QUẢ
+                // ========================================================================
+                return Json(new
                 {
                     success = true,
-                    data = new
-                    {
-                        inspectionId = inspection.InspectionId,
-                        inspectionCode = inspection.InspectionCode,
-                        vehicleInfo = new
-                        {
-                            plateNo = inspection.Vehicle?.PlateNo,
-                            brand = inspection.Vehicle?.Brand,
-                            model = inspection.Vehicle?.Model
-                        },
-                        allPassed = allPassed,
-                        stages = displayedStages, // ✅ CHỈ TRẢ VỀ STAGES ĐƯỢC HIỂN THỊ
-                        allStages = stagesInfo, // Tất cả stages (nếu cần debug)
-                        failedStages = failedStages,
-                        totalDefects = displayedStages.Sum(s => s.defects.Count)
-                    }
+                    inspectionCode = inspection.InspectionCode,
+                    plateNo = inspection.Vehicle?.PlateNo ?? "N/A",
+                    vehicleInfo = $"{inspection.Vehicle?.Brand ?? ""} {inspection.Vehicle?.Model ?? ""}",
+                    allPassed = allPassed, // ✅ true hoặc false
+                    stages = stagesInfo,
+                    countRe = inspection.Count_Re
                 });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"❌ LỖI: {ex.Message}");
                 return StatusCode(500, new
                 {
                     success = false,
-                    message = "Có lỗi khi lấy chi tiết kiểm định",
-                    error = ex.Message
+                    message = "Có lỗi khi lấy thông tin hồ sơ"
                 });
             }
         }
@@ -297,7 +304,7 @@ namespace Vehicle_Inspection.Controllers
         }
 
         /// <summary>
-        /// API: Kết luận KHÔNG ĐẠT - Chuyển Status từ 4 → 6 và trả về download link
+        /// API: Kết luận KHÔNG ĐẠT - Chuyển Status từ 4 → 6 và tạo PDF
         /// </summary>
         [HttpPost]
         public async Task<IActionResult> ConcludeFailed([FromBody] ConcludeRequest request)
@@ -344,7 +351,7 @@ namespace Vehicle_Inspection.Controllers
 
                 // Tạo file PDF biên bản không đạt
                 Console.WriteLine($"📄 Bắt đầu tạo file PDF cho hồ sơ {inspection.InspectionCode}...");
-                var pdfResult = await GenerateFailedInspectionPdf(inspection);
+                var pdfResult = await GeneratePdfReport(inspection);
 
                 if (!pdfResult.Success)
                 {
@@ -370,7 +377,7 @@ namespace Vehicle_Inspection.Controllers
                         inspectionCode = inspection.InspectionCode,
                         status = inspection.Status,
                         pdfFileName = pdfResult.FileName,
-                        downloadUrl = $"/failed-reports/{pdfResult.FileName}" // ✅ THAY ĐỔI KEY
+                        downloadUrl = $"/Reports/{pdfResult.FileName}"
                     }
                 });
             }
@@ -388,10 +395,122 @@ namespace Vehicle_Inspection.Controllers
         }
 
         /// <summary>
-        /// Tạo file PDF biên bản không đạt
-        /// ✅ CHỈ LIỆT KÊ CÁC STAGE CÓ ITEM VÀ KHÔNG ĐẠT
+        /// API: Kết luận hồ sơ (Đạt hoặc Không đạt)
         /// </summary>
-        private async Task<PdfGenerationResult> GenerateFailedInspectionPdf(Inspection inspection)
+        [HttpPost]
+        public async Task<IActionResult> ConcludeInspection([FromBody] ConcludeRequest request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                Console.WriteLine($"🎯 Bắt đầu kết luận hồ sơ ID: {request.InspectionId}");
+
+                // Kiểm tra hồ sơ tồn tại
+                var inspection = await _context.Inspections
+                    .Include(i => i.InspectionStages)
+                    .FirstOrDefaultAsync(i => i.InspectionId == request.InspectionId);
+
+                if (inspection == null)
+                {
+                    Console.WriteLine($"❌ Không tìm thấy hồ sơ ID: {request.InspectionId}");
+                    return NotFound(new { success = false, message = "Không tìm thấy hồ sơ" });
+                }
+
+                // Kiểm tra trạng thái hợp lệ
+                if (inspection.Status != 4)
+                {
+                    Console.WriteLine($"❌ Hồ sơ ID {request.InspectionId} có Status không hợp lệ: {inspection.Status}");
+                    return BadRequest(new { success = false, message = "Hồ sơ chưa hoàn thành kiểm định" });
+                }
+
+                // ========================================================================
+                // ✅ TÍNH TOÁN allPassed
+                // ========================================================================
+                var stageIds = inspection.InspectionStages.Select(s => s.StageId).ToList();
+                var stageItemCountDict = await _context.StageItems
+                    .Where(si => stageIds.Contains(si.StageId))
+                    .GroupBy(si => si.StageId)
+                    .Select(g => new { StageId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.StageId, x => x.Count);
+
+                bool allPassed = inspection.InspectionStages.All(stage =>
+                {
+                    if (stage.StageResult == null) return true;
+
+                    int itemCount = stageItemCountDict.ContainsKey(stage.StageId)
+                        ? stageItemCountDict[stage.StageId]
+                        : 0;
+
+                    if (itemCount == 0) return true;
+
+                    return stage.StageResult == 1;
+                });
+
+                Console.WriteLine($"📊 Kết quả tính toán: {(allPassed ? "ĐẠT" : "KHÔNG ĐẠT")}");
+
+                // ========================================================================
+                // ✅ CẬP NHẬT HỒ SƠ
+                // ========================================================================
+                inspection.Status = (short)(allPassed ? 5 : 6); // 5 = Đạt, 6 = Không đạt
+                inspection.ConcludedAt = DateTime.Now;
+                inspection.ConcludedBy = request.UserId;
+                inspection.ConclusionNote = request.Notes;
+
+                Console.WriteLine($"✅ Đặt Status = {inspection.Status} ({(allPassed ? "Đạt" : "Không đạt")})");
+
+                // ========================================================================
+                // ✅ TẠO PDF
+                // ========================================================================
+                var pdfResult = await GeneratePdfReport(inspection);
+
+                if (!pdfResult.Success)
+                {
+                    Console.WriteLine($"❌ Không thể tạo PDF: {pdfResult.ErrorMessage}");
+                    await transaction.RollbackAsync();
+                    return StatusCode(500, new { success = false, message = $"Lỗi tạo PDF: {pdfResult.ErrorMessage}" });
+                }
+
+                Console.WriteLine($"✅ Tạo PDF thành công: {pdfResult.FilePath}");
+
+                // ========================================================================
+                // ✅ LƯU VÀO DB
+                // ========================================================================
+                _context.Inspections.Update(inspection);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                Console.WriteLine($"✅ Kết luận thành công hồ sơ ID: {request.InspectionId}");
+
+                return Json(new
+                {
+                    success = true,
+                    message = allPassed ? "Kết luận: ĐẠT" : "Kết luận: KHÔNG ĐẠT",
+                    status = inspection.Status,
+                    pdfFileName = pdfResult.FileName
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ LỖI KẾT LUẬN: {ex.Message}");
+                Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"❌ Inner exception: {ex.InnerException.Message}");
+                }
+
+                await transaction.RollbackAsync();
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = $"Có lỗi: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// ✅ HÀM TẠO PDF - SỬ DỤNG TIMES NEW ROMAN VỚI UNICODE HỖ TRỢ TIẾNG VIỆT
+        /// </summary>
+        private async Task<PdfGenerationResult> GeneratePdfReport(Inspection inspection)
         {
             var result = new PdfGenerationResult();
             Document pdfDoc = null;
@@ -400,66 +519,101 @@ namespace Vehicle_Inspection.Controllers
 
             try
             {
-                // Tạo thư mục lưu PDF nếu chưa có
-                string reportFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "failed-reports");
-                if (!Directory.Exists(reportFolder))
+                Console.WriteLine($"📝 Bắt đầu tạo PDF cho hồ sơ: {inspection.InspectionCode}");
+
+                // Tạo thư mục Reports nếu chưa tồn tại
+                string reportDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Reports");
+                if (!Directory.Exists(reportDir))
                 {
-                    Directory.CreateDirectory(reportFolder);
-                    Console.WriteLine($"📁 Đã tạo thư mục: {reportFolder}");
+                    Directory.CreateDirectory(reportDir);
+                    Console.WriteLine($"📁 Đã tạo thư mục: {reportDir}");
                 }
 
-                // Tên file PDF
-                string fileName = $"BienBan_KhongDat_{inspection.InspectionCode}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
-                string filePath = Path.Combine(reportFolder, fileName);
+                // Tạo tên file
+                string fileName = $"KetLuan_{inspection.InspectionCode}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                string filePath = Path.Combine(reportDir, fileName);
 
-                Console.WriteLine($"📝 Tạo file PDF tại: {filePath}");
+                Console.WriteLine($"📄 Đường dẫn file: {filePath}");
 
-                // Tạo document PDF
+                // Tạo document
                 pdfDoc = new Document(PageSize.A4, 50, 50, 50, 50);
-                stream = new FileStream(filePath, FileMode.Create);
+                stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None);
                 writer = PdfWriter.GetInstance(pdfDoc, stream);
                 pdfDoc.Open();
 
-                Console.WriteLine($"📄 Đã mở PDF document");
+                Console.WriteLine($"✅ Đã mở PDF document");
 
-                // Font cho tiếng Việt
-                Font titleFont, headerFont, normalFont;
+                // ========================================================================
+                // ✅ TẠO FONT TIMES NEW ROMAN VỚI UNICODE
+                // ========================================================================
 
-                // Thử load font tiếng Việt
-                string fontPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "fonts", "arial.ttf");
-                if (System.IO.File.Exists(fontPath))
+                // Tìm đường dẫn font Times New Roman trên hệ thống
+                string fontPath;
+
+                // Thử các đường dẫn phổ biến cho Times New Roman
+                if (System.IO.File.Exists(@"C:\Windows\Fonts\times.ttf"))
                 {
-                    try
-                    {
-                        // Sử dụng font tiếng Việt với encoding Unicode
-                        BaseFont bf = BaseFont.CreateFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED);
-                        titleFont = new Font(bf, 16, Font.BOLD);
-                        headerFont = new Font(bf, 12, Font.BOLD);
-                        normalFont = new Font(bf, 10, Font.NORMAL);
-                        Console.WriteLine($"✅ Đã load font tiếng Việt thành công");
-                    }
-                    catch (Exception fontEx)
-                    {
-                        Console.WriteLine($"⚠️ Lỗi load font tiếng Việt: {fontEx.Message}, sử dụng font mặc định");
-                        titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16);
-                        headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12);
-                        normalFont = FontFactory.GetFont(FontFactory.HELVETICA, 10);
-                    }
+                    fontPath = @"C:\Windows\Fonts\times.ttf";
+                }
+                else if (System.IO.File.Exists("/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf"))
+                {
+                    // Linux - Liberation Serif (tương tự Times New Roman)
+                    fontPath = "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf";
+                }
+                else if (System.IO.File.Exists("/System/Library/Fonts/Supplemental/Times New Roman.ttf"))
+                {
+                    // macOS
+                    fontPath = "/System/Library/Fonts/Supplemental/Times New Roman.ttf";
                 }
                 else
                 {
-                    // Sử dụng font mặc định
-                    titleFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 16);
-                    headerFont = FontFactory.GetFont(FontFactory.HELVETICA_BOLD, 12);
-                    normalFont = FontFactory.GetFont(FontFactory.HELVETICA, 10);
-                    Console.WriteLine($"ℹ️ Sử dụng font mặc định");
+                    // Fallback: sử dụng font hệ thống mặc định
+                    Console.WriteLine("⚠️ Không tìm thấy Times New Roman, sử dụng font mặc định");
+                    fontPath = null;
                 }
 
+                BaseFont baseFont;
+                Font headerFont;
+                Font normalFont;
+
+                if (fontPath != null && System.IO.File.Exists(fontPath))
+                {
+                    // Tạo BaseFont với encoding IDENTITY_H (Unicode)
+                    baseFont = BaseFont.CreateFont(
+                        fontPath,
+                        BaseFont.IDENTITY_H,  // Hỗ trợ Unicode đầy đủ
+                        BaseFont.EMBEDDED     // Nhúng font vào PDF
+                    );
+
+                    headerFont = new Font(baseFont, 14, Font.BOLD);
+                    normalFont = new Font(baseFont, 12, Font.NORMAL);
+
+                    Console.WriteLine($"✅ Đã tạo font Times New Roman từ: {fontPath}");
+                }
+                else
+                {
+                    // Sử dụng font Helvetica mặc định (có hỗ trợ Unicode hạn chế)
+                    baseFont = BaseFont.CreateFont(
+                        BaseFont.HELVETICA,
+                        BaseFont.IDENTITY_H,
+                        BaseFont.EMBEDDED
+                    );
+
+                    headerFont = new Font(baseFont, 14, Font.BOLD);
+                    normalFont = new Font(baseFont, 12, Font.NORMAL);
+
+                    Console.WriteLine("⚠️ Sử dụng font Helvetica");
+                }
+
+                // ========================================================================
+                // ✅ NỘI DUNG PDF
+                // ========================================================================
+
                 // Tiêu đề
-                Paragraph title = new Paragraph("BIÊN BẢN KIỂM ĐỊNH - KHÔNG ĐẠT", titleFont);
+                Paragraph title = new Paragraph("BIÊN BẢN KẾT LUẬN KIỂM ĐỊNH", headerFont);
                 title.Alignment = Element.ALIGN_CENTER;
-                title.SpacingAfter = 20;
                 pdfDoc.Add(title);
+                pdfDoc.Add(new Paragraph(" ", normalFont));
 
                 // Thông tin hồ sơ
                 pdfDoc.Add(new Paragraph($"Mã hồ sơ: {inspection.InspectionCode ?? "N/A"}", normalFont));

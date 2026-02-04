@@ -170,22 +170,33 @@ function getInputType(dataType) {
  * Get standard text cho item
  */
 function getStandardText(item) {
-    if (item.passCondition && item.minValue != null && item.maxValue != null) {
-        //return item.passCondition;
+    //Nếu có PassCondition và cả MinValue/MaxValue → dùng PassCondition
+    if (item.passCondition) {
+        return item.passCondition;
+        //return `${item.minValue} - ${item.maxValue}`;
+    }
+
+    //CẢ HAI MinValue VÀ MaxValue
+    if (item.minValue !== null && item.minValue !== undefined &&
+        item.maxValue !== null && item.maxValue !== undefined) {
         return `${item.minValue} - ${item.maxValue}`;
     }
 
-    if (item.minValue !== null && item.maxValue !== null) {
-        return `${item.minValue} - ${item.maxValue}`;
-    }
-
-    if (item.minValue !== null && item.maxValue == null) {
+    //CHỈ CÓ MinValue
+    if (item.minValue !== null && item.minValue !== undefined) {
         return `≥ ${item.minValue}`;
     }
 
-    if (item.maxValue !== null && item.minValue == null) {
+    //CHỈ CÓ MaxValue
+    if (item.maxValue !== null && item.maxValue !== undefined) {
         return `≤ ${item.maxValue}`;
     }
+
+    ////Nếu có AllowedValues
+    //if (item.allowedValues) {
+    //    const options = item.allowedValues.split(';').map(v => v.trim()).filter(v => v);
+    //    return options.join(' hoặc ');
+    //}
 
     return 'Theo quy định';
 }

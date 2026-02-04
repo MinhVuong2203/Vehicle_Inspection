@@ -266,7 +266,7 @@ namespace Vehicle_Inspection.Service
                 // 3. Lấy thông tin InspectionStage đã có (nếu có)
                 var existingStages = _context.InspectionStages
                     .Where(ins => ins.InspectionId == inspectionId)
-                    .Include(ins => ins.AssignedUser)
+                   
                     .ToDictionary(ins => ins.StageId);
 
                 var user = _context.Users
@@ -471,7 +471,7 @@ namespace Vehicle_Inspection.Service
                         StageId = ls.StageId,
                         Status = 0,  // PENDING
                         StageResult = null,
-                        AssignedUserId = null,
+                      
                         SortOrder = ls.SortOrder,
                         IsRequired = ls.IsRequired ?? true,
                         Notes = null

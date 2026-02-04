@@ -97,26 +97,26 @@ namespace Vehicle_Inspection.Service
         }
 
         // Sản lượng theo KTV
-        public async Task<dynamic> GetKtvProductionAsync(DateTime startDate, DateTime endDate)
-        {
-            return await _context.InspectionStages
-                .Where(s => s.Inspection.CreatedAt >= startDate && s.Inspection.CreatedAt <= endDate && s.AssignedUserId != null)
-                .Include(s => s.AssignedUser)
-                .GroupBy(s => new { s.AssignedUserId, s.AssignedUser.FullName })
-                .Select(g => new
-                {
-                    UserId = g.Key.AssignedUserId,
-                    FullName = g.Key.FullName,
-                    TotalStages = g.Count(),
-                    CompletedStages = g.Count(s => s.Status == 2),
-                    PassedStages = g.Count(s => s.StageResult == 1),
-                    FailedStages = g.Count(s => s.StageResult == 2),
-                    CompletionRate = g.Count() > 0 ? (decimal)g.Count(s => s.Status == 2) / g.Count() * 100 : 0
-                })
-                .OrderByDescending(x => x.TotalStages)
-                .Take(10)
-                .ToListAsync();
-        }
+        //public async Task<dynamic> GetKtvProductionAsync(DateTime startDate, DateTime endDate)
+        //{
+        //    return await _context.InspectionStages
+        //        .Where(s => s.Inspection.CreatedAt >= startDate && s.Inspection.CreatedAt <= endDate && s.AssignedUserId != null)
+        //        .Include(s => s.AssignedUser)
+        //        .GroupBy(s => new { s.AssignedUserId, s.AssignedUser.FullName })
+        //        .Select(g => new
+        //        {
+        //            UserId = g.Key.AssignedUserId,
+        //            FullName = g.Key.FullName,
+        //            TotalStages = g.Count(),
+        //            CompletedStages = g.Count(s => s.Status == 2),
+        //            PassedStages = g.Count(s => s.StageResult == 1),
+        //            FailedStages = g.Count(s => s.StageResult == 2),
+        //            CompletionRate = g.Count() > 0 ? (decimal)g.Count(s => s.Status == 2) / g.Count() * 100 : 0
+        //        })
+        //        .OrderByDescending(x => x.TotalStages)
+        //        .Take(10)
+        //        .ToListAsync();
+        //}
 
         // Top lỗi phổ biến
         public async Task<dynamic> GetTopDefectsAsync(DateTime startDate, DateTime endDate, int topCount = 10)

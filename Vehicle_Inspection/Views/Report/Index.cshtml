@@ -429,32 +429,7 @@
                                 <th>Tiến độ</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            @{
-                                int stt = 1;
-                            }
-                            @foreach (var ktv in ViewBag.KtvProduction)
-                            {
-                                <tr>
-                                    <td class="fw-bold">@stt</td>
-                                    <td>
-                                        <i class="fas fa-user-tie me-2 text-primary"></i>
-                                        @ktv.FullName
-                                    </td>
-                                    <td><span class="stat-badge badge-info">@ktv.TotalStages</span></td>
-                                    <td><span class="stat-badge badge-success">@ktv.CompletedStages</span></td>
-                                    <td><span class="stat-badge badge-success">@ktv.PassedStages</span></td>
-                                    <td><span class="stat-badge badge-danger">@ktv.FailedStages</span></td>
-                                    <td class="fw-bold">@(ktv.CompletionRate.ToString("F1"))%</td>
-                                    <td style="width: 200px;">
-                                        <div class="progress-custom">
-                                            <div class="progress-bar-custom" style="width: @(ktv.CompletionRate)%"></div>
-                                        </div>
-                                    </td>
-                                </tr>
-                                stt++;
-                            }
-                        </tbody>
+                       
                     </table>
                 </div>
             </div>

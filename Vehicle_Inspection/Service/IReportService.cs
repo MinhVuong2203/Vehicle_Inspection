@@ -14,7 +14,7 @@
 
         // Sản lượng
         Task<dynamic> GetLaneProductionAsync(DateTime startDate, DateTime endDate);
-        Task<dynamic> GetKtvProductionAsync(DateTime startDate, DateTime endDate);
+      //  Task<dynamic> GetKtvProductionAsync(DateTime startDate, DateTime endDate);
 
         // Lỗi
         Task<dynamic> GetTopDefectsAsync(DateTime startDate, DateTime endDate, int topCount = 10);

@@ -34,7 +34,7 @@ namespace Vehicle_Inspection.Controllers
             ViewBag.DailyRevenue = await _reportService.GetDailyRevenueAsync(start, end);
             ViewBag.PaymentMethods = await _reportService.GetPaymentMethodStatsAsync(start, end);
             ViewBag.LaneProduction = await _reportService.GetLaneProductionAsync(start, end);
-            ViewBag.KtvProduction = await _reportService.GetKtvProductionAsync(start, end);
+            //ViewBag.KtvProduction = await _reportService.GetKtvProductionAsync(start, end);
             ViewBag.TopDefects = await _reportService.GetTopDefectsAsync(start, end, 10);
             ViewBag.DefectsByVehicleType = await _reportService.GetDefectsByVehicleTypeAsync(start, end);
             //ViewBag.InspectionTypes = await _reportService.GetInspectionTypeStatsAsync(start, end);

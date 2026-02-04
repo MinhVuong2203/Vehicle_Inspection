@@ -301,7 +301,7 @@ namespace Vehicle_Inspection.Service
     public class SubmitInspectionResultRequest
     {
         public int InspectionId { get; set; }
-        public int FinalResult { get; set; } // 1: ĐẠT, 2: KHÔNG ĐẠT, 3: TẠM ĐÌNH CHỈ
+        public int? FinalResult { get; set; } // 1: ĐẠT, 2: KHÔNG ĐẠT, 3: TẠM ĐÌNH CHỈ
         public string? ConclusionNote { get; set; }
     }
 

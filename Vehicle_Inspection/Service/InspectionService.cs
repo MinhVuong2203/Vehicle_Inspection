@@ -649,6 +649,7 @@ namespace Vehicle_Inspection.Service
 
                 // 1. Tìm Inspection
                 var inspection = _context.Inspections
+                    .Include(i => i.Vehicle)
                     .FirstOrDefault(i => i.InspectionId == request.InspectionId && !i.IsDeleted);
 
                 if (inspection == null)
@@ -657,26 +658,75 @@ namespace Vehicle_Inspection.Service
                     return false;
                 }
 
-                // 2. Kiểm tra tất cả stages đã hoàn thành chưa
-                var allStagesCompleted = _context.InspectionStages
-                    .Where(ins => ins.InspectionId == request.InspectionId)
-                    .All(ins => ins.Status == 2); // 2 = COMPLETED
+                // ✅ 2. LẤY VehicleTypeId
+                int? vehicleTypeId = inspection.Vehicle?.VehicleTypeId;
+                Console.WriteLine($"VehicleTypeId: {vehicleTypeId}");
 
-                if (!allStagesCompleted)
+                // ✅ 3. CHỈ KIỂM TRA STAGE CÓ ITEM APPLICABLE (hasThreshold)
+                // Lấy danh sách InspectionStage cần kiểm tra
+                var requiredStageIds = _context.InspectionStages
+                    .Where(ins => ins.InspectionId == request.InspectionId)
+                    .Select(ins => new
+                    {
+                        ins.InspStageId,
+                        ins.StageId,
+                        ins.Status
+                    })
+                    .ToList();
+
+                Console.WriteLine($"Total InspectionStages: {requiredStageIds.Count}");
+
+                //LỌC STAGE CÓ ÍT NHẤT 1 ITEM CÓ THRESHOLD
+                var applicableStages = new List<dynamic>();
+
+                foreach (var stage in requiredStageIds)
                 {
-                    Console.WriteLine("Not all stages are completed");
+                    // Kiểm tra có item nào của stage này có threshold không
+                    bool hasApplicableItem = _context.StageItems
+                        .Where(si => si.StageId == stage.StageId)
+                        .Any(si => _context.StageItemThresholds
+                            .Any(t => t.ItemId == si.ItemId
+                                   && t.IsActive == true
+                                   && (t.VehicleTypeId == vehicleTypeId || t.VehicleTypeId == null)));
+
+                    if (hasApplicableItem)
+                    {
+                        applicableStages.Add(stage);
+                        Console.WriteLine($"✅ StageId {stage.StageId} is applicable (has threshold)");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"⏭️ StageId {stage.StageId} is NOT applicable (no threshold)");
+                    }
+                }
+
+                Console.WriteLine($"Applicable stages count: {applicableStages.Count}");
+
+                //4. KIỂM TRA TẤT CẢ STAGE APPLICABLE ĐÃ HOÀN THÀNH CHƯA
+                var incompleteStages = applicableStages.Where(s => s.Status != 2).ToList();
+
+                if (incompleteStages.Any())
+                {
+                    Console.WriteLine($"❌ Not all applicable stages are completed. Incomplete count: {incompleteStages.Count}");
+                    foreach (var s in incompleteStages)
+                    {
+                        Console.WriteLine($"   - InspStageId {s.InspStageId}, Status: {s.Status}");
+                    }
                     return false;
                 }
 
-                // 3. Cập nhật Inspection
-                inspection.Status = 4; // COMPLETED
+                Console.WriteLine("✅ All applicable stages are completed");
+
+                // 5. Cập nhật Inspection
                 inspection.FinalResult = request.FinalResult;
                 inspection.ConclusionNote = request.ConclusionNote;
                 inspection.CompletedAt = DateTime.Now;
+                inspection.Status = 4; // COMPLETED
 
-                // TODO: Nếu có thông tin người kết luận, cập nhật ConcludedBy và ConcludedAt
-                // inspection.ConcludedBy = userId;
-                // inspection.ConcludedAt = DateTime.Now;
+                if (request.FinalResult.HasValue)
+                {
+                    inspection.ConcludedAt = DateTime.Now;
+                }
 
                 _context.SaveChanges();
                 Console.WriteLine($"✅ Updated Inspection: Status=4, FinalResult={request.FinalResult}");

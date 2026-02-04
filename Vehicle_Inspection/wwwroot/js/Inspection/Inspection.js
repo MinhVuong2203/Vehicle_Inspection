@@ -1584,18 +1584,13 @@ function backToStages() {
     showStage(stagesData.length - 1);
 }
 
-// Hoàn thành kiểm định
+// Hoàn thành kiểm định - KHÔNG YÊU CẦU CHỌN KẾT LUẬN
 async function submitConclusion() {
-    const finalResult = document.getElementById('finalResultSelect').value;
-    const conclusionNote = document.getElementById('conclusionNote')?.value || '' ;
+    // ✅ BỎ PHẦN KIỂM TRA finalResultSelect
+    const conclusionNote = document.getElementById('conclusionNote')?.value || '';
 
-    // ✅ KIỂM TRA finalResult có được chọn không
-    if (!finalResult) {
-        alert('Vui lòng chọn kết luận cuối cùng!');
-        return;
-    }
-
-    if (!confirm('Xác nhận hoàn thành kiểm định?')) {
+    // ✅ XÁC NHẬN ĐƠN GIẢN
+    if (!confirm('Xác nhận hoàn thành kiểm định?\n\nTất cả các công đoạn đã được lưu kết quả.')) {
         return;
     }
 
@@ -1604,7 +1599,7 @@ async function submitConclusion() {
     try {
         console.log('=== Submitting Conclusion ===');
         console.log('InspectionId:', currentInspection.inspectionId);
-        console.log('FinalResult:', finalResult);
+        console.log('ConclusionNote:', conclusionNote);
 
         const response = await fetch('/Inspection/SubmitInspectionResult', {
             method: 'POST',
@@ -1614,7 +1609,7 @@ async function submitConclusion() {
             },
             body: JSON.stringify({
                 inspectionId: currentInspection.inspectionId,
-                finalResult: parseInt(finalResult),
+                finalResult: null,  // ✅ KHÔNG GỬI KẾT LUẬN
                 conclusionNote: conclusionNote
             })
         });
@@ -1622,18 +1617,20 @@ async function submitConclusion() {
         console.log('Response status:', response.status);
 
         if (!response.ok) {
-            throw new Error('Không thể lưu kết quả kiểm định');
+            const errorText = await response.text();
+            console.error('Server error:', errorText);
+            throw new Error(`Server returned ${response.status}: ${errorText}`);
         }
 
         const result = await response.json();
         console.log('Submit result:', result);
 
         if (result.success) {
-            alert('✅ Đã hoàn thành kiểm định!');
+            alert('✅ Đã hoàn thành kiểm định thành công!');
             closeInspectionProcess();
             await loadInspectionRecords();
         } else {
-            alert('❌ ' + (result.message || 'Có lỗi xảy ra'));
+            alert('❌ ' + (result.message || 'Có lỗi xảy ra khi hoàn thành kiểm định'));
         }
     } catch (error) {
         console.error('Error submitting inspection:', error);

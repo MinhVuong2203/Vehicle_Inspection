@@ -1,4 +1,5 @@
-﻿@using Vehicle_Inspection.Models
+﻿@using Microsoft.EntityFrameworkCore
+@using Vehicle_Inspection.Models
 @using System.Linq
 @inject Vehicle_Inspection.Data.VehInsContext _context
 @using System.Security.Claims
@@ -7,6 +8,16 @@
     var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
     Guid? userId = Guid.TryParse(userIdStr, out var g) ? g : (Guid?)null;
     var username = User.Identity?.Name;
+
+    // Lấy thông tin user đầy đủ
+    User? currentUser = null;
+    if (userId.HasValue)
+    {
+        currentUser = _context.Users
+            .Include(u => u.Position)
+            .Include(u => u.Team)
+            .FirstOrDefault(u => u.UserId == userId.Value);
+    }
 }
 
 <!DOCTYPE html>
@@ -21,6 +32,315 @@
     <link rel="icon" type="image/x-icon" href="@Url.Content("~/images/icon.ico")" />
 
     @RenderSection("styles", required: false)
+
+    <style>
+        /* User Profile Modal Styles */
+        .user-profile-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+        }
+
+            .user-profile-modal.active {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                animation: fadeIn 0.3s ease;
+            }
+
+        .user-profile-content {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease;
+        }
+
+        .user-profile-header {
+            background: linear-gradient(135deg, #fcba03 0%, #764ba2 100%);
+            padding: 30px;
+            text-align: center;
+            border-radius: 16px 16px 0 0;
+            position: relative;
+        }
+
+        .user-profile-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+            .user-profile-close:hover {
+                background: rgba(255,255,255,0.3);
+                transform: rotate(90deg);
+            }
+
+        .user-profile-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 5px solid white;
+            object-fit: cover;
+            margin: 0 auto 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .user-profile-name {
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .user-profile-position {
+            color: rgba(255,255,255,0.9);
+            font-size: 14px;
+        }
+
+        .user-profile-body {
+            padding: 30px;
+        }
+
+        .profile-info-group {
+            margin-bottom: 20px;
+        }
+
+        .profile-info-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+
+        .profile-info-value {
+            font-size: 15px;
+            color: #333;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+            .profile-info-value i {
+                color: #667eea;
+                width: 20px;
+            }
+
+        .profile-divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 20px 0;
+        }
+
+        .profile-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+            .profile-status.active {
+                background: rgba(16, 185, 129, 0.1);
+                color: #10b981;
+            }
+
+            .profile-status.inactive {
+                background: rgba(239, 68, 68, 0.1);
+                color: #ef4444;
+            }
+
+        .profile-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .profile-status.active .profile-status-dot {
+            background: #10b981;
+        }
+
+        .profile-status.inactive .profile-status-dot {
+            background: #ef4444;
+        }
+
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @@keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @@keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .user-profile-content {
+                width: 95%;
+                max-height: 95vh;
+            }
+
+            .user-profile-header {
+                padding: 20px;
+            }
+
+            .user-profile-avatar {
+                width: 100px;
+                height: 100px;
+            }
+
+            .user-profile-name {
+                font-size: 20px;
+            }
+
+            .user-profile-body {
+                padding: 20px;
+            }
+        }
+
+        
+
+
+        .search-results-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 8px;
+        }
+
+            .search-results-dropdown.active {
+                display: block;
+            }
+
+        .search-result-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: background 0.2s;
+        }
+
+            .search-result-item:hover {
+                background: #f8f9fa;
+            }
+
+            .search-result-item:last-child {
+                border-bottom: none;
+            }
+
+        .search-result-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+            .search-result-icon.inspection {
+                background: rgba(13, 110, 253, 0.1);
+                color: #0d6efd;
+            }
+
+            .search-result-icon.vehicle {
+                background: rgba(25, 135, 84, 0.1);
+                color: #198754;
+            }
+
+            .search-result-icon.employee {
+                background: rgba(255, 193, 7, 0.1);
+                color: #ffc107;
+            }
+
+        .search-result-content {
+            flex: 1;
+        }
+
+        .search-result-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+
+        .search-result-subtitle {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .search-no-results {
+            padding: 20px;
+            text-align: center;
+            color: #999;
+        }
+
+        .search-loading {
+            padding: 20px;
+            text-align: center;
+            color: #0d6efd;
+        }
+
+
+    </style>
 </head>
 <body>
 
@@ -32,25 +352,36 @@
                     <b class="brand text-white">TRUNG TÂM ĐĂNG KIỂM</b>
                 </div>
                 <div class="flex-grow-1 d-flex justify-content-center">
-                    <form class="w-100 d-flex justify-content-center no-loading">
-                        <div class="search-box w-75 w-sm-50">
+                    <form class="w-100 d-flex justify-content-center no-loading" onsubmit="return false;">
+                        <div class="search-box w-75 w-sm-50 position-relative">
                             <div class="input-group">
-                                <input type="text" class="form-control" placeholder="Tìm kiếm..." aria-label="Search">
-                                <button class="btn btn-outline-light" type="button">🔍</button>
+                                <input type="text"
+                                       class="form-control"
+                                       id="globalSearchInput"
+                                       placeholder="Tìm kiếm (mã kiểm định, biển số, tên nhân viên)..."
+                                       aria-label="Search"
+                                       autocomplete="off" style="font-size: 15px;">
+                                <button class="btn btn-outline-light" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
                             </div>
+
+                            <!-- Search Results Dropdown -->
+                            <div id="searchResults" class="search-results-dropdown"></div>
                         </div>
                     </form>
                 </div>
                 <div class="user-links d-flex align-items-center">
                     <b class="me-2">Welcome, @username</b>
                     <div hidden id="UserId">@userId</div>
-                    <a href="#" class="m-0">
+
+                    <!-- USER PROFILE BUTTON -->
+                    <a href="javascript:void(0)" class="m-0" onclick="openUserProfile()">
                         <div class="icon-top"><i class="fa-solid fa-circle-user fa-xl"></i></div>
                     </a>
-                    <a href="#" class="m-0">
-                        <div class="icon-top"><i class="fa-solid fa-circle-info fa-xl"></i></div>
-                    </a>
-                    <form method="post" asp-action="Logout" asp-controller="Account" style="display: inline;" class="no-loading">
+
+                 
+                    <form method="post" onsubmit="return confirm('Bạn có muốn đăng xuất?');" asp-action="Logout" asp-controller="Account" style="display: inline;" class="no-loading">
                         @Html.AntiForgeryToken()
                         <button type="submit" class="icon-top"><i class="fa-solid fa-right-from-bracket fa-xl"></i></button>
                     </form>
@@ -132,6 +463,154 @@
         </div>
     </header>
 
+    <!-- USER PROFILE MODAL -->
+    <div class="user-profile-modal" id="userProfileModal" onclick="closeUserProfileOnBackdrop(event)">
+        <div class="user-profile-content">
+            @if (currentUser != null)
+            {
+                <div class="user-profile-header">
+                    <button class="user-profile-close" onclick="closeUserProfile()">
+                        <i class="fas fa-times"></i>
+                    </button>
+
+                    <img src="@(string.IsNullOrEmpty(currentUser.ImageUrl) ? "/images/default-avatar.png" : currentUser.ImageUrl)"
+                         alt="Avatar"
+                         class="user-profile-avatar" />
+
+                    <div class="user-profile-name">@currentUser.FullName</div>
+                    <div class="user-profile-position">@currentUser.Position?.PositionName</div>
+                </div>
+
+                <div class="user-profile-body">
+                    <!-- Status -->
+                    <div class="profile-info-group">
+                        <div class="profile-info-label">Trạng thái</div>
+                        <div class="profile-info-value">
+                            <span class="profile-status @(currentUser.IsActive ? "active" : "inactive")">
+                                <span class="profile-status-dot"></span>
+                                @(currentUser.IsActive ? "Đang hoạt động" : "Không hoạt động")
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="profile-divider"></div>
+
+                    <!-- Email -->
+                    <div class="profile-info-group">
+                        <div class="profile-info-label">Email</div>
+                        <div class="profile-info-value">
+                            <i class="fas fa-envelope"></i>
+                            <span>@currentUser.Email</span>
+                        </div>
+                    </div>
+
+                    <!-- Phone -->
+                    <div class="profile-info-group">
+                        <div class="profile-info-label">Số điện thoại</div>
+                        <div class="profile-info-value">
+                            <i class="fas fa-phone"></i>
+                            <span>@currentUser.Phone</span>
+                        </div>
+                    </div>
+
+                    <!-- CCCD -->
+                    <div class="profile-info-group">
+                        <div class="profile-info-label">CCCD</div>
+                        <div class="profile-info-value">
+                            <i class="fas fa-id-card"></i>
+                            <span>@currentUser.CCCD</span>
+                        </div>
+                    </div>
+
+                    <div class="profile-divider"></div>
+
+                    <!-- Birth Date -->
+                    @if (currentUser.BirthDate.HasValue)
+                    {
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Ngày sinh</div>
+                            <div class="profile-info-value">
+                                <i class="fas fa-birthday-cake"></i>
+                                <span>@currentUser.BirthDate.Value.ToString("dd/MM/yyyy")</span>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Gender -->
+                    @if (!string.IsNullOrEmpty(currentUser.Gender))
+                    {
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Giới tính</div>
+                            <div class="profile-info-value">
+                                <i class="fas fa-venus-mars"></i>
+                                <span>@currentUser.Gender</span>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Address -->
+                    @if (!string.IsNullOrEmpty(currentUser.Address))
+                    {
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Địa chỉ</div>
+                            <div class="profile-info-value">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>@currentUser.Address, @currentUser.Ward, @currentUser.Province</span>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="profile-divider"></div>
+
+                    <!-- Team -->
+                    @if (currentUser.Team != null)
+                    {
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Đội/Nhóm</div>
+                            <div class="profile-info-value">
+                                <i class="fas fa-users"></i>
+                                <span>@currentUser.Team.TeamName</span>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Level -->
+                    @if (!string.IsNullOrEmpty(currentUser.Level))
+                    {
+                        <div class="profile-info-group">
+                            <div class="profile-info-label">Cấp bậc</div>
+                            <div class="profile-info-value">
+                                <i class="fas fa-star"></i>
+                                <span>@currentUser.Level</span>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Created At -->
+                    <div class="profile-info-group">
+                        <div class="profile-info-label">Ngày tham gia</div>
+                        <div class="profile-info-value">
+                            <i class="fas fa-calendar-plus"></i>
+                            <span>@currentUser.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="user-profile-header">
+                    <button class="user-profile-close" onclick="closeUserProfile()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="user-profile-name">Không tìm thấy thông tin</div>
+                </div>
+                <div class="user-profile-body">
+                    <p class="text-center text-muted">Vui lòng đăng nhập lại</p>
+                </div>
+            }
+        </div>
+    </div>
+
     <!-- Notification Area -->
     @if (TempData["SuccessMessage"] != null)
     {
@@ -212,6 +691,114 @@
                 setTimeout(closeNotification, 10000);
             }
         });
+
+        // ========================================
+        // USER PROFILE MODAL FUNCTIONS
+        // ========================================
+        function openUserProfile() {
+            document.getElementById('userProfileModal').classList.add('active');
+            document.body.style.overflow = 'hidden'; // Prevent scroll
+        }
+
+        function closeUserProfile() {
+            document.getElementById('userProfileModal').classList.remove('active');
+            document.body.style.overflow = ''; // Restore scroll
+        }
+
+        function closeUserProfileOnBackdrop(event) {
+            if (event.target.id === 'userProfileModal') {
+                closeUserProfile();
+            }
+        }
+
+        // Close modal with ESC key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeUserProfile();
+            }
+        });
+
+
+                // ========================================
+        // GLOBAL SEARCH
+        // ========================================
+        let searchTimeout;
+        const searchInput = document.getElementById('globalSearchInput');
+        const searchResults = document.getElementById('searchResults');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', function(e) {
+                clearTimeout(searchTimeout);
+                const query = e.target.value.trim();
+
+                if (query.length < 2) {
+                    searchResults.classList.remove('active');
+                    return;
+                }
+
+                // Debounce search
+                searchTimeout = setTimeout(() => {
+                    performGlobalSearch(query);
+                }, 300);
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+                    searchResults.classList.remove('active');
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ctrl+K or Cmd+K to focus search
+                if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+
+                // ESC to close search
+                if (e.key === 'Escape') {
+                    searchResults.classList.remove('active');
+                    searchInput.blur();
+                }
+            });
+        }
+
+        async function performGlobalSearch(query) {
+            searchResults.innerHTML = '<div class="search-loading"><i class="fas fa-spinner fa-spin"></i> Đang tìm kiếm...</div>';
+            searchResults.classList.add('active');
+
+            try {
+                const response = await fetch(`/api/search/global?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.results && data.results.length > 0) {
+                    let html = '';
+                    data.results.forEach(item => {
+                        html += `
+                            <div class="search-result-item">
+                                <div class="search-result-icon ${item.type}">
+                                    <i class="fas ${item.icon}"></i>
+                                </div>
+                                <div class="search-result-content">
+                                    <div class="search-result-title">${item.title}</div>
+                                    <div class="search-result-subtitle">${item.subtitle}</div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    searchResults.innerHTML = html;
+                } else {
+                    searchResults.innerHTML = '<div class="search-no-results"><i class="fas fa-search"></i><br/>Không tìm thấy kết quả</div>';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                searchResults.innerHTML = '<div class="search-no-results text-danger"><i class="fas fa-exclamation-circle"></i><br/>Lỗi tìm kiếm</div>';
+            }
+        }
+
+
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

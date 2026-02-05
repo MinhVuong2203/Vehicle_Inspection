@@ -242,26 +242,36 @@ namespace Vehicle_Inspection.Service
         /// - Cùng ngày: 50%
         /// - Qua ngày: 100%
         /// </summary>
-        
+
         private decimal CalculateFeePercentage(DateTime originalCreatedAt)
         {
             DateTime today = DateTime.Now.Date;
             DateTime originalDate = originalCreatedAt.Date;
 
-            // Tính số ngày chênh lệch
-            int daysDifference = (today - originalDate).Days;
+            // Ngày đầu tiên bắt đầu tính phí là ngày hôm sau của originalDate
+            DateTime startCountingDate = originalDate.AddDays(1);
 
-            // Trong vòng 1-7 ngày → 50%
-            if (daysDifference >= 0 && daysDifference <= 7)
+            // Tính số ngày chênh lệch từ ngày bắt đầu tính
+            int daysDifference = (today - startCountingDate).Days;
+
+            // Ngày gốc (ngày 0): 0%
+            if (today < startCountingDate)
             {
                 return 0.5m;
             }
 
-            // Trên 7 ngày → 100%
-            if (daysDifference > 7)
+            // Từ ngày 1-7 (tức là hôm sau đến 7 ngày sau) → 50%
+            if (daysDifference >= 0 && daysDifference <= 6)
+            {
+                return 0.5m;
+            }
+
+            // Từ ngày 8 trở đi → 100%
+            if (daysDifference >= 7)
             {
                 return 1.0m;
             }
+
             return 0.5m;
         }
 
